@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maggie Forbes Strategies | Strategic Growth Partnership</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --gold: #B8935F;
+            --gold-light: #D4B896;
+            --navy: #1a2332;
+            --navy-light: #2c3e50;
+            --cream: #f8f6f3;
+            --white: #ffffff;
+            --text-dark: #2c2c2c;
+            --text-light: #666666;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.8;
+            color: var(--text-dark);
+            background-color: var(--cream);
+            overflow-x: hidden;
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 400;
+            line-height: 1.3;
+            color: var(--navy);
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        h2 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            margin-bottom: 2rem;
+        }
+
+        h3 {
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            margin-bottom: 1rem;
+            color: var(--gold);
+        }
+
+        p {
+            font-size: 1.125rem;
+            line-height: 1.9;
+            margin-bottom: 1.5rem;
+            color: var(--text-light);
+            max-width: 70ch;
+        }
+
+        .emphasis {
+            font-style: italic;
+            color: var(--navy);
+            font-weight: 400;
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .section {
+            padding: 6rem 0;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+            padding: 2rem 0;
+            border-bottom: 1px solid var(--gold);
+        }
+
+        .logo-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-monogram {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 4rem;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            line-height: 1;
+        }
+
+        .logo-monogram .gold {
+            color: var(--gold);
+        }
+
+        .logo-monogram .navy {
+            color: var(--white);
+        }
+
+        .logo-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            letter-spacing: 0.2em;
+            color: var(--gold);
+            text-transform: uppercase;
+            font-weight: 300;
+        }
+
+        .logo-tagline {
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            color: var(--white);
+            font-weight: 300;
+            letter-spacing: 0.05em;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+            color: var(--white);
+            text-align: center;
+            padding: 8rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(184, 147, 95, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero h1 {
+            color: var(--white);
+            font-weight: 300;
+            margin-bottom: 2rem;
+        }
+
+        .hero p {
+            color: rgba(255, 255, 255, 0.9);
+            max-width: 60ch;
+            margin: 0 auto 3rem;
+            font-size: 1.25rem;
+            line-height: 1.8;
+        }
+
+        .hero .emphasis {
+            color: var(--gold);
+        }
+
+        /* Philosophy Section */
+        .philosophy {
+            background: var(--white);
+            text-align: center;
+        }
+
+        .philosophy p {
+            margin: 0 auto 1rem;
+            font-size: 1.25rem;
+            font-style: italic;
+            color: var(--navy);
+        }
+
+        /* Positioning Section */
+        .positioning {
+            background: var(--cream);
+        }
+
+        .positioning-content {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        /* Engagement Models */
+        .engagements {
+            background: var(--white);
+        }
+
+        .engagement-intro {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .engagement-intro p {
+            margin: 0 auto;
+            max-width: 70ch;
+        }
+
+        .engagement-card {
+            background: var(--cream);
+            padding: 4rem;
+            margin-bottom: 3rem;
+            border-left: 3px solid var(--gold);
+            transition: all 0.3s ease;
+        }
+
+        .engagement-card:hover {
+            transform: translateX(10px);
+            box-shadow: 0 10px 40px rgba(26, 35, 50, 0.1);
+        }
+
+        .engagement-card h3 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .engagement-subtitle {
+            font-style: italic;
+            color: var(--text-light);
+            font-size: 1.125rem;
+            margin-bottom: 2rem;
+            display: block;
+        }
+
+        .engagement-card p {
+            margin-bottom: 1.5rem;
+        }
+
+        .engagement-includes {
+            font-weight: 500;
+            color: var(--navy);
+            margin-top: 2rem;
+        }
+
+        .investment {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.125rem;
+            color: var(--gold);
+            margin-top: 2rem;
+            font-style: italic;
+        }
+
+        /* Process Section */
+        .process {
+            background: var(--cream);
+        }
+
+        .process-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Inquiry Section */
+        .inquiry {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+            color: var(--white);
+            text-align: center;
+        }
+
+        .inquiry h2 {
+            color: var(--white);
+            margin-bottom: 1.5rem;
+        }
+
+        .inquiry p {
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0 auto 3rem;
+        }
+
+        .inquiry-form {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 3rem;
+            border-radius: 2px;
+            border: 1px solid rgba(184, 147, 95, 0.2);
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--gold);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(184, 147, 95, 0.3);
+            border-radius: 2px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            color: var(--text-dark);
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--gold);
+            background: var(--white);
+        }
+
+        .form-group textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .submit-btn {
+            background: var(--gold);
+            color: var(--navy);
+            padding: 1rem 3rem;
+            border: none;
+            border-radius: 2px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            background: var(--gold-light);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(184, 147, 95, 0.3);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--navy);
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            padding: 3rem 0;
+            font-size: 0.875rem;
+        }
+
+        footer p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+        }
+
+        .divider {
+            width: 60px;
+            height: 1px;
+            background: var(--gold);
+            margin: 3rem auto;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .section {
+                padding: 4rem 0;
+            }
+
+            .hero {
+                padding: 5rem 0;
+            }
+
+            .engagement-card {
+                padding: 2rem;
+            }
+
+            .inquiry-form {
+                padding: 2rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.75rem;
+            }
+
+            p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="logo-section">
+                <div class="logo-monogram">
+                    <span class="gold">M</span><span class="gold">F</span>
+                </div>
+                <div class="logo-name">Maggie Forbes</div>
+                <div class="logo-tagline">B2B Growth Strategist</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <h1>AI Systems for<br>Human-Led Growth</h1>
+            <p>We build intelligent systems that give your business what it really needs—<span class="emphasis">clarity, consistency, and freedom to grow</span>.</p>
+            <p>Our work combines AI precision with human strategy, helping you scale faster while staying true to your values.</p>
+        </div>
+    </section>
+
+    <!-- Philosophy -->
+    <section class="section philosophy">
+        <div class="container">
+            <p>We believe growth should feel <span class="emphasis">aligned</span>—not rushed.</p>
+            <p>That systems should amplify <span class="emphasis">human judgment</span>, not replace it.</p>
+            <p>And that the best client relationships are built on <span class="emphasis">mutual respect and shared vision</span>.</p>
+        </div>
+    </section>
+
+    <!-- Positioning -->
+    <section class="section positioning">
+        <div class="container">
+            <div class="positioning-content">
+                <h2>A Partnership Approach</h2>
+                <div class="divider"></div>
+                <p>We work with a limited number of B2B leaders who recognize that sustainable growth requires more than tactics—it requires intelligent architecture.</p>
+                <p>Our engagements are designed for organizations that value strategic clarity over quick fixes, and who understand that the most powerful systems are those that think like you do.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Engagement Models -->
+    <section class="section engagements">
+        <div class="container">
+            <div class="engagement-intro">
+                <h2>Three Ways We Partner With Select Organizations</h2>
+                <div class="divider"></div>
+                <p>Each engagement is designed around mutual fit and shared commitment to meaningful outcomes.</p>
+            </div>
+
+            <!-- Strategic Foundations -->
+            <div class="engagement-card">
+                <h3>Strategic Foundations</h3>
+                <span class="engagement-subtitle">For leaders seeking clarity before scale</span>
+                
+                <p>This engagement is designed for organizations that recognize something isn't aligned—and want to understand why before building further. We map your existing systems, identify what's working and what's creating friction, and architect a clear path forward.</p>
+                
+                <p>This is strategy first. We help you see the full picture, then decide—together—what to build.</p>
+                
+                <p><strong>What this looks like:</strong> A deep partnership over 90 days where we audit your business model, map your workflows, clarify your growth priorities, and deliver a custom roadmap. You'll leave with complete clarity on where to invest your resources and attention.</p>
+                
+                <p class="engagement-includes">This engagement includes strategic mapping, data clarity systems, and a prioritized implementation roadmap.</p>
+                
+                <p class="investment">Strategic engagements are designed around scope and timeline</p>
+            </div>
+
+            <!-- Growth Architecture -->
+            <div class="engagement-card">
+                <h3>Growth Architecture</h3>
+                <span class="engagement-subtitle">For organizations ready to systematize and scale</span>
+                
+                <p>This is where strategy becomes structure. We design and implement the intelligent systems that create predictable revenue—AI-powered acquisition, conversion optimization, authority positioning, and operational automation.</p>
+                
+                <p>This isn't about more tools. It's about building systems that think like you do, allowing your business to scale without losing what makes it distinct.</p>
+                
+                <p><strong>What this looks like:</strong> An ongoing partnership where we serve as your fractional growth team. We architect your lead generation, refine your sales process, build your content engine, and automate the repetitive—freeing your team to focus on relationships, craft, and strategic decisions.</p>
+                
+                <p class="engagement-includes">This engagement includes implementation of core growth systems with quarterly optimization reviews.</p>
+                
+                <p class="investment">Annual partnerships begin at $150,000</p>
+            </div>
+
+            <!-- Strategic Alliance -->
+            <div class="engagement-card">
+                <h3>Strategic Alliance</h3>
+                <span class="engagement-subtitle">For leaders who want a permanent thinking partner</span>
+                
+                <p>Some businesses reach a stage where they need more than systems—they need a strategic partner who understands their vision and can continuously architect around it. This is our most comprehensive engagement.</p>
+                
+                <p>We become an extension of your leadership team, providing executive-level strategic counsel, predictive intelligence, continuous optimization, and access to emerging capabilities as they develop.</p>
+                
+                <p><strong>What this looks like:</strong> You have a dedicated growth strategist who knows your business intimately. We meet regularly, maintain continuous optimization across all systems, and serve as your trusted advisor on growth decisions. You're never building alone.</p>
+                
+                <p class="engagement-includes">This is a long-term partnership for organizations committed to sustained, aligned growth.</p>
+                
+                <p class="investment">By invitation and mutual fit assessment</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Process -->
+    <section class="section process">
+        <div class="container">
+            <div class="process-content">
+                <h2>How We Begin</h2>
+                <div class="divider"></div>
+                <p>We begin every engagement with a private conversation to understand your vision, assess alignment, and determine if a partnership makes sense for both of us.</p>
+                <p>If we're a fit, we move forward deliberately—strategy first, then structure. We don't rush into solutions before we understand what you're really building.</p>
+                <p>This approach ensures that every system we create serves your long-term vision, not just your immediate needs.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Inquiry -->
+    <section class="section inquiry">
+        <div class="container">
+            <h2>Begin a Conversation</h2>
+            <p>If you're interested in exploring a partnership, submit an inquiry below.<br>We'll respond within 48 hours to schedule a private conversation.</p>
+            
+            <form class="inquiry-form" id="inquiryForm">
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="company">Organization</label>
+                    <input type="text" id="company" name="company" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="message">Tell us about your current growth challenges</label>
+                    <textarea id="message" name="message" required></textarea>
+                </div>
+                
+                <button type="submit" class="submit-btn">Submit Inquiry</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Maggie Forbes Strategies. All rights reserved.</p>
+            <p style="margin-top: 1rem;">Building intelligent systems for human-led growth.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scroll animation on load
+        const sections = document.querySelectorAll('.section');
+        sections.forEach((section, index) => {
+            section.style.animationDelay = `${index * 0.1}s`;
+        });
+
+        // Backend API configuration
+        const API_BASE = 'https://growthmanagerpro-backend.vercel.app/api';
+
+        // Extract UTM parameters from URL for tracking
+        function getUTMParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                utm_source: params.get('utm_source'),
+                utm_campaign: params.get('utm_campaign'),
+                utm_medium: params.get('utm_medium')
+            };
+        }
+
+        // Form handling
+        document.getElementById('inquiryForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = this.querySelector('.submit-btn');
+            const originalBtnText = submitBtn.textContent;
+            
+            // Disable button and show loading state
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            
+            try {
+                // Gather form data
+                const formData = {
+                    name: document.getElementById('name').value,
+                    company: document.getElementById('company').value,
+                    email: document.getElementById('email').value,
+                    message: document.getElementById('message').value,
+                    source: 'growthmanagerpro.com', // Updated source
+                    ...getUTMParams() // Include UTM tracking
+                };
+
+                // Submit to backend API
+                const response = await fetch(`${API_BASE}/lead-capture`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    // Success! Redirect to Calendly
+                    window.location.href = result.redirectUrl;
+                } else {
+                    throw new Error(result.error || 'Submission failed');
+                }
+                
+            } catch (error) {
+                console.error('Form submission error:', error);
+                
+                // Show error message
+                alert('There was an error submitting your inquiry. Please email us directly at maggie@maggieforbes.com');
+                
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+            }
+        });
+    </script>
+</body>
+</html>
