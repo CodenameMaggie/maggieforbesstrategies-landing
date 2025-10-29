@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maggie Forbes Strategies | Strategic Growth Partnership</title>
+    <title>Maggie Forbes Strategies | Strategic Growth Architecture</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -69,7 +69,7 @@
         .emphasis {
             font-style: italic;
             color: var(--navy);
-            font-weight: 400;
+            font-weight: 500;
         }
 
         /* Layout */
@@ -173,7 +173,7 @@
         .hero p {
             color: rgba(255, 255, 255, 0.9);
             max-width: 60ch;
-            margin: 0 auto 3rem;
+            margin: 0 auto 1.5rem;
             font-size: 1.25rem;
             line-height: 1.8;
         }
@@ -182,234 +182,305 @@
             color: var(--gold);
         }
 
-        /* Philosophy Section */
-        .philosophy {
+        .cta-button {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 1.25rem 3rem;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            font-size: 1.125rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-decoration: none;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(184, 147, 95, 0.4);
+        }
+
+        /* Divider */
+        .divider {
+            width: 80px;
+            height: 2px;
+            background: var(--gold);
+            margin: 2rem auto;
+        }
+
+        /* Problem Section */
+        .problem {
             background: var(--white);
-            text-align: center;
         }
 
-        .philosophy p {
-            margin: 0 auto 1rem;
-            font-size: 1.25rem;
-            font-style: italic;
-            color: var(--navy);
-        }
-
-        /* Positioning Section */
-        .positioning {
-            background: var(--cream);
-        }
-
-        .positioning-content {
+        .problem-content {
             max-width: 800px;
             margin: 0 auto;
             text-align: center;
         }
 
-        /* Engagement Models */
-        .engagements {
+        .problem-grid {
+            display: grid;
+            gap: 2rem;
+            margin-top: 3rem;
+            text-align: left;
+        }
+
+        .problem-card {
+            background: var(--cream);
+            padding: 2rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--gold);
+        }
+
+        .problem-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .problem-card p {
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        /* Testimonials */
+        .testimonials {
+            background: var(--cream);
+        }
+
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .testimonial-card {
+            background: var(--white);
+            padding: 2.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border-top: 3px solid var(--gold);
+        }
+
+        .testimonial-quote {
+            font-style: italic;
+            color: var(--text-dark);
+            margin-bottom: 1.5rem;
+            line-height: 1.7;
+            font-size: 1.05rem;
+        }
+
+        .testimonial-author {
+            font-weight: 600;
+            color: var(--navy);
+            margin-bottom: 0.25rem;
+        }
+
+        .testimonial-role {
+            font-size: 0.95rem;
+            color: var(--text-light);
+        }
+
+        /* Approach Section */
+        .approach {
             background: var(--white);
         }
 
-        .engagement-intro {
-            text-align: center;
-            margin-bottom: 4rem;
-        }
-
-        .engagement-intro p {
+        .approach-content {
+            max-width: 800px;
             margin: 0 auto;
-            max-width: 70ch;
+            text-align: center;
         }
 
-        .engagement-card {
-            background: var(--cream);
-            padding: 4rem;
-            margin-bottom: 3rem;
-            border-left: 3px solid var(--gold);
-            transition: all 0.3s ease;
+        .approach-content p {
+            text-align: left;
         }
 
-        .engagement-card:hover {
-            transform: translateX(10px);
-            box-shadow: 0 10px 40px rgba(26, 35, 50, 0.1);
+        /* Partnership Section */
+        .partnership {
+            background: var(--navy);
+            color: var(--white);
         }
 
-        .engagement-card h3 {
+        .partnership h2 {
+            color: var(--white);
+            text-align: center;
+        }
+
+        .partnership-content {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .partnership-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 3rem;
+            border-radius: 12px;
+            margin-top: 3rem;
+            border-top: 4px solid var(--gold);
+        }
+
+        .partnership-card h3 {
+            color: var(--gold);
             font-size: 2rem;
-            margin-bottom: 0.5rem;
+            margin-bottom: 1rem;
         }
 
-        .engagement-subtitle {
-            font-style: italic;
-            color: var(--text-light);
-            font-size: 1.125rem;
-            margin-bottom: 2rem;
-            display: block;
-        }
-
-        .engagement-card p {
+        .partnership-card p {
+            color: rgba(255, 255, 255, 0.9);
+            max-width: 100%;
             margin-bottom: 1.5rem;
         }
 
-        .engagement-includes {
-            font-weight: 500;
-            color: var(--navy);
-            margin-top: 2rem;
+        .system-list {
+            margin: 1.5rem 0;
+            padding-left: 0;
+            list-style: none;
+        }
+
+        .system-list li {
+            padding: 0.75rem 0;
+            padding-left: 2rem;
+            position: relative;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .system-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-weight: bold;
         }
 
         .investment {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.125rem;
+            font-weight: 600;
             color: var(--gold);
+            font-size: 1.25rem;
             margin-top: 2rem;
-            font-style: italic;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        /* Process Section */
-        .process {
+        /* Qualification */
+        .qualification {
             background: var(--cream);
+            text-align: center;
         }
 
-        .process-content {
+        .qualification-content {
             max-width: 800px;
             margin: 0 auto;
+            text-align: center;
+        }
+
+        .qualification-box {
+            background: var(--white);
+            padding: 3rem;
+            border-radius: 12px;
+            border: 2px solid var(--gold);
+            margin-top: 3rem;
+        }
+
+        .qualification-box h3 {
+            margin-bottom: 2rem;
+        }
+
+        .qualification-list {
+            list-style: none;
+            padding: 0;
+            text-align: left;
+        }
+
+        .qualification-list li {
+            padding: 1rem 0;
+            padding-left: 2.5rem;
+            position: relative;
+            border-bottom: 1px solid var(--cream);
+            font-size: 1.05rem;
+        }
+
+        .qualification-list li:last-child {
+            border-bottom: none;
+        }
+
+        .qualification-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-weight: bold;
+            font-size: 1.3rem;
         }
 
         /* Inquiry Section */
         .inquiry {
-            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
-            color: var(--white);
+            background: var(--white);
             text-align: center;
         }
 
-        .inquiry h2 {
-            color: var(--white);
-            margin-bottom: 1.5rem;
-        }
-
-        .inquiry p {
-            color: rgba(255, 255, 255, 0.9);
-            margin: 0 auto 3rem;
-        }
-
-        .inquiry-form {
-            max-width: 600px;
+        .inquiry-content {
+            max-width: 700px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 3rem;
-            border-radius: 2px;
-            border: 1px solid rgba(184, 147, 95, 0.2);
         }
 
-        .form-group {
-            margin-bottom: 2rem;
-            text-align: left;
+        .availability-notice {
+            background: var(--navy);
+            color: var(--white);
+            padding: 2.5rem;
+            border-radius: 8px;
+            border: 2px solid var(--gold);
+            margin: 3rem auto;
         }
 
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
+        .availability-notice h3 {
             color: var(--gold);
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
         }
 
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(184, 147, 95, 0.3);
-            border-radius: 2px;
-            font-family: 'Inter', sans-serif;
-            font-size: 1rem;
-            color: var(--text-dark);
-            transition: all 0.3s ease;
+        .availability-notice p {
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0 auto;
         }
 
-        .form-group input:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--gold);
-            background: var(--white);
-        }
-
-        .form-group textarea {
-            min-height: 150px;
-            resize: vertical;
-        }
-
-        .submit-btn {
-            background: var(--gold);
-            color: var(--navy);
-            padding: 1rem 3rem;
-            border: none;
-            border-radius: 2px;
-            font-family: 'Inter', sans-serif;
-            font-size: 1rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .submit-btn:hover {
-            background: var(--gold-light);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(184, 147, 95, 0.3);
+        .slots-remaining {
+            font-weight: 600;
+            color: var(--gold);
+            font-size: 1.25rem;
+            margin-top: 1rem;
         }
 
         /* Footer */
         footer {
             background: var(--navy);
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--white);
             text-align: center;
-            padding: 3rem 0;
-            font-size: 0.875rem;
+            padding: 3rem 2rem;
         }
 
         footer p {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.875rem;
-        }
-
-        .divider {
-            width: 60px;
-            height: 1px;
-            background: var(--gold);
-            margin: 3rem auto;
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0 auto;
         }
 
         /* Responsive */
         @media (max-width: 768px) {
+            .testimonial-grid {
+                grid-template-columns: 1fr;
+            }
+
             .section {
                 padding: 4rem 0;
             }
 
-            .hero {
-                padding: 5rem 0;
-            }
-
-            .engagement-card {
+            .partnership-card {
                 padding: 2rem;
-            }
-
-            .inquiry-form {
-                padding: 2rem;
-            }
-
-            h1 {
-                font-size: 2rem;
-            }
-
-            h2 {
-                font-size: 1.75rem;
-            }
-
-            p {
-                font-size: 1rem;
             }
         }
     </style>
@@ -420,10 +491,10 @@
         <div class="container">
             <div class="logo-section">
                 <div class="logo-monogram">
-                    <span class="gold">M</span><span class="gold">F</span>
+                    <span class="gold">M</span><span class="navy">F</span>
                 </div>
                 <div class="logo-name">Maggie Forbes</div>
-                <div class="logo-tagline">B2B Growth Strategist</div>
+                <div class="logo-tagline">Strategic Growth Architecture</div>
             </div>
         </div>
     </header>
@@ -431,142 +502,173 @@
     <!-- Hero -->
     <section class="hero">
         <div class="container">
-            <h1>AI Systems for<br>Human-Led Growth</h1>
-            <p>We build intelligent systems that give your business what it really needs—<span class="emphasis">clarity, consistency, and freedom to grow</span>.</p>
-            <p>Our work combines AI precision with human strategy, helping you scale faster while staying true to your values.</p>
+            <h1>Enterprise Growth Without Enterprise Complexity</h1>
+            <p>Most organizations hit a ceiling between $3M and $25M—not from lack of capability, but from infrastructure that wasn't designed to scale.</p>
+            <p><span class="emphasis">We architect intelligent growth systems that create predictable opportunity flow without operational chaos.</span></p>
+            <p>For leaders ready to build the foundation that sustains long-term market leadership.</p>
+            <a href="#inquiry" class="cta-button">Schedule Strategy Call</a>
         </div>
     </section>
 
-    <!-- Philosophy -->
-    <section class="section philosophy">
+    <!-- The Problem -->
+    <section class="section problem">
         <div class="container">
-            <p>We believe growth should feel <span class="emphasis">aligned</span>—not rushed.</p>
-            <p>That systems should amplify <span class="emphasis">human judgment</span>, not replace it.</p>
-            <p>And that the best client relationships are built on <span class="emphasis">mutual respect and shared vision</span>.</p>
-        </div>
-    </section>
-
-    <!-- Positioning -->
-    <section class="section positioning">
-        <div class="container">
-            <div class="positioning-content">
-                <h2>A Partnership Approach</h2>
+            <div class="problem-content">
+                <h2>The Architecture Gap</h2>
                 <div class="divider"></div>
-                <p>We work with a limited number of B2B leaders who recognize that sustainable growth requires more than tactics—it requires intelligent architecture.</p>
-                <p>Our engagements are designed for organizations that value strategic clarity over quick fixes, and who understand that the most powerful systems are those that think like you do.</p>
+                <p>Your organization has outgrown its foundation. Every strategic relationship requires founder involvement. Every quarter depends on relationships rather than systems. Growth creates complexity rather than capacity.</p>
+                
+                <div class="problem-grid">
+                    <div class="problem-card">
+                        <h3>Leadership Dependency</h3>
+                        <p>Strategic decisions, key relationships, and critical initiatives all flow through you. Your team operates tactically while you remain trapped in execution. The very success you've built now constrains further growth.</p>
+                    </div>
+
+                    <div class="problem-card">
+                        <h3>Relationship-Dependent Revenue</h3>
+                        <p>Pipeline depends on referrals, relationships, and timing you can't control. Strong quarters followed by uncertainty. No systematic approach to opportunity creation at the executive level.</p>
+                    </div>
+
+                    <div class="problem-card">
+                        <h3>Infrastructure That Doesn't Scale</h3>
+                        <p>Disconnected systems. Manual processes masquerading as automation. Data exists but provides no intelligence. Technology creates more work instead of leverage.</p>
+                    </div>
+                </div>
+
+                <p style="margin-top: 3rem; font-style: italic;">These patterns transcend industry. They emerge at scale.</p>
             </div>
         </div>
     </section>
 
-    <!-- Engagement Models -->
-    <section class="section engagements">
+    <!-- Leadership Focus -->
+    <section class="section testimonials">
         <div class="container">
-            <div class="engagement-intro">
-                <h2>Three Ways We Partner With Select Organizations</h2>
+            <h2 style="text-align: center;">Built for Enterprise Leadership</h2>
+            <div class="divider"></div>
+            
+            <p style="text-align: center; max-width: 700px; margin: 0 auto 3rem;">We work exclusively with leaders of established organizations—those who've built a substantial enterprise and now face the distinct challenge of architecting for scale without sacrificing what makes them exceptional.</p>
+            
+            <div class="testimonial-grid">
+                <div class="testimonial-card">
+                    <h3 style="font-size: 1.25rem; margin-bottom: 1rem;">The Founder Who's Become the Constraint</h3>
+                    <p style="margin: 0; font-size: 1rem;">You've built a valuable organization. But now every strategic decision requires your presence. Every key relationship depends on your involvement. Your team executes tactically while you remain embedded in operations. We architect the systems that enable autonomous execution at the highest level.</p>
+                </div>
+
+                <div class="testimonial-card">
+                    <h3 style="font-size: 1.25rem; margin-bottom: 1rem;">The Executive Navigating Unpredictable Pipeline</h3>
+                    <p style="margin: 0; font-size: 1rem;">Quarters alternate between exceptional and uncertain. Opportunity creation depends on relationships you've cultivated, not systems you can scale. There's no predictable engine for executive-level conversations. We design the intelligent infrastructure that creates consistent opportunity flow without constant founder involvement.</p>
+                </div>
+
+                <div class="testimonial-card">
+                    <h3 style="font-size: 1.25rem; margin-bottom: 1rem;">The Operator Managing Complexity at Scale</h3>
+                    <p style="margin: 0; font-size: 1rem;">Revenue grows but operational leverage doesn't. Each new engagement creates disproportionate complexity. Your technology stack generates reports, not intelligence. We build sophisticated infrastructure that scales capacity without adding overhead.</p>
+                </div>
+            </div>
+
+            <p style="text-align: center; margin-top: 3rem; font-style: italic; max-width: 700px; margin-left: auto; margin-right: auto;">If you're leading an enterprise-level organization and recognized these patterns, this partnership is designed for you.</p>
+        </div>
+    </section>
+
+    <!-- Our Approach -->
+    <section class="section approach">
+        <div class="container">
+            <div class="approach-content">
+                <h2>Strategic Growth Architecture</h2>
                 <div class="divider"></div>
-                <p>Each engagement is designed around mutual fit and shared commitment to meaningful outcomes.</p>
-            </div>
-
-            <!-- Strategic Foundations -->
-            <div class="engagement-card">
-                <h3>Strategic Foundations</h3>
-                <span class="engagement-subtitle">For leaders seeking clarity before scale</span>
+                <p>We work with a limited number of enterprise-level organizations annually—maintaining a selective roster of 8-12 strategic partnerships—to architect intelligent systems that create predictable opportunity flow without operational chaos.</p>
                 
-                <p>This engagement is designed for organizations that recognize something isn't aligned—and want to understand why before building further. We map your existing systems, identify what's working and what's creating friction, and architect a clear path forward.</p>
+                <p>Our methodology combines AI-powered opportunity creation, intent detection, autonomous qualification, and sophisticated operational automation. Not additional tools. Not increased complexity. <span class="emphasis">Intelligent architecture that generates leverage without requiring your constant involvement.</span></p>
                 
-                <p>This is strategy first. We help you see the full picture, then decide—together—what to build.</p>
+                <p>This isn't tactical optimization. It's comprehensive infrastructure designed for your specific business model, market position, and growth trajectory.</p>
                 
-                <p><strong>What this looks like:</strong> A deep partnership over 90 days where we audit your business model, map your workflows, clarify your growth priorities, and deliver a custom roadmap. You'll leave with complete clarity on where to invest your resources and attention.</p>
-                
-                <p class="engagement-includes">This engagement includes strategic mapping, data clarity systems, and a prioritized implementation roadmap.</p>
-                
-                <p class="investment">Strategic engagements are designed around scope and timeline</p>
-            </div>
-
-            <!-- Growth Architecture -->
-            <div class="engagement-card">
-                <h3>Growth Architecture</h3>
-                <span class="engagement-subtitle">For organizations ready to systematize and scale</span>
-                
-                <p>This is where strategy becomes structure. We design and implement the intelligent systems that create predictable revenue—AI-powered acquisition, conversion optimization, authority positioning, and operational automation.</p>
-                
-                <p>This isn't about more tools. It's about building systems that think like you do, allowing your business to scale without losing what makes it distinct.</p>
-                
-                <p><strong>What this looks like:</strong> An ongoing partnership where we serve as your fractional growth team. We architect your lead generation, refine your sales process, build your content engine, and automate the repetitive—freeing your team to focus on relationships, craft, and strategic decisions.</p>
-                
-                <p class="engagement-includes">This engagement includes implementation of core growth systems with quarterly optimization reviews.</p>
-                
-                <p class="investment">Annual partnerships begin at $150,000</p>
-            </div>
-
-            <!-- Strategic Alliance -->
-            <div class="engagement-card">
-                <h3>Strategic Alliance</h3>
-                <span class="engagement-subtitle">For leaders who want a permanent thinking partner</span>
-                
-                <p>Some businesses reach a stage where they need more than systems—they need a strategic partner who understands their vision and can continuously architect around it. This is our most comprehensive engagement.</p>
-                
-                <p>We become an extension of your leadership team, providing executive-level strategic counsel, predictive intelligence, continuous optimization, and access to emerging capabilities as they develop.</p>
-                
-                <p><strong>What this looks like:</strong> You have a dedicated growth strategist who knows your business intimately. We meet regularly, maintain continuous optimization across all systems, and serve as your trusted advisor on growth decisions. You're never building alone.</p>
-                
-                <p class="engagement-includes">This is a long-term partnership for organizations committed to sustained, aligned growth.</p>
-                
-                <p class="investment">By invitation and mutual fit assessment</p>
+                <p>We serve as your fractional growth architecture team—designing systems, implementing intelligence, and continuously optimizing performance. You gain predictable pipeline, operational clarity, and the capacity to focus on strategic leadership rather than tactical execution.</p>
             </div>
         </div>
     </section>
 
-    <!-- Process -->
-    <section class="section process">
+    <!-- Partnership Structure -->
+    <section class="section partnership">
         <div class="container">
-            <div class="process-content">
-                <h2>How We Begin</h2>
+            <div class="partnership-content">
+                <h2>Strategic Partnership</h2>
+                <div class="divider" style="background: var(--gold);"></div>
+                <p style="text-align: center; max-width: 800px; margin: 0 auto;">We offer comprehensive growth architecture engagements for organizations committed to building sophisticated, intelligent systems that create sustainable competitive advantage.</p>
+
+                <div class="partnership-card">
+                    <h3>What This Partnership Delivers</h3>
+                    <p>We become your fractional growth architecture team—designing and implementing the intelligent infrastructure your organization requires to scale predictably.</p>
+                    
+                    <ul class="system-list">
+                        <li>Intent-based prospecting systems that identify buying signals and executive-level opportunities automatically</li>
+                        <li>AI-powered personalization and autonomous qualification at scale</li>
+                        <li>Multi-channel orchestration across email, social platforms, and strategic advertising</li>
+                        <li>Authority architecture that attracts ideal prospects and positions market leadership</li>
+                        <li>Executive enablement platforms and sophisticated buyer experiences</li>
+                        <li>Complete operational automation with intelligent integration</li>
+                        <li>Ongoing strategic counsel, performance optimization, and continuous evolution</li>
+                    </ul>
+                    
+                    <p>You receive comprehensive growth infrastructure that operates autonomously, enabling your leadership team to focus on strategic relationships and high-value decision-making rather than tactical execution.</p>
+                    
+                    <p class="investment">Strategic partnerships are designed as 12-month minimum engagements</p>
+                    <p style="color: rgba(255, 255, 255, 0.7); font-style: italic; margin-top: 0.5rem;">Investment structure and performance alignment determined during strategy conversation</p>
+                </div>
+
+                <p style="text-align: center; margin-top: 3rem; font-size: 1.125rem;">We design custom engagements based on organizational complexity, existing infrastructure, and strategic growth objectives. Investment and structure determined during initial strategy conversation.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Qualification -->
+    <section class="section qualification">
+        <div class="container">
+            <div class="qualification-content">
+                <h2>Is This Partnership Right for Your Organization?</h2>
                 <div class="divider"></div>
-                <p>We begin every engagement with a private conversation to understand your vision, assess alignment, and determine if a partnership makes sense for both of us.</p>
-                <p>If we're a fit, we move forward deliberately—strategy first, then structure. We don't rush into solutions before we understand what you're really building.</p>
-                <p>This approach ensures that every system we create serves your long-term vision, not just your immediate needs.</p>
+                
+                <div class="qualification-box">
+                    <h3>We work with organizations that meet these criteria:</h3>
+                    <ul class="qualification-list">
+                        <li>Generating $3M+ in annual revenue with proven market position and established operations</li>
+                        <li>Led by executives who recognize they've become the constraint to further growth</li>
+                        <li>Committed to systematic architecture over tactical quick fixes</li>
+                        <li>Value strategic infrastructure and sustainable competitive advantage</li>
+                        <li>Ready to invest significantly in intelligent systems and foundational transformation</li>
+                        <li>Willing to fundamentally reshape how your organization creates opportunity</li>
+                    </ul>
+                </div>
+
+                <p style="margin-top: 3rem;">If your organization doesn't meet these criteria, we're likely not the right partner. We work exclusively with established enterprises ready for architectural transformation, not incremental optimization.</p>
             </div>
         </div>
     </section>
 
     <!-- Inquiry -->
-    <section class="section inquiry">
+    <section class="section inquiry" id="inquiry">
         <div class="container">
-            <h2>Begin a Conversation</h2>
-            <p>If you're interested in exploring a partnership, submit an inquiry below.<br>We'll respond within 48 hours to schedule a private conversation.</p>
-            
-            <form class="inquiry-form" id="inquiryForm">
-                <div class="form-group">
-                    <label for="name">Name</label>
-                    <input type="text" id="name" name="name" required>
-                </div>
+            <div class="inquiry-content">
+                <h2>Begin the Conversation</h2>
                 
-                <div class="form-group">
-                    <label for="company">Organization</label>
-                    <input type="text" id="company" name="company" required>
+                <div class="availability-notice">
+                    <h3>Limited Availability</h3>
+                    <p>We maintain a highly selective partnership roster to ensure exceptional service and meaningful transformation.</p>
+                    <p class="slots-remaining">3 strategic partnerships available for Q1 2026</p>
                 </div>
+
+                <p>If your organization meets the criteria above, schedule a Strategy Call. We'll discuss your current architecture, growth challenges, and whether a strategic partnership makes sense for both parties.</p>
                 
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" required>
-                </div>
+                <p style="margin-bottom: 3rem;">This is a strategic conversation, not a presentation. We're assessing mutual fit and alignment.</p>
                 
-                <div class="form-group">
-                    <label for="message">Tell us about your current growth challenges</label>
-                    <textarea id="message" name="message" required></textarea>
-                </div>
-                
-                <button type="submit" class="submit-btn">Submit Inquiry</button>
-            </form>
+                <a href="https://calendly.com/maggie-maggieforbesstrategies/podcast-call-1" class="cta-button" target="_blank">Schedule Strategy Call</a>
+            </div>
         </div>
     </section>
 
     <!-- Footer -->
     <footer>
         <div class="container">
-            <p>&copy; 2025 Maggie Forbes Strategies. All rights reserved.</p>
-            <p style="margin-top: 1rem;">Building intelligent systems for human-led growth.</p>
+            <p>&copy; 2026 Maggie Forbes Strategies. All rights reserved.</p>
+            <p style="margin-top: 1rem;">Building intelligent systems for strategic growth.</p>
         </div>
     </footer>
 
@@ -577,69 +679,18 @@
             section.style.animationDelay = `${index * 0.1}s`;
         });
 
-        // Backend API configuration
-        const API_BASE = 'https://growthmanagerpro-backend.vercel.app/api';
-
-        // Extract UTM parameters from URL for tracking
-        function getUTMParams() {
-            const params = new URLSearchParams(window.location.search);
-            return {
-                utm_source: params.get('utm_source'),
-                utm_campaign: params.get('utm_campaign'),
-                utm_medium: params.get('utm_medium')
-            };
-        }
-
-        // Form handling
-        document.getElementById('inquiryForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const submitBtn = this.querySelector('.submit-btn');
-            const originalBtnText = submitBtn.textContent;
-            
-            // Disable button and show loading state
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Submitting...';
-            
-            try {
-                // Gather form data
-                const formData = {
-                    name: document.getElementById('name').value,
-                    company: document.getElementById('company').value,
-                    email: document.getElementById('email').value,
-                    message: document.getElementById('message').value,
-                    source: 'growthmanagerpro.com', // Updated source
-                    ...getUTMParams() // Include UTM tracking
-                };
-
-                // Submit to backend API
-                const response = await fetch(`${API_BASE}/lead-capture`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                });
-
-                const result = await response.json();
-
-                if (response.ok && result.success) {
-                    // Success! Redirect to Calendly
-                    window.location.href = result.redirectUrl;
-                } else {
-                    throw new Error(result.error || 'Submission failed');
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
                 }
-                
-            } catch (error) {
-                console.error('Form submission error:', error);
-                
-                // Show error message
-                alert('There was an error submitting your inquiry. Please email us directly at maggie@maggieforbes.com');
-                
-                // Re-enable button
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalBtnText;
-            }
+            });
         });
     </script>
 </body>
