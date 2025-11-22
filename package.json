@@ -1,0 +1,18 @@
+{
+  "name": "maggieforbesstrategies-landing",
+  "version": "1.0.0",
+  "description": "Maggie Forbes Strategies - Strategic Growth Architecture",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Build complete'",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0",
+    "@supabase/supabase-js": "^2.49.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
