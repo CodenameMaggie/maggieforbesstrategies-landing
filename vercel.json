@@ -2,7 +2,9 @@
   "version": 2,
   "rewrites": [
     { "source": "/", "destination": "/mf-landing-page.html" },
-    { "source": "/dashboard", "destination": "/dashboard.html" }
+    { "source": "/dashboard", "destination": "/dashboard.html" },
+    { "source": "/ai-chat", "destination": "/ai-chat-widget.html" },
+    { "source": "/ai-assistants", "destination": "/ai-chat-widget.html" }
   ],
   "functions": {
     "api/**/*.js": {
