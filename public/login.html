@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | Maggie Forbes Strategies</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --gold: #B8935F;
+      --gold-light: #D4B896;
+      --navy: #1a2332;
+      --navy-light: #2c3e50;
+      --cream: #f8f6f3;
+      --white: #ffffff;
+      --text-dark: #2c2c2c;
+      --error: #e53935;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .login-container {
+      background: var(--white);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 420px;
+      padding: 3rem;
+    }
+
+    .logo-section {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo-monogram {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 3rem;
+      font-weight: 300;
+      letter-spacing: 0.05em;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .logo-monogram .gold {
+      color: var(--gold);
+    }
+
+    .logo-monogram .navy {
+      color: var(--navy);
+    }
+
+    .logo-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.2rem;
+      letter-spacing: 0.15em;
+      color: var(--navy);
+      text-transform: uppercase;
+      font-weight: 400;
+    }
+
+    h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.8rem;
+      color: var(--navy);
+      text-align: center;
+      margin-bottom: 2rem;
+      font-weight: 400;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--text-dark);
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.9rem 1rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: all 0.2s;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(184, 147, 95, 0.1);
+    }
+
+    input.error {
+      border-color: var(--error);
+    }
+
+    .error-message {
+      display: none;
+      color: var(--error);
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 1rem;
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(184, 147, 95, 0.4);
+    }
+
+    .login-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 1.5rem;
+      color: var(--navy);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    .back-link:hover {
+      color: var(--gold);
+    }
+
+    .divider {
+      width: 60px;
+      height: 2px;
+      background: var(--gold);
+      margin: 0 auto 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="logo-section">
+      <div class="logo-monogram">
+        <span class="gold">M</span><span class="navy">F</span>
+      </div>
+      <div class="logo-name">Maggie Forbes</div>
+    </div>
+
+    <h1>Admin Login</h1>
+    <div class="divider"></div>
+
+    <form id="login-form" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="Enter your email" required>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+        <div class="error-message" id="error-message">Invalid email or password</div>
+      </div>
+
+      <button type="submit" class="login-btn" id="login-btn">Sign In</button>
+    </form>
+
+    <a href="/" class="back-link">Back to website</a>
+  </div>
+
+  <script>
+    // Simple authentication - in production, use proper auth like Supabase Auth
+    const VALID_CREDENTIALS = {
+      email: 'maggie@maggieforbesstrategies.com',
+      // This is a simple hash - in production use proper password hashing
+      passwordHash: 'mfs2024admin'
+    };
+
+    function handleLogin(e) {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const password = document.getElementById('password').value;
+      const btn = document.getElementById('login-btn');
+      const errorMsg = document.getElementById('error-message');
+
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+      errorMsg.classList.remove('show');
+
+      // Simulate network delay
+      setTimeout(() => {
+        if (email === VALID_CREDENTIALS.email && password === VALID_CREDENTIALS.passwordHash) {
+          // Set session
+          const session = {
+            email: email,
+            name: 'Maggie',
+            loggedInAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
+          };
+          localStorage.setItem('mfs_session', JSON.stringify(session));
+
+          // Redirect to dashboard
+          window.location.href = '/dashboard';
+        } else {
+          errorMsg.classList.add('show');
+          document.getElementById('password').classList.add('error');
+          btn.disabled = false;
+          btn.textContent = 'Sign In';
+        }
+      }, 500);
+    }
+
+    // Check if already logged in
+    function checkSession() {
+      const session = localStorage.getItem('mfs_session');
+      if (session) {
+        try {
+          const data = JSON.parse(session);
+          if (new Date(data.expiresAt) > new Date()) {
+            window.location.href = '/dashboard';
+          } else {
+            localStorage.removeItem('mfs_session');
+          }
+        } catch (e) {
+          localStorage.removeItem('mfs_session');
+        }
+      }
+    }
+
+    checkSession();
+  </script>
+</body>
+</html>
