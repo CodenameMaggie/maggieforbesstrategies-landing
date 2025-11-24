@@ -1,8 +1,4 @@
-const { createClient } = require('@supabase/supabase-js');
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const db = require('./utils/db');
 
 /**
  * MFS Tasks API
@@ -31,35 +27,37 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  const tenantId = req.query.tenant_id || req.headers['x-tenant-id'] || process.env.MFS_TENANT_ID;
+  const tenantId = req.query.tenant_id || req.headers['x-tenant-id'] || process.env.MFS_TENANT_ID || 'mfs-001';
 
   try {
     // GET - List tasks
     if (req.method === 'GET') {
       const { status, priority, limit = 50 } = req.query;
 
-      let query = supabase
-        .from('tasks')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .order('created_at', { ascending: false })
-        .limit(parseInt(limit));
+      let query = 'SELECT * FROM tasks WHERE tenant_id = $1';
+      const params = [tenantId];
+      let paramIndex = 2;
 
       if (status) {
-        query = query.eq('status', status);
+        query += ` AND status = $${paramIndex}`;
+        params.push(status);
+        paramIndex++;
       }
 
       if (priority) {
-        query = query.eq('priority', priority);
+        query += ` AND priority = $${paramIndex}`;
+        params.push(priority);
+        paramIndex++;
       }
 
-      const { data, error } = await query;
+      query += ` ORDER BY created_at DESC LIMIT $${paramIndex}`;
+      params.push(parseInt(limit));
 
-      if (error) throw error;
+      const tasks = await db.queryAll(query, params);
 
       return res.status(200).json({
         success: true,
-        tasks: data || []
+        tasks: tasks || []
       });
     }
 
@@ -71,28 +69,22 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'Title is required' });
       }
 
-      const { data, error } = await supabase
-        .from('tasks')
-        .insert({
-          tenant_id: tenantId,
-          title,
-          description,
-          priority: priority || 'medium',
-          status: 'pending',
-          due_date_text,
-          contact_id,
-          source: 'manual',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
+      const task = await db.insert('tasks', {
+        tenant_id: tenantId,
+        title,
+        description,
+        priority: priority || 'medium',
+        status: 'pending',
+        due_date_text,
+        contact_id,
+        source: 'manual',
+        created_at: new Date(),
+        updated_at: new Date()
+      });
 
       return res.status(201).json({
         success: true,
-        task: data
+        task
       });
     }
 
@@ -104,25 +96,22 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'Task ID is required' });
       }
 
-      updates.updated_at = new Date().toISOString();
+      updates.updated_at = new Date();
 
       if (updates.status === 'completed') {
-        updates.completed_at = new Date().toISOString();
+        updates.completed_at = new Date();
       }
 
-      const { data, error } = await supabase
-        .from('tasks')
-        .update(updates)
-        .eq('id', id)
-        .eq('tenant_id', tenantId)
-        .select()
-        .single();
+      const keys = Object.keys(updates);
+      const values = Object.values(updates);
+      const setClause = keys.map((key, i) => `${key} = $${i + 1}`).join(', ');
 
-      if (error) throw error;
+      const query = `UPDATE tasks SET ${setClause} WHERE id = $${keys.length + 1} AND tenant_id = $${keys.length + 2} RETURNING *`;
+      const result = await db.queryOne(query, [...values, id, tenantId]);
 
       return res.status(200).json({
         success: true,
-        task: data
+        task: result
       });
     }
 
@@ -134,13 +123,7 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'Task ID is required' });
       }
 
-      const { error } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('id', id)
-        .eq('tenant_id', tenantId);
-
-      if (error) throw error;
+      await db.query('DELETE FROM tasks WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
 
       return res.status(200).json({
         success: true,

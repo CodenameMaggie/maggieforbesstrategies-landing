@@ -1,4 +1,6 @@
+// Load .env.local for local development, Railway provides env vars directly
 require('dotenv').config({ path: '.env.local' });
+require('dotenv').config(); // Also try .env as fallback
 
 const express = require('express');
 const path = require('path');
@@ -6,6 +8,23 @@ const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize database on startup
+let dbInitialized = false;
+const initializeDatabase = async () => {
+  if (process.env.DATABASE_URL) {
+    try {
+      const db = require('./api/utils/db');
+      await db.initDb();
+      dbInitialized = true;
+      console.log('[Server] Database initialized successfully');
+    } catch (error) {
+      console.error('[Server] Database initialization failed:', error.message);
+    }
+  } else {
+    console.log('[Server] No DATABASE_URL - database features disabled');
+  }
+};
 
 // Middleware
 app.use(cors());
@@ -62,15 +81,24 @@ app.get('/health', (req, res) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     env: {
-      supabase: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-      anthropic: !!process.env.ANTHROPIC_API_KEY
+      database: !!process.env.DATABASE_URL,
+      anthropic: !!process.env.ANTHROPIC_API_KEY,
+      dbInitialized: dbInitialized
     }
   });
 });
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Supabase URL: ${process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Not set'}`);
-});
+const startServer = async () => {
+  // Initialize database before starting
+  await initializeDatabase();
+
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Database URL: ${process.env.DATABASE_URL ? 'Set' : 'Not set'}`);
+    console.log(`Anthropic API: ${process.env.ANTHROPIC_API_KEY ? 'Set' : 'Not set'}`);
+  });
+};
+
+startServer();

@@ -1,11 +1,7 @@
 const Anthropic = require('@anthropic-ai/sdk');
-const { createClient } = require('@supabase/supabase-js');
+const db = require('./utils/db');
 const { processConversationMemory, buildSystemPromptWithMemory } = require('./utils/memory-manager');
 const { loadBotContext, injectContextIntoPrompt } = require('./utils/context-loader-helper');
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -55,15 +51,14 @@ module.exports = async (req, res) => {
       });
     }
 
-    const effectiveTenantId = tenantId || process.env.MFS_TENANT_ID;
+    const effectiveTenantId = tenantId || process.env.MFS_TENANT_ID || 'mfs-001';
 
     // Verify user access (MFS admin only)
     if (userId) {
-      const { data: user } = await supabase
-        .from('users')
-        .select('email, role')
-        .eq('id', userId)
-        .single();
+      const user = await db.queryOne(
+        'SELECT email, role FROM users WHERE id = $1',
+        [userId]
+      );
 
       if (!user || (user.role !== 'admin' && user.email !== 'maggie@maggieforbesstrategies.com')) {
         console.log('[MFS Marketing] Access denied');
@@ -83,35 +78,26 @@ module.exports = async (req, res) => {
     let conversation = null;
 
     if (conversationId) {
-      const { data: conv } = await supabase
-        .from('ai_conversations')
-        .select('*')
-        .eq('id', conversationId)
-        .eq('tenant_id', effectiveTenantId)
-        .single();
+      conversation = await db.queryOne(
+        'SELECT * FROM ai_conversations WHERE id = $1 AND tenant_id = $2',
+        [conversationId, effectiveTenantId]
+      );
 
-      if (conv) {
-        conversation = conv;
-        conversationHistory = conv.messages || [];
+      if (conversation) {
+        conversationHistory = conversation.messages || [];
       }
     } else {
-      const { data: newConversation } = await supabase
-        .from('ai_conversations')
-        .insert([{
-          tenant_id: effectiveTenantId,
-          user_id: userId,
-          bot_type: 'marketing',
-          started_at: new Date().toISOString(),
-          last_message_at: new Date().toISOString(),
-          messages: [],
-          message_count: 0,
-          conversation_summary: null,
-          key_facts: {},
-          status: 'active',
-          created_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
+      const newConversation = await db.insert('ai_conversations', {
+        tenant_id: effectiveTenantId,
+        user_id: userId,
+        bot_type: 'marketing',
+        started_at: new Date(),
+        last_message_at: new Date(),
+        messages: JSON.stringify([]),
+        message_count: 0,
+        status: 'active',
+        created_at: new Date()
+      });
 
       if (newConversation) {
         conversation = newConversation;
@@ -128,7 +114,6 @@ module.exports = async (req, res) => {
 
     // Process conversation with memory management
     const memoryContext = await processConversationMemory(
-      supabase,
       conversationHistory,
       dbConversationId,
       {
@@ -237,21 +222,17 @@ SPECIALTIES:
 
       console.log(`[MFS Marketing] Creating ${platform} post...`);
 
-      const { data: newPost, error: postError } = await supabase
-        .from('social_posts')
-        .insert([{
-          tenant_id: effectiveTenantId,
-          user_id: userId,
-          platform: platform,
-          post_type: 'ai_generated',
-          content: postContent,
-          status: 'draft',
-          created_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
+      const newPost = await db.insert('social_posts', {
+        tenant_id: effectiveTenantId,
+        user_id: userId,
+        platform: platform,
+        post_type: 'ai_generated',
+        content: postContent,
+        status: 'draft',
+        created_at: new Date()
+      });
 
-      if (!postError && newPost) {
+      if (newPost) {
         createdPost = {
           id: newPost.id,
           platform: platform,
@@ -259,8 +240,6 @@ SPECIALTIES:
           status: 'draft'
         };
         console.log(`[MFS Marketing] Post saved: ${newPost.id}`);
-      } else {
-        console.error('[MFS Marketing] Error saving post:', postError);
       }
     }
 
@@ -273,15 +252,10 @@ SPECIALTIES:
 
     // Update conversation in database
     if (dbConversationId) {
-      await supabase
-        .from('ai_conversations')
-        .update({
-          messages: conversationHistory,
-          message_count: conversationHistory.length,
-          last_message_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', dbConversationId);
+      await db.query(
+        `UPDATE ai_conversations SET messages = $1, message_count = $2, last_message_at = $3, updated_at = $4 WHERE id = $5`,
+        [JSON.stringify(conversationHistory), conversationHistory.length, new Date(), new Date(), dbConversationId]
+      );
     }
 
     console.log('[MFS Marketing] Response generated');

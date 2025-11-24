@@ -1,4 +1,5 @@
 const Anthropic = require('@anthropic-ai/sdk');
+const db = require('./db');
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -151,25 +152,15 @@ Use this context to provide continuity in the conversation. Refer back to their 
 }
 
 /**
- * Update conversation memory in database
+ * Update conversation memory in database (PostgreSQL)
  */
-async function updateConversationMemory(supabase, conversationId, summary, keyFacts, messageCount) {
+async function updateConversationMemory(conversationId, summary, keyFacts, messageCount) {
   try {
-    const { error } = await supabase
-      .from('ai_conversations')
-      .update({
-        conversation_summary: summary,
-        key_facts: keyFacts,
-        message_count: messageCount,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', conversationId);
-
-    if (error) {
-      console.error('[Memory] Error updating memory:', error);
-    } else {
-      console.log('[Memory] Memory updated for conversation:', conversationId);
-    }
+    await db.query(
+      `UPDATE ai_conversations SET conversation_summary = $1, key_facts = $2, message_count = $3, updated_at = $4 WHERE id = $5`,
+      [summary, JSON.stringify(keyFacts), messageCount, new Date(), conversationId]
+    );
+    console.log('[Memory] Memory updated for conversation:', conversationId);
   } catch (error) {
     console.error('[Memory] Error updating memory:', error);
   }
@@ -178,7 +169,7 @@ async function updateConversationMemory(supabase, conversationId, summary, keyFa
 /**
  * Complete memory management workflow
  */
-async function processConversationMemory(supabase, conversationHistory, conversationId, existingSummary = {}) {
+async function processConversationMemory(conversationHistory, conversationId, existingSummary = {}) {
   const memoryContext = buildContextWithMemory(conversationHistory, existingSummary);
 
   if (memoryContext.needsUpdate && memoryContext.fullHistory) {
@@ -191,7 +182,6 @@ async function processConversationMemory(supabase, conversationHistory, conversa
 
     if (conversationId) {
       updateConversationMemory(
-        supabase,
         conversationId,
         summary,
         keyFacts,

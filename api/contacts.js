@@ -1,8 +1,4 @@
-const { createClient } = require('@supabase/supabase-js');
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const db = require('./utils/db');
 
 /**
  * MFS Contacts API
@@ -31,31 +27,29 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  const tenantId = req.query.tenant_id || req.headers['x-tenant-id'] || process.env.MFS_TENANT_ID;
+  const tenantId = req.query.tenant_id || req.headers['x-tenant-id'] || process.env.MFS_TENANT_ID || 'mfs-001';
 
   try {
     // GET - List contacts
     if (req.method === 'GET') {
       const { stage, limit = 50 } = req.query;
 
-      let query = supabase
-        .from('contacts')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .order('updated_at', { ascending: false })
-        .limit(parseInt(limit));
+      let query = 'SELECT * FROM contacts WHERE tenant_id = $1';
+      const params = [tenantId];
 
       if (stage) {
-        query = query.eq('stage', stage);
+        query += ' AND stage = $2';
+        params.push(stage);
       }
 
-      const { data, error } = await query;
+      query += ' ORDER BY updated_at DESC LIMIT $' + (params.length + 1);
+      params.push(parseInt(limit));
 
-      if (error) throw error;
+      const contacts = await db.queryAll(query, params);
 
       return res.status(200).json({
         success: true,
-        contacts: data || []
+        contacts: contacts || []
       });
     }
 
@@ -72,31 +66,25 @@ module.exports = async (req, res) => {
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
 
-      const { data, error } = await supabase
-        .from('contacts')
-        .insert({
-          tenant_id: tenantId,
-          full_name,
-          first_name: firstName,
-          last_name: lastName,
-          email: email.toLowerCase(),
-          phone,
-          company,
-          stage: stage || 'new',
-          lead_source,
-          notes,
-          client_type: 'mfs_client',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
+      const contact = await db.insert('contacts', {
+        tenant_id: tenantId,
+        full_name,
+        first_name: firstName,
+        last_name: lastName,
+        email: email.toLowerCase(),
+        phone,
+        company,
+        stage: stage || 'new',
+        lead_source,
+        notes,
+        client_type: 'mfs_client',
+        created_at: new Date(),
+        updated_at: new Date()
+      });
 
       return res.status(201).json({
         success: true,
-        contact: data
+        contact
       });
     }
 
@@ -108,21 +96,19 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'Contact ID is required' });
       }
 
-      updates.updated_at = new Date().toISOString();
+      updates.updated_at = new Date();
 
-      const { data, error } = await supabase
-        .from('contacts')
-        .update(updates)
-        .eq('id', id)
-        .eq('tenant_id', tenantId)
-        .select()
-        .single();
+      // Build update query
+      const keys = Object.keys(updates);
+      const values = Object.values(updates);
+      const setClause = keys.map((key, i) => `${key} = $${i + 1}`).join(', ');
 
-      if (error) throw error;
+      const query = `UPDATE contacts SET ${setClause} WHERE id = $${keys.length + 1} AND tenant_id = $${keys.length + 2} RETURNING *`;
+      const result = await db.queryOne(query, [...values, id, tenantId]);
 
       return res.status(200).json({
         success: true,
-        contact: data
+        contact: result
       });
     }
 

@@ -1,8 +1,4 @@
-const { createClient } = require('@supabase/supabase-js');
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const db = require('./utils/db');
 
 /**
  * MFS Memory Store API
@@ -31,31 +27,28 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  const tenantId = req.query.tenant_id || req.headers['x-tenant-id'] || process.env.MFS_TENANT_ID;
+  const tenantId = req.query.tenant_id || req.headers['x-tenant-id'] || process.env.MFS_TENANT_ID || 'mfs-001';
 
   try {
     // GET - List memories
     if (req.method === 'GET') {
       const { category } = req.query;
 
-      let query = supabase
-        .from('ai_memory_store')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .order('category')
-        .order('key');
+      let query = 'SELECT * FROM ai_memory_store WHERE tenant_id = $1';
+      const params = [tenantId];
 
       if (category) {
-        query = query.eq('category', category);
+        query += ' AND category = $2';
+        params.push(category);
       }
 
-      const { data, error } = await query;
+      query += ' ORDER BY category, key';
 
-      if (error) throw error;
+      const memories = await db.queryAll(query, params);
 
       return res.status(200).json({
         success: true,
-        memories: data || []
+        memories: memories || []
       });
     }
 
@@ -68,46 +61,28 @@ module.exports = async (req, res) => {
       }
 
       // Check if memory exists
-      const { data: existing } = await supabase
-        .from('ai_memory_store')
-        .select('id')
-        .eq('tenant_id', tenantId)
-        .eq('category', category)
-        .eq('key', key)
-        .single();
+      const existing = await db.queryOne(
+        'SELECT id FROM ai_memory_store WHERE tenant_id = $1 AND category = $2 AND key = $3',
+        [tenantId, category, key]
+      );
 
       let result;
 
       if (existing) {
         // Update existing
-        const { data, error } = await supabase
-          .from('ai_memory_store')
-          .update({
-            value,
-            last_updated: new Date().toISOString()
-          })
-          .eq('id', existing.id)
-          .select()
-          .single();
-
-        if (error) throw error;
-        result = data;
+        result = await db.queryOne(
+          'UPDATE ai_memory_store SET value = $1, last_updated = $2 WHERE id = $3 RETURNING *',
+          [value, new Date(), existing.id]
+        );
       } else {
         // Create new
-        const { data, error } = await supabase
-          .from('ai_memory_store')
-          .insert({
-            tenant_id: tenantId,
-            category,
-            key,
-            value,
-            last_updated: new Date().toISOString()
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-        result = data;
+        result = await db.insert('ai_memory_store', {
+          tenant_id: tenantId,
+          category,
+          key,
+          value,
+          last_updated: new Date()
+        });
       }
 
       return res.status(200).json({
@@ -121,22 +96,12 @@ module.exports = async (req, res) => {
       const { id, category, key } = req.query;
 
       if (id) {
-        const { error } = await supabase
-          .from('ai_memory_store')
-          .delete()
-          .eq('id', id)
-          .eq('tenant_id', tenantId);
-
-        if (error) throw error;
+        await db.query('DELETE FROM ai_memory_store WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
       } else if (category && key) {
-        const { error } = await supabase
-          .from('ai_memory_store')
-          .delete()
-          .eq('tenant_id', tenantId)
-          .eq('category', category)
-          .eq('key', key);
-
-        if (error) throw error;
+        await db.query(
+          'DELETE FROM ai_memory_store WHERE tenant_id = $1 AND category = $2 AND key = $3',
+          [tenantId, category, key]
+        );
       } else {
         return res.status(400).json({ error: 'ID or category+key required' });
       }

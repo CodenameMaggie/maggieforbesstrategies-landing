@@ -1,8 +1,4 @@
-const { createClient } = require('@supabase/supabase-js');
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const db = require('./db');
 
 /**
  * CONTEXT LOADER HELPER - MFS Bots
@@ -18,18 +14,14 @@ async function loadBotContext(tenantId, botType) {
 
     const categories = getBotCategories(botType);
 
-    const { data: memories, error } = await supabase
-      .from('ai_memory_store')
-      .select('*')
-      .eq('tenant_id', tenantId)
-      .in('category', categories)
-      .order('category')
-      .order('last_updated', { ascending: false });
+    const placeholders = categories.map((_, i) => `$${i + 2}`).join(', ');
+    const query = `
+      SELECT * FROM ai_memory_store
+      WHERE tenant_id = $1 AND category IN (${placeholders})
+      ORDER BY category, last_updated DESC
+    `;
 
-    if (error) {
-      console.error('[Context Loader] Error loading memories:', error);
-      return { context: '', memories: [] };
-    }
+    const memories = await db.queryAll(query, [tenantId, ...categories]);
 
     if (!memories || memories.length === 0) {
       console.log('[Context Loader] No memories found for', botType);
