@@ -21,10 +21,22 @@ module.exports = async (req, res) => {
   }
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Cron-Secret');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  // Verify CRON secret for security
+  const cronSecret = process.env.CRON_SECRET;
+  const providedSecret = req.headers['x-cron-secret'] || req.query.secret || req.body?.secret;
+
+  if (cronSecret && providedSecret !== cronSecret) {
+    console.error('[Automation Scheduler] Invalid or missing CRON_SECRET');
+    return res.status(401).json({
+      success: false,
+      error: 'Unauthorized: Invalid CRON_SECRET'
+    });
   }
 
   const tenantId = process.env.MFS_TENANT_ID || 'mfs-001';
