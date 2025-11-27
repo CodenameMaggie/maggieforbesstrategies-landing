@@ -1829,6 +1829,10 @@
           body: JSON.stringify({ action: 'find_prospects', data: {} })
         });
         const linkedInData = await linkedInRes.json();
+        console.log('LinkedIn Response:', linkedInData);
+        if (!linkedInData.success) {
+          console.error('LinkedIn Error:', linkedInData.error);
+        }
         results.linkedin = linkedInData.prospects?.length || 0;
 
         // 2. Web
@@ -1839,6 +1843,10 @@
           body: JSON.stringify({ action: 'scan_web', data: {} })
         });
         const webData = await webRes.json();
+        console.log('Web Response:', webData);
+        if (!webData.success) {
+          console.error('Web Error:', webData.error);
+        }
         results.web = webData.prospects?.length || 0;
 
         // 3. Sales Automation
