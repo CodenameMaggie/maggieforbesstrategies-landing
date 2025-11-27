@@ -964,7 +964,6 @@
         <div class="page-header">
           <h2 class="section-title">Prospecting & Automation</h2>
           <div class="header-actions">
-            <button class="btn btn-secondary" onclick="fixDatabase()" id="fix-db-btn" style="background: #e53935; color: white;">🔧 Fix Database</button>
             <button class="btn btn-secondary" onclick="runAutomation()">▶ Run Now</button>
             <button class="btn btn-primary" onclick="openAutomationSettings()">⚙ Settings</button>
           </div>
@@ -1782,31 +1781,6 @@
       if (days === 1) return 'Yesterday';
       if (days < 7) return `${days} days ago`;
       return date.toLocaleDateString();
-    }
-
-    async function fixDatabase() {
-      const btn = document.getElementById('fix-db-btn');
-      const originalText = btn.textContent;
-      btn.textContent = '⏳ Fixing...';
-      btn.disabled = true;
-
-      try {
-        const res = await fetch(`${API_BASE}/api/migrate-db`, { method: 'POST' });
-        const data = await res.json();
-
-        if (data.success) {
-          alert('✅ Database fixed! You can now run automation.');
-          btn.style.display = 'none'; // Hide button after successful migration
-        } else {
-          alert('❌ Migration failed: ' + data.error);
-          btn.textContent = originalText;
-          btn.disabled = false;
-        }
-      } catch (error) {
-        alert('❌ Error: ' + error.message);
-        btn.textContent = originalText;
-        btn.disabled = false;
-      }
     }
 
     async function runAutomation() {
