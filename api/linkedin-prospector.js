@@ -184,19 +184,26 @@ Format as JSON array.`;
 
   // Save prospects to database
   for (const prospect of prospects) {
+    const prospectName = prospect.name || prospect.fullName || prospect.Full_Name || 'Unknown';
+    const prospectCompany = prospect.company || prospect.companyName || prospect.Company_Name || 'Unknown Company';
+
+    // Skip if we don't have basic info
+    if (prospectName === 'Unknown') continue;
+
+    // Check for existing contact by company name instead of email (since we don't have emails)
     const existingContact = await db.queryOne(
-      'SELECT id FROM contacts WHERE email ILIKE $1 AND tenant_id = $2',
-      [`%${prospect.name.toLowerCase().replace(' ', '.')}%`, tenantId]
+      'SELECT id FROM contacts WHERE company ILIKE $1 AND tenant_id = $2',
+      [prospectCompany, tenantId]
     );
 
     if (!existingContact) {
       await db.insert('contacts', {
         tenant_id: tenantId,
-        full_name: prospect.name || prospect.fullName,
-        company: prospect.company || prospect.companyName,
+        full_name: prospectName,
+        company: prospectCompany,
         stage: 'new',
         lead_source: 'linkedin_prospector',
-        notes: `${prospect.title} at ${prospect.company}. ${prospect.why_good_fit || prospect.buyingSignals}`,
+        notes: `${prospect.title || prospect.jobTitle || prospect.Job_Title || 'Position unknown'} at ${prospectCompany}. ${prospect.why_good_fit || prospect.buyingSignals || prospect.Why_Good_Fit || 'High-value prospect'}`,
         client_type: 'prospect',
         created_at: new Date(),
         updated_at: new Date()
