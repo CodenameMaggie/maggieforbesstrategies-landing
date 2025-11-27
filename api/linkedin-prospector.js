@@ -215,16 +215,18 @@ Titles: ${searchCriteria.titles.join(', ')}
 Industries: ${searchCriteria.industries.join(', ')}
 Company Size: ${searchCriteria.companySize.join(', ')}
 
-For each prospect, provide:
-1. Full Name
-2. Job Title
-3. Company Name
-4. Industry
-5. Company Size
-6. Why they're a good fit (buying signals)
-7. Personalized approach angle
+For each prospect provide a JSON object with these EXACT field names:
+{
+  "fullName": "person's name",
+  "title": "job title",
+  "companyName": "company name",
+  "industry": "industry",
+  "companySize": "employee count or range",
+  "buyingSignals": "why they're a good fit",
+  "approachAngle": "personalized approach"
+}
 
-Format as JSON array.`;
+CRITICAL: Use these EXACT field names in camelCase. Return a JSON array of 5 prospect objects.`;
 
   const responseText = await callAIWithFallback(prompt, 2000);
 
@@ -238,32 +240,65 @@ Format as JSON array.`;
     console.error('[LinkedIn Prospector] Error parsing prospects:', error);
   }
 
-  // Save prospects to database
+  // Save prospects to database with robust field extraction
   for (const prospect of prospects) {
-    const prospectName = prospect.name || prospect.fullName || prospect.Full_Name || 'Unknown';
-    const prospectCompany = prospect.company || prospect.companyName || prospect.Company_Name || 'Unknown Company';
+    // Extract full name (try multiple variations)
+    const fullName = prospect.fullName || prospect.name || prospect.Full_Name ||
+                     prospect['Full Name'] || prospect.fullname || null;
+
+    // Extract company name (try multiple variations)
+    const companyName = prospect.companyName || prospect.company || prospect.Company_Name ||
+                        prospect['Company Name'] || prospect.companyname || 'Unknown Company';
+
+    // Extract title (try multiple variations)
+    const title = prospect.title || prospect.jobTitle || prospect.Job_Title ||
+                 prospect['Job Title'] || prospect.position || 'Position unknown';
+
+    // Extract buying signals
+    const buyingSignals = prospect.buyingSignals || prospect.why_good_fit || prospect.Why_Good_Fit ||
+                         prospect['Why Good Fit'] || prospect.signals || prospect.fitReason || 'High-value prospect';
+
+    // Extract approach angle
+    const approachAngle = prospect.approachAngle || prospect.approach || prospect.Approach_Angle ||
+                         prospect['Approach Angle'] || prospect.personalizedApproach || '';
 
     // Skip if we don't have basic info
-    if (prospectName === 'Unknown') continue;
+    if (!fullName || fullName === 'Unknown') {
+      console.log('[LinkedIn Prospector] Skipping prospect - no name found');
+      continue;
+    }
 
-    // Check for existing contact by company name instead of email (since we don't have emails)
+    // Check for existing contact by company name
     const existingContact = await db.queryOne(
       'SELECT id FROM contacts WHERE company ILIKE $1 AND tenant_id = $2',
-      [prospectCompany, tenantId]
+      [companyName, tenantId]
     );
 
     if (!existingContact) {
-      await db.insert('contacts', {
+      const contact = await db.insert('contacts', {
         tenant_id: tenantId,
-        full_name: prospectName,
-        company: prospectCompany,
+        full_name: fullName,
+        company: companyName,
         stage: 'new',
         lead_source: 'linkedin_prospector',
-        notes: `${prospect.title || prospect.jobTitle || prospect.Job_Title || 'Position unknown'} at ${prospectCompany}. ${prospect.why_good_fit || prospect.buyingSignals || prospect.Why_Good_Fit || 'High-value prospect'}`,
+        notes: `${title} at ${companyName}. ${buyingSignals}`,
         client_type: 'prospect',
         created_at: new Date(),
         updated_at: new Date()
       });
+
+      // Log the approach
+      await db.insert('contact_activities', {
+        tenant_id: tenantId,
+        contact_id: contact.id,
+        type: 'linkedin_prospect_identified',
+        description: `LinkedIn prospect. Approach: ${approachAngle}`,
+        created_at: new Date()
+      });
+
+      console.log(`[LinkedIn Prospector] ✓ Saved prospect: ${fullName} at ${companyName}`);
+    } else {
+      console.log(`[LinkedIn Prospector] Skipping duplicate: ${companyName}`);
     }
   }
 

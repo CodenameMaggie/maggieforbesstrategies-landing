@@ -265,17 +265,19 @@ These prospects should show clear BUYER INTENT SIGNALS such as:
 - Public statements about scaling challenges
 - Posts seeking business advice/consultants
 
-For each prospect provide:
-1. Company Name
-2. Industry
-3. Company Size (employees)
-4. Recent Signal/Trigger Event (what made them show intent)
-5. Where Found (news article, forum post, job posting, social media, etc.)
-6. Intent Score (1-100, how likely they need consulting now)
-7. Contact Person (if identifiable - CEO, Founder, COO, etc.)
-8. Approach Angle (how to reach out based on their signal)
+For each prospect provide a JSON object with these EXACT field names:
+{
+  "companyName": "string",
+  "industry": "string",
+  "companySize": "number of employees",
+  "recentSignal": "what triggered the intent",
+  "whereFound": "source (news/forum/job posting/social media)",
+  "intentScore": "number 1-100",
+  "contactPerson": "name and title (CEO, Founder, COO, etc.)",
+  "approachAngle": "how to reach out"
+}
 
-Format as JSON array. Make these realistic companies with genuine-sounding signals.`;
+CRITICAL: Use these EXACT field names in camelCase. Return a JSON array of 5 prospect objects.`;
 
   const responseText = await callAIWithFallback(prompt, 2500);
 
@@ -294,21 +296,51 @@ Format as JSON array. Make these realistic companies with genuine-sounding signa
     console.log('[Web Prospector] Response preview:', responseText.substring(0, 500));
   }
 
-  // Save prospects to database
+  // Save prospects to database with robust field extraction
   for (const prospect of prospects) {
+    // Extract company name (try multiple field name variations)
+    const companyName = prospect.companyName || prospect.company || prospect.Company_Name ||
+                        prospect['Company Name'] || prospect.name || 'Unknown Company';
+
+    // Extract contact person (try multiple variations)
+    const contactPerson = prospect.contactPerson || prospect.contact || prospect.Contact_Person ||
+                          prospect['Contact Person'] || prospect.contactName || null;
+
+    // Extract intent score (ensure it's a number)
+    const intentScore = parseInt(prospect.intentScore || prospect.intent_score ||
+                                 prospect['Intent Score'] || prospect.score || 0);
+
+    // Extract recent signal
+    const recentSignal = prospect.recentSignal || prospect.signal || prospect.Recent_Signal ||
+                        prospect['Recent Signal'] || prospect.triggerEvent || 'Growth signal detected';
+
+    // Extract where found
+    const whereFound = prospect.whereFound || prospect.where_found || prospect['Where Found'] ||
+                      prospect.source || prospect.Source || 'web';
+
+    // Extract approach angle
+    const approachAngle = prospect.approachAngle || prospect.approach || prospect.Approach_Angle ||
+                         prospect['Approach Angle'] || prospect.recommendation || '';
+
+    // Skip if we don't have at least a company name
+    if (companyName === 'Unknown Company') {
+      console.log('[Web Prospector] Skipping prospect - no company name found');
+      continue;
+    }
+
     const existingContact = await db.queryOne(
       'SELECT id FROM contacts WHERE company ILIKE $1 AND tenant_id = $2',
-      [prospect.companyName || prospect.company, tenantId]
+      [companyName, tenantId]
     );
 
     if (!existingContact) {
       const contact = await db.insert('contacts', {
         tenant_id: tenantId,
-        full_name: prospect.contactPerson || prospect.contact,
-        company: prospect.companyName || prospect.company,
+        full_name: contactPerson,
+        company: companyName,
         stage: 'new',
-        lead_source: `web_prospector_${prospect.whereFound || 'web'}`,
-        notes: `Intent Score: ${prospect.intentScore}/100. Signal: ${prospect.recentSignal || prospect.signal}. Found: ${prospect.whereFound}`,
+        lead_source: `web_prospector_${whereFound}`,
+        notes: `Intent Score: ${intentScore}/100. Signal: ${recentSignal}. Found: ${whereFound}`,
         client_type: 'high_intent_prospect',
         created_at: new Date(),
         updated_at: new Date()
@@ -319,9 +351,13 @@ Format as JSON array. Make these realistic companies with genuine-sounding signa
         tenant_id: tenantId,
         contact_id: contact.id,
         type: 'intent_signal_detected',
-        description: `Web signal: ${prospect.recentSignal || prospect.signal}. Source: ${prospect.whereFound}. Approach: ${prospect.approachAngle || prospect.approach}`,
+        description: `Web signal: ${recentSignal}. Source: ${whereFound}. Approach: ${approachAngle}`,
         created_at: new Date()
       });
+
+      console.log(`[Web Prospector] ✓ Saved prospect: ${companyName} (Intent: ${intentScore}/100)`);
+    } else {
+      console.log(`[Web Prospector] Skipping duplicate: ${companyName}`);
     }
   }
 
