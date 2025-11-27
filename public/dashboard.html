@@ -1822,9 +1822,9 @@
           headers: { 'Content-Type': 'application/json' }
         });
         const salesData = await salesRes.json();
-        results.sales = salesData.results;
+        results.sales = salesData.results || {};
 
-        alert(`Automation Complete!\n\n✅ LinkedIn: ${results.linkedin} prospects\n✅ Web: ${results.web} prospects\n✅ Qualified: ${results.sales.leadsQualified || 0}\n✅ Follow-ups: ${results.sales.followUpsSent || 0}`);
+        alert(`Automation Complete!\n\n✅ LinkedIn: ${results.linkedin} prospects\n✅ Web: ${results.web} prospects\n✅ Qualified: ${results.sales?.leadsQualified || 0}\n✅ Follow-ups: ${results.sales?.followUpsSent || 0}`);
 
         loadAutomationPage();
         loadDashboard();
