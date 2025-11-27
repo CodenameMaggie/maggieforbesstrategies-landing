@@ -53,6 +53,7 @@ app.all('/api/tasks', vercelToExpress('./api/tasks'));
 app.all('/api/memory', vercelToExpress('./api/memory'));
 app.all('/api/ai-marketing-bot', vercelToExpress('./api/ai-marketing-bot'));
 app.all('/api/ai-secretary-bot', vercelToExpress('./api/ai-secretary-bot'));
+app.all('/api/sales-automation', vercelToExpress('./api/sales-automation'));
 
 // Page routes - serve HTML files
 app.get('/', (req, res) => {
