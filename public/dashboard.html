@@ -787,6 +787,14 @@
           <span class="nav-badge" id="nav-tasks-count">0</span>
         </div>
       </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Automation</div>
+        <div class="nav-item" data-page="automation">
+          <span class="nav-icon">⚡</span>
+          <span>Prospecting</span>
+          <span class="nav-badge" id="nav-automation-count">0</span>
+        </div>
+      </div>
     </nav>
 
     <main class="content">
@@ -950,6 +958,103 @@
           </div>
         </div>
       </div>
+
+      <!-- Automation & Prospecting Page -->
+      <div class="page-section" id="page-automation">
+        <div class="page-header">
+          <h2 class="section-title">Prospecting & Automation</h2>
+          <div class="header-actions">
+            <button class="btn btn-secondary" onclick="runAutomation()">▶ Run Now</button>
+            <button class="btn btn-primary" onclick="openAutomationSettings()">⚙ Settings</button>
+          </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="dashboard-grid">
+          <div class="stat-card" style="border-left-color: #4a6cf7;">
+            <h3>LinkedIn Prospects</h3>
+            <div class="value" id="stat-linkedin-prospects">0</div>
+            <div class="subtext">Found via LinkedIn</div>
+          </div>
+          <div class="stat-card" style="border-left-color: #43a047;">
+            <h3>Web Prospects</h3>
+            <div class="value" id="stat-web-prospects">0</div>
+            <div class="subtext">Intent signals detected</div>
+          </div>
+          <div class="stat-card" style="border-left-color: #fb8c00;">
+            <h3>Auto-Qualified</h3>
+            <div class="value" id="stat-auto-qualified">0</div>
+            <div class="subtext">This week</div>
+          </div>
+          <div class="stat-card" style="border-left-color: #7b1fa2;">
+            <h3>Follow-ups Sent</h3>
+            <div class="value" id="stat-follow-ups">0</div>
+            <div class="subtext">Last 7 days</div>
+          </div>
+        </div>
+
+        <!-- Automation Status -->
+        <div class="pipeline-section">
+          <div class="pipeline-header">
+            <span class="pipeline-title">Automation Status</span>
+            <span style="font-size: 0.85rem; color: #888;">Last run: <span id="last-automation-run">Never</span></span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem;">
+            <!-- LinkedIn Prospecting -->
+            <div style="background: #f9fafb; border-radius: 8px; padding: 1.25rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="font-size: 1.5rem;">🔗</span>
+                  <span style="font-weight: 600; color: var(--navy);">LinkedIn</span>
+                </div>
+                <div style="background: #43a047; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600;" id="linkedin-status">Active</div>
+              </div>
+              <p style="font-size: 0.85rem; color: #666; margin-bottom: 0.75rem;">Finds C-level prospects at $5M+ companies</p>
+              <div style="font-size: 0.8rem; color: #888;">Schedule: <span id="linkedin-schedule">Daily</span></div>
+              <button class="btn btn-secondary" style="margin-top: 0.75rem; padding: 0.5rem 1rem; font-size: 0.8rem; width: 100%;" onclick="runLinkedInProspecting()">Run LinkedIn Scan</button>
+            </div>
+
+            <!-- Web Prospecting -->
+            <div style="background: #f9fafb; border-radius: 8px; padding: 1.25rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="font-size: 1.5rem;">🌐</span>
+                  <span style="font-weight: 600; color: var(--navy);">Web Prospector</span>
+                </div>
+                <div style="background: #43a047; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600;" id="web-status">Active</div>
+              </div>
+              <p style="font-size: 0.85rem; color: #666; margin-bottom: 0.75rem;">Scans news, forums, job boards for high-intent leads</p>
+              <div style="font-size: 0.8rem; color: #888;">Schedule: <span id="web-schedule">Daily</span></div>
+              <button class="btn btn-secondary" style="margin-top: 0.75rem; padding: 0.5rem 1rem; font-size: 0.8rem; width: 100%;" onclick="runWebProspecting()">Run Web Scan</button>
+            </div>
+
+            <!-- Sales Automation -->
+            <div style="background: #f9fafb; border-radius: 8px; padding: 1.25rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="font-size: 1.5rem;">⚡</span>
+                  <span style="font-weight: 600; color: var(--navy);">Sales Automation</span>
+                </div>
+                <div style="background: #43a047; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600;" id="sales-status">Active</div>
+              </div>
+              <p style="font-size: 0.85rem; color: #666; margin-bottom: 0.75rem;">Auto-qualifies, follows up, progresses pipeline</p>
+              <div style="font-size: 0.8rem; color: #888;">Schedule: <span id="sales-schedule">Continuous</span></div>
+              <button class="btn btn-secondary" style="margin-top: 0.75rem; padding: 0.5rem 1rem; font-size: 0.8rem; width: 100%;" onclick="runSalesAutomation()">Run Automation</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="pipeline-section" style="margin-top: 1.5rem;">
+          <div class="pipeline-header">
+            <span class="pipeline-title">Recent Automation Activity</span>
+          </div>
+          <div id="automation-activity" style="margin-top: 1rem;">
+            <div class="empty-state">Loading activity...</div>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 
@@ -1101,6 +1206,7 @@
       if (page === 'tasks') loadTasksFull();
       if (page === 'dashboard') loadDashboard();
       if (page === 'bots') setupBotPage();
+      if (page === 'automation') loadAutomationPage();
     }
 
     // Dashboard
@@ -1571,6 +1677,230 @@
         window.location.href = '/login';
         return false;
       }
+    }
+
+    // Automation & Prospecting
+    async function loadAutomationPage() {
+      try {
+        const res = await fetch(`${API_BASE}/api/automation-settings?tenant_id=${TENANT_ID}`);
+        const data = await res.json();
+
+        if (data.success) {
+          const { stats, settings } = data;
+
+          // Update stats
+          document.getElementById('stat-linkedin-prospects').textContent = stats.prospects.linkedIn;
+          document.getElementById('stat-web-prospects').textContent = stats.prospects.web;
+          document.getElementById('stat-auto-qualified').textContent = stats.recent.qualifiedThisWeek;
+          document.getElementById('stat-follow-ups').textContent = stats.automation.followUpsSent;
+          document.getElementById('nav-automation-count').textContent = stats.prospects.total;
+
+          // Update schedules
+          document.getElementById('linkedin-schedule').textContent = settings.linkedInSchedule || 'Daily';
+          document.getElementById('web-schedule').textContent = settings.webSchedule || 'Daily';
+          document.getElementById('sales-schedule').textContent = settings.salesSchedule || 'Continuous';
+
+          // Update status badges
+          updateStatusBadge('linkedin-status', settings.linkedInProspectingEnabled);
+          updateStatusBadge('web-status', settings.webProspectingEnabled);
+          updateStatusBadge('sales-status', settings.salesAutomationEnabled);
+
+          // Load recent activity
+          loadAutomationActivity();
+        }
+      } catch (error) {
+        console.error('Error loading automation page:', error);
+      }
+    }
+
+    function updateStatusBadge(elementId, enabled) {
+      const el = document.getElementById(elementId);
+      if (enabled) {
+        el.textContent = 'Active';
+        el.style.background = '#43a047';
+      } else {
+        el.textContent = 'Paused';
+        el.style.background = '#9e9e9e';
+      }
+    }
+
+    async function loadAutomationActivity() {
+      try {
+        const res = await fetch(`${API_BASE}/api/contacts?tenant_id=${TENANT_ID}&limit=100`);
+        const data = await res.json();
+
+        // Get prospects from automation
+        const automationContacts = (data.contacts || []).filter(c =>
+          c.lead_source && (c.lead_source.includes('linkedin') || c.lead_source.includes('web') ||
+          c.lead_source.includes('business_news') || c.lead_source.includes('job'))
+        ).slice(0, 10);
+
+        const container = document.getElementById('automation-activity');
+
+        if (automationContacts.length === 0) {
+          container.innerHTML = '<div class="empty-state">No automation activity yet. Run a scan to get started!</div>';
+          return;
+        }
+
+        container.innerHTML = automationContacts.map(contact => `
+          <div class="task-item" onclick="openContactDetail('${contact.id}')" style="cursor: pointer;">
+            <div style="flex: 1;">
+              <div class="task-title">${contact.full_name || contact.company || 'Unknown'}</div>
+              <div class="task-meta">
+                ${formatLeadSource(contact.lead_source)} •
+                ${contact.company || 'No company'} •
+                ${formatStage(contact.stage)}
+              </div>
+            </div>
+            <div style="font-size: 0.75rem; color: #888;">${formatDate(contact.created_at)}</div>
+          </div>
+        `).join('');
+      } catch (error) {
+        console.error('Error loading automation activity:', error);
+      }
+    }
+
+    function formatLeadSource(source) {
+      const sources = {
+        'linkedin_prospector': '🔗 LinkedIn',
+        'web_prospector': '🌐 Web',
+        'web_prospector_web': '🌐 Web',
+        'business_news': '📰 News',
+        'job_posting_signal': '💼 Job Signal'
+      };
+      return sources[source] || '⚡ Automation';
+    }
+
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diff = now - date;
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+      if (days === 0) return 'Today';
+      if (days === 1) return 'Yesterday';
+      if (days < 7) return `${days} days ago`;
+      return date.toLocaleDateString();
+    }
+
+    async function runAutomation() {
+      if (!confirm('Run full automation now? This will scan for prospects and run sales automation.')) return;
+
+      const btn = event.target;
+      const originalText = btn.textContent;
+      btn.textContent = '⏳ Running...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/automation-scheduler`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tenantId: TENANT_ID })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          alert('Automation completed successfully! Check the activity feed for results.');
+          loadAutomationPage();
+          loadDashboard();
+        } else {
+          alert('Automation encountered errors. Check console for details.');
+        }
+      } catch (error) {
+        alert('Error running automation: ' + error.message);
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    async function runLinkedInProspecting() {
+      const btn = event.target;
+      const originalText = btn.textContent;
+      btn.textContent = '⏳ Scanning...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/linkedin-prospector`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'find_prospects', data: {} })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          alert(`Found ${data.prospects?.length || 0} LinkedIn prospects!`);
+          loadAutomationPage();
+          loadDashboard();
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    async function runWebProspecting() {
+      const btn = event.target;
+      const originalText = btn.textContent;
+      btn.textContent = '⏳ Scanning...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/web-prospector`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'scan_web', data: {} })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          alert(`Found ${data.prospects?.length || 0} web prospects!`);
+          loadAutomationPage();
+          loadDashboard();
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    async function runSalesAutomation() {
+      const btn = event.target;
+      const originalText = btn.textContent;
+      btn.textContent = '⏳ Running...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/sales-automation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          const r = data.results;
+          alert(`Sales Automation Complete!\n\nQualified: ${r.leadsQualified}\nFollow-ups: ${r.followUpsSent}\nProgressed: ${r.stagesProgressed}\nTasks Created: ${r.tasksCreated}`);
+          loadAutomationPage();
+          loadDashboard();
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    function openAutomationSettings() {
+      alert('Automation settings coming soon! Currently using default settings:\n\n• LinkedIn: Daily scans\n• Web: Daily scans\n• Sales: Continuous automation');
     }
 
     // Initialize
