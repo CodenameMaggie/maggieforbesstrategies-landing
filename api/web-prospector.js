@@ -16,6 +16,59 @@ const perplexity = new OpenAI({
   baseURL: 'https://api.perplexity.ai',
 });
 
+// AI provider fallback - tries Perplexity first (main), then OpenAI, then Claude
+async function callAIWithFallback(prompt, maxTokens = 2000) {
+  const providers = [
+    {
+      name: 'Perplexity',
+      call: async () => {
+        const response = await perplexity.chat.completions.create({
+          model: 'llama-3.1-sonar-large-128k-online',
+          max_tokens: maxTokens,
+          messages: [{ role: 'user', content: prompt }]
+        });
+        return response.choices[0].message.content;
+      }
+    },
+    {
+      name: 'OpenAI',
+      call: async () => {
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          max_tokens: maxTokens,
+          messages: [{ role: 'user', content: prompt }]
+        });
+        return response.choices[0].message.content;
+      }
+    },
+    {
+      name: 'Claude',
+      call: async () => {
+        const response = await anthropic.messages.create({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: maxTokens,
+          messages: [{ role: 'user', content: prompt }]
+        });
+        return response.content[0].text;
+      }
+    }
+  ];
+
+  for (const provider of providers) {
+    try {
+      console.log(`[AI] Trying ${provider.name}...`);
+      const result = await provider.call();
+      console.log(`[AI] ✓ ${provider.name} succeeded`);
+      return result;
+    } catch (error) {
+      console.error(`[AI] ✗ ${provider.name} failed:`, error.message);
+      // Continue to next provider
+    }
+  }
+
+  throw new Error('All AI providers failed');
+}
+
 /**
  * WEB PROSPECTING & INTENT SIGNAL DETECTION
  * Finds high-intent prospects across the web actively seeking growth consulting
@@ -224,18 +277,11 @@ For each prospect provide:
 
 Format as JSON array. Make these realistic companies with genuine-sounding signals.`;
 
-  const response = await anthropic.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 2500,
-    messages: [{
-      role: 'user',
-      content: prompt
-    }]
-  });
+  const responseText = await callAIWithFallback(prompt, 2500);
 
   let prospects = [];
   try {
-    const jsonMatch = response.content[0].text.match(/\[[\s\S]*\]/);
+    const jsonMatch = responseText.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
       prospects = JSON.parse(jsonMatch[0]);
     }
