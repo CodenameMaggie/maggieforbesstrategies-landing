@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 // Initialize database on startup
 let dbInitialized = false;
 const initializeDatabase = async () => {
-  if (process.env.DATABASE_URL) {
+  if (process.env.PGHOST && process.env.PGDATABASE) {
     try {
       const db = require('./api/utils/db');
       await db.initDb();
@@ -22,7 +22,7 @@ const initializeDatabase = async () => {
       console.error('[Server] Database initialization failed:', error.message);
     }
   } else {
-    console.log('[Server] No DATABASE_URL - database features disabled');
+    console.log('[Server] No database connection info - database features disabled');
   }
 };
 
@@ -81,7 +81,7 @@ app.get('/health', (req, res) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     env: {
-      database: !!process.env.DATABASE_URL,
+      database: !!(process.env.PGHOST && process.env.PGDATABASE),
       anthropic: !!process.env.ANTHROPIC_API_KEY,
       dbInitialized: dbInitialized
     }
@@ -96,7 +96,7 @@ const startServer = async () => {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`Database URL: ${process.env.DATABASE_URL ? 'Set' : 'Not set'}`);
+    console.log(`Database: ${process.env.PGHOST ? 'Connected' : 'Not connected'}`);
     console.log(`Anthropic API: ${process.env.ANTHROPIC_API_KEY ? 'Set' : 'Not set'}`);
   });
 };
