@@ -284,9 +284,14 @@ Format as JSON array. Make these realistic companies with genuine-sounding signa
     const jsonMatch = responseText.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
       prospects = JSON.parse(jsonMatch[0]);
+      console.log('[Web Prospector] Parsed prospects:', JSON.stringify(prospects[0])); // Log first prospect to see field names
+    } else {
+      console.error('[Web Prospector] No JSON array found in response');
+      console.log('[Web Prospector] Response preview:', responseText.substring(0, 500));
     }
   } catch (error) {
     console.error('[Web Prospector] Error parsing prospects:', error);
+    console.log('[Web Prospector] Response preview:', responseText.substring(0, 500));
   }
 
   // Save prospects to database
