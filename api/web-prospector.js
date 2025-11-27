@@ -1,8 +1,19 @@
 const Anthropic = require('@anthropic-ai/sdk');
+const OpenAI = require('openai');
 const db = require('./utils/db');
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+const openai = new OpenAI({
+  apiKey: process.env.OPEN_API_KEY,
+});
+
+// Perplexity for web search (uses OpenAI SDK)
+const perplexity = new OpenAI({
+  apiKey: process.env.PERPLEXITY_API_KEY,
+  baseURL: 'https://api.perplexity.ai',
 });
 
 /**
@@ -170,10 +181,28 @@ async function scanWebForProspects(criteria, tenantId) {
     'operational efficiency consultant'
   ];
 
-  // In production, this would use real search APIs (Google Custom Search, Bing API, etc.)
-  // For now, we'll use AI to simulate finding prospects based on typical web signals
+  // Use Perplexity to search the web for real prospects
+  let webSearchResults = '';
+  try {
+    const perplexityResponse = await perplexity.chat.completions.create({
+      model: 'llama-3.1-sonar-small-128k-online',
+      messages: [{
+        role: 'user',
+        content: `Find recent news and announcements about companies that might need strategic growth consulting. Look for: companies getting new funding, hiring executives, expanding operations, facing growth challenges, or publicly seeking business advice. Return 3-5 specific examples with company names and what signals they're showing.`
+      }]
+    });
+    webSearchResults = perplexityResponse.choices[0].message.content;
+    console.log('[Web Prospector] Perplexity search results:', webSearchResults.substring(0, 200));
+  } catch (error) {
+    console.error('[Web Prospector] Perplexity error:', error.message);
+  }
 
-  const prompt = `You are a B2B web prospecting expert. Generate 5 high-intent prospect profiles for a strategic growth consulting business.
+  const prompt = `You are a B2B web prospecting expert. Using these REAL web search results as a foundation, generate 5 high-intent prospect profiles for a strategic growth consulting business.
+
+WEB SEARCH RESULTS:
+${webSearchResults}
+
+Generate 5 prospects. If the web search found real companies, include them. Otherwise create realistic profiles based on typical signals.
 
 These prospects should show clear BUYER INTENT SIGNALS such as:
 - Recent funding announcements
