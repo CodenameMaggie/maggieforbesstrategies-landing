@@ -26,9 +26,20 @@ const initializeDatabase = async () => {
   }
 };
 
+// CORS configuration - allow all origins for development and production
+const corsOptions = {
+  origin: true, // Allow all origins
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Cron-Secret'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 600 // Cache preflight for 10 minutes
+};
+
 // Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve static files from public folder
 app.use(express.static(path.join(__dirname, 'public')));
@@ -36,6 +47,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Helper to convert Vercel handler to Express
 const vercelToExpress = (handlerPath) => async (req, res) => {
   try {
+    // Set CORS headers explicitly for all API responses
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Cron-Secret');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
+    }
+
     // Lazy load the handler to ensure env vars are available
     const handler = require(handlerPath);
     await handler(req, res);

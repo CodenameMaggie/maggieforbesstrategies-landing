@@ -3,7 +3,24 @@ const { Pool } = require('pg');
 // Supabase connection - uses DATABASE_URL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+  ssl: {
+    rejectUnauthorized: false // Required for Supabase
+  },
+  max: 20, // Maximum number of clients in the pool
+  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
+  connectionTimeoutMillis: 10000, // Return error after 10 seconds if connection fails
+});
+
+// Handle pool errors
+pool.on('error', (err, client) => {
+  console.error('[DB Pool Error]:', err.message);
+});
+
+// Log successful connections in development
+pool.on('connect', () => {
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[DB] Client connected to Supabase');
+  }
 });
 
 // Initialize tables
@@ -127,12 +144,17 @@ const initDb = async () => {
   }
 };
 
-// Query helper with automatic connection
+// Query helper with automatic connection and error handling
 const query = async (text, params) => {
   const client = await pool.connect();
   try {
     const result = await client.query(text, params);
     return result;
+  } catch (error) {
+    console.error('[DB Query Error]:', error.message);
+    console.error('[DB Query]:', text);
+    console.error('[DB Params]:', params);
+    throw error;
   } finally {
     client.release();
   }
