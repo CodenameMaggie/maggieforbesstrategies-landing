@@ -189,7 +189,7 @@ Based on this information, is this a qualified lead? Respond with:
 3. Suggested next action`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-3-5-sonnet-20241022',
     max_tokens: 300,
     messages: [{
       role: 'user',
@@ -231,7 +231,7 @@ Last updated: ${contact.updated_at}
 Write a brief, professional follow-up message (2-3 sentences) to re-engage them.`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-3-5-sonnet-20241022',
     max_tokens: 200,
     messages: [{
       role: 'user',

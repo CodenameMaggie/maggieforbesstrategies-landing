@@ -82,7 +82,7 @@ Previous key facts (build upon these):
 ${JSON.stringify(existingKeyFacts, null, 2)}`;
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-3-5-sonnet-20241022',
       max_tokens: 500,
       messages: [{
         role: 'user',

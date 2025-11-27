@@ -164,7 +164,7 @@ For each prospect, provide:
 Format as JSON array.`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-3-5-sonnet-20241022',
     max_tokens: 2000,
     messages: [{
       role: 'user',
@@ -240,7 +240,7 @@ Score this prospect 1-100 and provide:
 Format as JSON.`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-3-5-sonnet-20241022',
     max_tokens: 500,
     messages: [{
       role: 'user',
@@ -297,7 +297,7 @@ Include:
 Tone: Professional, consultative, not salesy.`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-3-5-sonnet-20241022',
     max_tokens: 400,
     messages: [{
       role: 'user',

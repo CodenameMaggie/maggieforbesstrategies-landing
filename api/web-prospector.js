@@ -196,7 +196,7 @@ For each prospect provide:
 Format as JSON array. Make these realistic companies with genuine-sounding signals.`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-3-5-sonnet-20241022',
     max_tokens: 2500,
     messages: [{
       role: 'user',
@@ -281,7 +281,7 @@ Provide:
 Format as JSON.`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-3-5-sonnet-20241022',
     max_tokens: 600,
     messages: [{
       role: 'user',
@@ -331,7 +331,7 @@ For each news item provide:
 Format as JSON array.`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-3-5-sonnet-20241022',
     max_tokens: 1500,
     messages: [{
       role: 'user',
@@ -400,7 +400,7 @@ For each post provide:
 Format as JSON array.`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-3-5-sonnet-20241022',
     max_tokens: 1500,
     messages: [{
       role: 'user',
@@ -451,7 +451,7 @@ For each posting provide:
 Format as JSON array.`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-3-5-sonnet-20241022',
     max_tokens: 1500,
     messages: [{
       role: 'user',
