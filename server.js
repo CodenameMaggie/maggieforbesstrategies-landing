@@ -58,6 +58,7 @@ app.all('/api/linkedin-prospector', vercelToExpress('./api/linkedin-prospector')
 app.all('/api/web-prospector', vercelToExpress('./api/web-prospector'));
 app.all('/api/automation-scheduler', vercelToExpress('./api/automation-scheduler'));
 app.all('/api/automation-settings', vercelToExpress('./api/automation-settings'));
+app.all('/api/migrate-db', vercelToExpress('./api/migrate-db'));
 
 // Page routes - serve HTML files
 app.get('/', (req, res) => {
