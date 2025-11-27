@@ -27,11 +27,13 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  // Verify CRON secret for security
+  // Verify CRON secret for security (only required for external calls)
   const cronSecret = process.env.CRON_SECRET;
   const providedSecret = req.headers['x-cron-secret'] || req.query.secret || req.body?.secret;
+  const isInternalCall = req.headers.origin && allowedOrigins.includes(req.headers.origin);
 
-  if (cronSecret && providedSecret !== cronSecret) {
+  // Require secret only for external calls (not from dashboard)
+  if (cronSecret && !isInternalCall && providedSecret !== cronSecret) {
     console.error('[Automation Scheduler] Invalid or missing CRON_SECRET');
     return res.status(401).json({
       success: false,
