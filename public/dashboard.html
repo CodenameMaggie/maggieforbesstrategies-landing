@@ -1788,26 +1788,48 @@
 
       const btn = event.target;
       const originalText = btn.textContent;
-      btn.textContent = '⏳ Running...';
+      btn.textContent = '⏳ Running all...';
       btn.disabled = true;
 
       try {
-        const res = await fetch(`${API_BASE}/api/automation-scheduler`, {
+        // Run all three automations in sequence
+        let results = { linkedin: 0, web: 0, sales: {} };
+
+        // 1. LinkedIn
+        btn.textContent = '⏳ LinkedIn scan...';
+        const linkedInRes = await fetch(`${API_BASE}/api/linkedin-prospector`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tenantId: TENANT_ID })
+          body: JSON.stringify({ action: 'find_prospects', data: {} })
         });
+        const linkedInData = await linkedInRes.json();
+        results.linkedin = linkedInData.prospects?.length || 0;
 
-        const data = await res.json();
+        // 2. Web
+        btn.textContent = '⏳ Web scan...';
+        const webRes = await fetch(`${API_BASE}/api/web-prospector`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'scan_web', data: {} })
+        });
+        const webData = await webRes.json();
+        results.web = webData.prospects?.length || 0;
 
-        if (data.success) {
-          alert('Automation completed successfully! Check the activity feed for results.');
-          loadAutomationPage();
-          loadDashboard();
-        } else {
-          alert('Automation encountered errors. Check console for details.');
-        }
+        // 3. Sales Automation
+        btn.textContent = '⏳ Sales automation...';
+        const salesRes = await fetch(`${API_BASE}/api/sales-automation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const salesData = await salesRes.json();
+        results.sales = salesData.results;
+
+        alert(`Automation Complete!\n\n✅ LinkedIn: ${results.linkedin} prospects\n✅ Web: ${results.web} prospects\n✅ Qualified: ${results.sales.leadsQualified || 0}\n✅ Follow-ups: ${results.sales.followUpsSent || 0}`);
+
+        loadAutomationPage();
+        loadDashboard();
       } catch (error) {
+        console.error('Automation error:', error);
         alert('Error running automation: ' + error.message);
       } finally {
         btn.textContent = originalText;
