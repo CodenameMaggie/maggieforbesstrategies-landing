@@ -1,13 +1,9 @@
 const { Pool } = require('pg');
 
-// Railway provides individual PostgreSQL variables
+// Supabase connection - uses DATABASE_URL
 const pool = new Pool({
-  host: process.env.PGHOST,
-  port: process.env.PGPORT,
-  database: process.env.PGDATABASE,
-  user: process.env.PGUSER,
-  password: process.env.PGPASSWORD,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
 // Initialize tables

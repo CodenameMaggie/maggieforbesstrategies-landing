@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 // Initialize database on startup
 let dbInitialized = false;
 const initializeDatabase = async () => {
-  if (process.env.PGHOST && process.env.PGDATABASE) {
+  if (process.env.DATABASE_URL) {
     try {
       const db = require('./api/utils/db');
       await db.initDb();
@@ -87,7 +87,7 @@ app.get('/health', (req, res) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     env: {
-      database: !!(process.env.PGHOST && process.env.PGDATABASE),
+      database: !!process.env.DATABASE_URL,
       anthropic: !!process.env.ANTHROPIC_API_KEY,
       dbInitialized: dbInitialized
     }
@@ -102,7 +102,7 @@ const startServer = async () => {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`Database: ${process.env.PGHOST ? 'Connected' : 'Not connected'}`);
+    console.log(`Database: ${process.env.DATABASE_URL ? 'Connected (Supabase)' : 'Not connected'}`);
     console.log(`Anthropic API: ${process.env.ANTHROPIC_API_KEY ? 'Set' : 'Not set'}`);
   });
 };
