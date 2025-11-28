@@ -1761,19 +1761,15 @@
     }
 
     async function runAutomation() {
-      if (!confirm('Run full automation now? This will scan for prospects and run sales automation.')) return;
+      if (!confirm('Scan for new prospects? (Sales automation runs automatically every 6 hours via cron)')) return;
 
       const btn = event.target;
       const originalText = btn.textContent;
-      btn.textContent = '⏳ Running all...';
+      btn.textContent = '⏳ Scanning...';
       btn.disabled = true;
 
       try {
-        // Run all automations
-        let results = { web: 0, sales: {} };
-
-        // 1. Web Prospecting
-        btn.textContent = '⏳ Web scan...';
+        // Run web prospecting only (sales automation via cron to avoid timeout)
         const webRes = await fetch(`${API_BASE}/api/web-prospector`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1787,27 +1783,10 @@
 
         const webData = await webRes.json();
         console.log('Web Response:', webData);
-        if (!webData.success) {
-          console.error('Web Error:', webData.error);
-        }
-        results.web = webData.prospects?.length || 0;
 
-        // 2. Sales Automation
-        btn.textContent = '⏳ Sales automation...';
-        const salesRes = await fetch(`${API_BASE}/api/sales-automation`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
+        const prospectsFound = webData.prospects?.length || 0;
 
-        if (!salesRes.ok) {
-          const errorText = await salesRes.text();
-          throw new Error(`Sales automation failed (${salesRes.status}): ${errorText.substring(0, 200)}`);
-        }
-
-        const salesData = await salesRes.json();
-        results.sales = salesData.results || {};
-
-        alert(`Automation Complete!\n\n✅ Web: ${results.web} prospects\n✅ Qualified: ${results.sales?.leadsQualified || 0}\n✅ Follow-ups: ${results.sales?.followUpsSent || 0}`);
+        alert(`Prospect Scan Complete!\n\n✅ Found: ${prospectsFound} new prospects\n\nℹ️ Sales automation runs automatically every 6 hours`);
 
         loadAutomationPage();
         loadDashboard();
