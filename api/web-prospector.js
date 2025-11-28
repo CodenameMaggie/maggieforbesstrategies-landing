@@ -336,7 +336,16 @@ Find 5 real companies with verified signals ($5M+ revenue).`
     }
   }
 
-  // Save real help-seekers to database
+  // For manual dashboard calls, return prospects immediately without saving (avoid timeout)
+  // Cron jobs will save them in background with more time
+  const isManualCall = req.headers.origin && req.headers.origin.includes('maggieforbesstrategies.com');
+
+  if (isManualCall && prospects.length > 0) {
+    console.log(`[Web Prospector] Manual call - returning ${prospects.length} prospects without saving (cron will save)`);
+    return prospects;
+  }
+
+  // Save real help-seekers to database (cron jobs only)
   for (const prospect of prospects) {
     // Extract company name (try multiple field name variations)
     const companyName = prospect.companyName || prospect.company || prospect.Company_Name ||
