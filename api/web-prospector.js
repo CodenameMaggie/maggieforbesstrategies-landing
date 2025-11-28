@@ -221,82 +221,86 @@ module.exports = async (req, res) => {
 };
 
 /**
- * Scan the web for high-intent prospects
+ * Find prospects who are ACTIVELY ASKING for help - real intent signals
  */
 async function scanWebForProspects(criteria, tenantId) {
-  console.log('[Web Prospector] Scanning web for prospects...');
+  console.log('[Web Prospector] Finding people actively seeking strategic help...');
 
-  const searchQueries = [
-    'business looking for strategic consulting',
-    'company seeking growth advisor',
-    'scaling business need help',
-    'business expansion consultant needed',
-    'operational efficiency consultant'
-  ];
+  let prospects = [];
 
-  // Use Perplexity to search the web for real prospects
-  let webSearchResults = '';
   try {
+    // Search for people actively asking for help in the last 7 days
     const perplexityResponse = await perplexity.chat.completions.create({
       model: 'llama-3.1-sonar-small-128k-online',
       messages: [{
         role: 'user',
-        content: `Find recent news and announcements about companies that might need strategic growth consulting. Look for: companies getting new funding, hiring executives, expanding operations, facing growth challenges, or publicly seeking business advice. Return 3-5 specific examples with company names and what signals they're showing.`
+        content: `Search Reddit, Quora, LinkedIn, Twitter/X, and business forums for posts from business owners/executives asking for help with:
+
+- Scaling operations
+- Strategic planning
+- Business growth strategy
+- Operational efficiency
+- Revenue growth
+- Team/org structure
+- Process optimization
+- Market expansion
+
+Find 5 recent posts (last 7 days) where someone is ACTIVELY SEEKING advice or help. For each:
+1. Platform and post title
+2. Poster's name/username
+3. Their company (if mentioned)
+4. What they're struggling with (exact quote)
+5. Direct link to post
+6. Their role/title (if mentioned)
+
+ONLY include posts where someone is genuinely asking for help or admitting they need guidance. Include the actual URL so we can verify.`
       }]
     });
-    webSearchResults = perplexityResponse.choices[0].message.content;
-    console.log('[Web Prospector] Perplexity search results:', webSearchResults.substring(0, 200));
-  } catch (error) {
-    console.error('[Web Prospector] Perplexity error:', error.message);
-  }
 
-  const prompt = `You are a B2B web prospecting expert. Using these REAL web search results as a foundation, generate 5 high-intent prospect profiles for a strategic growth consulting business.
+    const searchResults = perplexityResponse.choices[0].message.content;
+    console.log('[Web Prospector] Active help-seekers found:\n', searchResults);
 
-WEB SEARCH RESULTS:
-${webSearchResults}
+    // Extract into structured format
+    const extractionResponse = await callAIWithFallback(`From these real search results, extract structured prospect data:
 
-Generate 5 prospects. If the web search found real companies, include them. Otherwise create realistic profiles based on typical signals.
+${searchResults}
 
-These prospects should show clear BUYER INTENT SIGNALS such as:
-- Recent funding announcements
-- Leadership changes (new CEO, VP Operations, etc.)
-- Expansion announcements
-- Hiring surges
-- Public statements about scaling challenges
-- Posts seeking business advice/consultants
-
-For each prospect provide a JSON object with these EXACT field names:
+For each person actively seeking help, return JSON with EXACT field names:
 {
-  "companyName": "string",
-  "industry": "string",
-  "companySize": "number of employees",
-  "recentSignal": "what triggered the intent",
-  "whereFound": "source (news/forum/job posting/social media)",
-  "intentScore": "number 1-100",
-  "contactPerson": "name and title (CEO, Founder, COO, etc.)",
-  "approachAngle": "how to reach out"
+  "contactPerson": "name or username",
+  "companyName": "company name if mentioned, otherwise 'Not specified'",
+  "recentSignal": "exact problem they posted about",
+  "whereFound": "platform and URL",
+  "intentScore": 95,
+  "approachAngle": "specific advice based on their exact problem",
+  "platform": "Reddit/Quora/LinkedIn/Twitter",
+  "postUrl": "direct link to post"
 }
 
-CRITICAL: Use these EXACT field names in camelCase. Return a JSON array of 5 prospect objects.`;
+Return ONLY JSON array of real people who posted.`, 2000);
 
-  const responseText = await callAIWithFallback(prompt, 2500);
-
-  let prospects = [];
-  try {
-    const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+    // Parse prospects
+    const jsonMatch = extractionResponse.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
       prospects = JSON.parse(jsonMatch[0]);
-      console.log('[Web Prospector] Parsed prospects:', JSON.stringify(prospects[0])); // Log first prospect to see field names
-    } else {
-      console.error('[Web Prospector] No JSON array found in response');
-      console.log('[Web Prospector] Response preview:', responseText.substring(0, 500));
+      console.log(`[Web Prospector] ✓ Found ${prospects.length} real help-seekers`);
     }
+
   } catch (error) {
-    console.error('[Web Prospector] Error parsing prospects:', error);
-    console.log('[Web Prospector] Response preview:', responseText.substring(0, 500));
+    console.error('[Web Prospector] Perplexity search error:', error.message);
+
+    // Fallback: search for active intent on specific platforms
+    try {
+      const fallbackResponse = await callAIWithFallback(`Search for recent Reddit posts in r/entrepreneur, r/startups, r/smallbusiness where business owners asked for help with scaling, operations, or strategy in the last 48 hours. Include usernames and post titles.`, 1500);
+
+      console.log('[Web Prospector] Fallback search results:', fallbackResponse.substring(0, 300));
+      prospects = []; // Parse fallback results if needed
+    } catch (fallbackError) {
+      console.error('[Web Prospector] All search methods failed');
+    }
   }
 
-  // Save prospects to database with robust field extraction
+  // Save real help-seekers to database
   for (const prospect of prospects) {
     // Extract company name (try multiple field name variations)
     const companyName = prospect.companyName || prospect.company || prospect.Company_Name ||
@@ -322,42 +326,53 @@ CRITICAL: Use these EXACT field names in camelCase. Return a JSON array of 5 pro
     const approachAngle = prospect.approachAngle || prospect.approach || prospect.Approach_Angle ||
                          prospect['Approach Angle'] || prospect.recommendation || '';
 
-    // Skip if we don't have at least a company name
-    if (companyName === 'Unknown Company') {
-      console.log('[Web Prospector] Skipping prospect - no company name found');
+    // Extract post URL for verification
+    const postUrl = prospect.postUrl || prospect.url || prospect.link || prospect.whereFound || '';
+
+    // Extract platform
+    const platform = prospect.platform || prospect.Platform ||
+                    (whereFound.includes('reddit') ? 'Reddit' :
+                     whereFound.includes('linkedin') ? 'LinkedIn' :
+                     whereFound.includes('quora') ? 'Quora' : 'Web');
+
+    // Skip if we don't have at least a contact person (for active help-seekers)
+    if (!contactPerson) {
+      console.log('[Web Prospector] Skipping - no contact person found');
       continue;
     }
 
+    // Check if we already have this person
+    const searchName = contactPerson.replace('@', ''); // Remove @ for username
     const existingContact = await db.queryOne(
-      'SELECT id FROM contacts WHERE company ILIKE $1 AND tenant_id = $2',
-      [companyName, tenantId]
+      'SELECT id FROM contacts WHERE full_name ILIKE $1 AND tenant_id = $2',
+      [searchName, tenantId]
     );
 
     if (!existingContact) {
       const contact = await db.insert('contacts', {
         tenant_id: tenantId,
         full_name: contactPerson,
-        company: companyName,
+        company: companyName !== 'Unknown Company' && companyName !== 'Not specified' ? companyName : null,
         stage: 'new',
-        lead_source: `web_prospector_${whereFound}`,
-        notes: `Intent Score: ${intentScore}/100. Signal: ${recentSignal}. Found: ${whereFound}`,
-        client_type: 'high_intent_prospect',
+        lead_source: `active_help_seeker_${platform.toLowerCase()}`,
+        notes: `🔥 ACTIVE HELP-SEEKER: ${recentSignal}\n\nPlatform: ${platform}\nPost: ${postUrl}`,
+        client_type: 'warm_inbound',
         created_at: new Date(),
         updated_at: new Date()
       });
 
-      // Log the intent signal
+      // Log the intent signal with URL
       await db.insert('contact_activities', {
         tenant_id: tenantId,
         contact_id: contact.id,
-        type: 'intent_signal_detected',
-        description: `Web signal: ${recentSignal}. Source: ${whereFound}. Approach: ${approachAngle}`,
+        type: 'active_help_request_detected',
+        description: `Platform: ${platform}\nProblem: ${recentSignal}\nPost URL: ${postUrl}\n\nSuggested approach: ${approachAngle}`,
         created_at: new Date()
       });
 
-      console.log(`[Web Prospector] ✓ Saved prospect: ${companyName} (Intent: ${intentScore}/100)`);
+      console.log(`[Web Prospector] ✓ Saved WARM lead: ${contactPerson} from ${platform}`);
     } else {
-      console.log(`[Web Prospector] Skipping duplicate: ${companyName}`);
+      console.log(`[Web Prospector] Skipping duplicate: ${contactPerson}`);
     }
   }
 
