@@ -287,7 +287,7 @@ CREATE TABLE IF NOT EXISTS partner_activities (
   outcome TEXT,
 
   -- If it's a referral
-  referral_contact_id INTEGER REFERENCES contacts(id) ON DELETE SET NULL,
+  referral_contact_id UUID REFERENCES contacts(id) ON DELETE SET NULL,
   referral_value DECIMAL(12,2),
 
   created_at TIMESTAMP DEFAULT NOW()
