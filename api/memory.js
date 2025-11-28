@@ -58,7 +58,7 @@ module.exports = async (req, res) => {
       const { category, key, value } = req.body;
 
       if (!category || !key) {
-        return res.status(400).json({ error: 'Category and key are required' });
+        return res.status(400).json({ success: false, error: 'Category and key are required' });
       }
 
       // Check if memory exists
@@ -104,7 +104,7 @@ module.exports = async (req, res) => {
           [TENANT_ID, category, key]
         );
       } else {
-        return res.status(400).json({ error: 'ID or category+key required' });
+        return res.status(400).json({ success: false, error: 'ID or category+key required' });
       }
 
       return res.status(200).json({
@@ -113,7 +113,7 @@ module.exports = async (req, res) => {
       });
     }
 
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
 
   } catch (error) {
     console.error('[MFS Memory] Error:', error);

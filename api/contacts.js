@@ -60,7 +60,7 @@ module.exports = async (req, res) => {
       const { full_name, email, phone, company, stage, lead_source, notes } = req.body;
 
       if (!email) {
-        return res.status(400).json({ error: 'Email is required' });
+        return res.status(400).json({ success: false, error: 'Email is required' });
       }
 
       // Parse name
@@ -95,7 +95,7 @@ module.exports = async (req, res) => {
       const { id, ...updates } = req.body;
 
       if (!id) {
-        return res.status(400).json({ error: 'Contact ID is required' });
+        return res.status(400).json({ success: false, error: 'Contact ID is required' });
       }
 
       updates.updated_at = new Date();
@@ -114,7 +114,7 @@ module.exports = async (req, res) => {
       });
     }
 
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
 
   } catch (error) {
     console.error('[MFS Contacts] Error:', error);

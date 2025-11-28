@@ -67,7 +67,7 @@ module.exports = async (req, res) => {
       const { title, description, priority, due_date_text, contact_id } = req.body;
 
       if (!title) {
-        return res.status(400).json({ error: 'Title is required' });
+        return res.status(400).json({ success: false, error: 'Title is required' });
       }
 
       const task = await db.insert('tasks', {
@@ -94,7 +94,7 @@ module.exports = async (req, res) => {
       const { id, ...updates } = req.body;
 
       if (!id) {
-        return res.status(400).json({ error: 'Task ID is required' });
+        return res.status(400).json({ success: false, error: 'Task ID is required' });
       }
 
       updates.updated_at = new Date();
@@ -121,7 +121,7 @@ module.exports = async (req, res) => {
       const { id } = req.query;
 
       if (!id) {
-        return res.status(400).json({ error: 'Task ID is required' });
+        return res.status(400).json({ success: false, error: 'Task ID is required' });
       }
 
       await db.query('DELETE FROM tasks WHERE id = $1 AND tenant_id = $2', [id, TENANT_ID]);
@@ -132,7 +132,7 @@ module.exports = async (req, res) => {
       });
     }
 
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
 
   } catch (error) {
     console.error('[MFS Tasks] Error:', error);
