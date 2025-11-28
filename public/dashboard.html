@@ -1808,32 +1808,6 @@
       }
     }
 
-      const btn = event.target;
-      const originalText = btn.textContent;
-      btn.textContent = '⏳ Scanning LinkedIn...';
-      btn.disabled = true;
-
-      try {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'find_prospects', data: {} })
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-          alert(`Found ${data.prospects?.length || 0} real LinkedIn prospects!`);
-          loadAutomationPage();
-          loadDashboard();
-        }
-      } catch (error) {
-        alert('Error: ' + error.message);
-      } finally {
-        btn.textContent = originalText;
-        btn.disabled = false;
-      }
-    }
-
     async function runWebProspecting() {
       const btn = event.target;
       const originalText = btn.textContent;
