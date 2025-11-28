@@ -36,13 +36,13 @@ module.exports = async (req, res) => {
     tests: []
   };
 
-  // Test different models
+  // Test different models (from official docs)
   const modelsToTest = [
-    'llama-3.1-sonar-small-128k-online',
-    'llama-3.1-sonar-large-128k-online',
-    'sonar-small-online',
-    'sonar-medium-online',
-    'sonar'
+    'sonar',
+    'sonar-pro',
+    'sonar-reasoning',
+    'sonar-reasoning-pro',
+    'sonar-deep-research'
   ];
 
   for (const modelName of modelsToTest) {
@@ -56,7 +56,8 @@ module.exports = async (req, res) => {
           role: 'user',
           content: 'What is the capital of France?'
         }],
-        ...(modelName.includes('online') && { search_recency_filter: 'month' })
+        // All sonar models support search
+        search_recency_filter: 'month'
       });
 
       testResults.tests.push({
