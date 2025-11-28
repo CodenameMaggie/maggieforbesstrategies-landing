@@ -1670,16 +1670,19 @@
           const { stats, settings } = data;
 
           // Update stats
+          document.getElementById('stat-linkedin-prospects').textContent = stats.prospects.linkedIn;
           document.getElementById('stat-web-prospects').textContent = stats.prospects.web;
           document.getElementById('stat-auto-qualified').textContent = stats.recent.qualifiedThisWeek;
           document.getElementById('stat-follow-ups').textContent = stats.automation.followUpsSent;
           document.getElementById('nav-automation-count').textContent = stats.prospects.total;
 
           // Update schedules
+          document.getElementById('linkedin-schedule').textContent = settings.linkedInSchedule || 'Daily';
           document.getElementById('web-schedule').textContent = settings.webSchedule || 'Daily';
           document.getElementById('sales-schedule').textContent = settings.salesSchedule || 'Continuous';
 
           // Update status badges
+          updateStatusBadge('linkedin-status', settings.linkedInProspectingEnabled);
           updateStatusBadge('web-status', settings.webProspectingEnabled);
           updateStatusBadge('sales-status', settings.salesAutomationEnabled);
 
@@ -1740,6 +1743,7 @@
 
     function formatLeadSource(source) {
       const sources = {
+        'linkedin_prospector': '🔗 LinkedIn',
         'web_prospector': '🌐 Web',
         'web_prospector_web': '🌐 Web',
         'business_news': '📰 News',
@@ -1774,6 +1778,7 @@
 
         // 1. LinkedIn (NOW REAL DATA - Perplexity search)
         btn.textContent = '⏳ LinkedIn scan...';
+        const linkedInRes = await fetch(`${API_BASE}/api/linkedin-prospector`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'find_prospects', data: {} })
@@ -1818,12 +1823,14 @@
       }
     }
 
+    async function runLinkedInProspecting() {
       const btn = event.target;
       const originalText = btn.textContent;
       btn.textContent = '⏳ Scanning LinkedIn...';
       btn.disabled = true;
 
       try {
+        const res = await fetch(`${API_BASE}/api/linkedin-prospector`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'find_prospects', data: {} })
