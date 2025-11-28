@@ -74,7 +74,7 @@ const testAuth = async (baseUrl, platform) => {
   await testAuth('https://maggieforbesstrategies.com', 'Railway (Production Domain)');
 
   // Test Vercel (latest deployment)
-  await testAuth('https://maggieforbesstrategies-landing-lcj2ym6ox.vercel.app', 'Vercel (Latest)');
+  await testAuth('https://maggieforbesstrategies-landing-i80hkzw5w.vercel.app', 'Vercel (Latest Production)');
 
   console.log('\n' + '='.repeat(60));
   console.log('All tests complete!');
