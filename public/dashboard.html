@@ -1274,15 +1274,17 @@
 
     async function advanceStage(contactId, newStage) {
       try {
-        await fetch(`${API_BASE}/api/contacts`, {
+        const res = await fetch(`${API_BASE}/api/contacts`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: contactId, stage: newStage })
+          body: JSON.stringify({ id: contactId, stage: newStage, tenant_id: TENANT_ID })
         });
+        if (!res.ok) throw new Error(`Failed to advance stage: ${res.status}`);
         loadPipeline();
         loadDashboard();
       } catch (error) {
         console.error('Error advancing stage:', error);
+        alert('Error advancing stage: ' + error.message);
       }
     }
 
@@ -1344,11 +1346,12 @@
       if (!selectedContact) return;
 
       try {
-        await fetch(`${API_BASE}/api/contacts`, {
+        const res = await fetch(`${API_BASE}/api/contacts`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: selectedContact.id, stage: newStage })
+          body: JSON.stringify({ id: selectedContact.id, stage: newStage, tenant_id: TENANT_ID })
         });
+        if (!res.ok) throw new Error(`Failed to update stage: ${res.status}`);
 
         selectedContact.stage = newStage;
         document.getElementById('contact-detail-stage').textContent = formatStage(newStage);
@@ -1401,15 +1404,17 @@
 
     async function completeTask(taskId) {
       try {
-        await fetch(`${API_BASE}/api/tasks`, {
+        const res = await fetch(`${API_BASE}/api/tasks`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: taskId, status: 'completed' })
+          body: JSON.stringify({ id: taskId, status: 'completed', tenant_id: TENANT_ID })
         });
+        if (!res.ok) throw new Error(`Failed to complete task: ${res.status}`);
         loadDashboard();
         loadTasksFull();
       } catch (error) {
         console.error('Error completing task:', error);
+        alert('Error completing task: ' + error.message);
       }
     }
 
@@ -1570,11 +1575,12 @@
       }
 
       try {
-        await fetch(`${API_BASE}/api/contacts`, {
+        const res = await fetch(`${API_BASE}/api/contacts`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ full_name: name, email, phone, company, stage, notes })
+          body: JSON.stringify({ full_name: name, email, phone, company, stage, notes, tenant_id: TENANT_ID })
         });
+        if (!res.ok) throw new Error(`Failed to add contact: ${res.status}`);
 
         closeModal('add-contact-modal');
         document.getElementById('contact-name').value = '';
@@ -1601,11 +1607,12 @@
       }
 
       try {
-        await fetch(`${API_BASE}/api/tasks`, {
+        const res = await fetch(`${API_BASE}/api/tasks`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, priority, due_date_text: due })
+          body: JSON.stringify({ title, priority, due_date_text: due, tenant_id: TENANT_ID })
         });
+        if (!res.ok) throw new Error(`Failed to add task: ${res.status}`);
 
         closeModal('add-task-modal');
         document.getElementById('task-title').value = '';
@@ -1613,7 +1620,8 @@
 
         loadDashboard();
       } catch (error) {
-        alert('Error saving task');
+        console.error('Error saving task:', error);
+        alert('Error saving task: ' + error.message);
       }
     }
 
