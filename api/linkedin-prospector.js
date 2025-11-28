@@ -111,7 +111,9 @@ module.exports = async (req, res) => {
       switch (action) {
         case 'find_prospects':
           const prospects = await findRealLinkedInProspects(data, tenantId);
-          return res.status(200).json({ success: true, prospects });
+          const debug = prospects._debug;
+          delete prospects._debug;
+          return res.status(200).json({ success: true, prospects, debug });
 
         default:
           return res.status(400).json({ error: 'Invalid action' });
@@ -135,6 +137,7 @@ async function findRealLinkedInProspects(criteria, tenantId) {
   console.log('[LinkedIn Prospector] Searching for REAL LinkedIn activity...');
 
   let prospects = [];
+  let debugInfo = { perplexityResponse: null, validationFailed: null, error: null };
 
   try {
     // Use Perplexity to search LinkedIn for real people discussing challenges
@@ -162,6 +165,8 @@ ONLY return real, recent posts you can verify. Include the actual LinkedIn URLs.
     });
 
     const searchResults = perplexityResponse.choices[0].message.content;
+    debugInfo.perplexityResponse = searchResults.substring(0, 500); // First 500 chars for debugging
+
     console.log('[LinkedIn Prospector] ===== PERPLEXITY SEARCH RESULTS =====');
     console.log(searchResults);
     console.log('[LinkedIn Prospector] ===== END SEARCH RESULTS =====');
@@ -171,8 +176,10 @@ ONLY return real, recent posts you can verify. Include the actual LinkedIn URLs.
         !searchResults.includes('linkedin.com') ||
         searchResults.toLowerCase().includes('i cannot') ||
         searchResults.toLowerCase().includes('i don\'t have access')) {
+      debugInfo.validationFailed = 'Perplexity did not return real LinkedIn results';
       console.error('[LinkedIn Prospector] Perplexity did not return real LinkedIn results');
-      return [];
+      prospects._debug = debugInfo;
+      return prospects;
     }
 
     // Extract structured data - BE STRICT
@@ -237,8 +244,10 @@ Return ONLY JSON array of real posts found.`, 2000);
     }
 
   } catch (error) {
+    debugInfo.error = error.message;
     console.error('[LinkedIn Prospector] Search error:', error.message);
-    return [];
+    prospects._debug = debugInfo;
+    return prospects;
   }
 
   // Save validated prospects to database
