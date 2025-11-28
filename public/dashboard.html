@@ -964,7 +964,7 @@
         <div class="page-header">
           <h2 class="section-title">Prospecting & Automation</h2>
           <div class="header-actions">
-            <button class="btn btn-secondary" onclick="runAutomation()">▶ Run Now</button>
+            <button class="btn btn-secondary" onclick="runAutomation(event)">▶ Run Now</button>
             <button class="btn btn-primary" onclick="openAutomationSettings()">⚙ Settings</button>
           </div>
         </div>
@@ -1007,7 +1007,7 @@
               </div>
               <p style="font-size: 0.85rem; color: #666; margin-bottom: 0.75rem;">Scans news, forums, job boards for high-intent leads</p>
               <div style="font-size: 0.8rem; color: #888;">Schedule: <span id="web-schedule">Daily</span></div>
-              <button class="btn btn-secondary" style="margin-top: 0.75rem; padding: 0.5rem 1rem; font-size: 0.8rem; width: 100%;" onclick="runWebProspecting()">Run Web Scan</button>
+              <button class="btn btn-secondary" style="margin-top: 0.75rem; padding: 0.5rem 1rem; font-size: 0.8rem; width: 100%;" onclick="runWebProspecting(event)">Run Web Scan</button>
             </div>
 
             <!-- Sales Automation -->
@@ -1021,7 +1021,7 @@
               </div>
               <p style="font-size: 0.85rem; color: #666; margin-bottom: 0.75rem;">Auto-qualifies, follows up, progresses pipeline</p>
               <div style="font-size: 0.8rem; color: #888;">Schedule: <span id="sales-schedule">Continuous</span></div>
-              <button class="btn btn-secondary" style="margin-top: 0.75rem; padding: 0.5rem 1rem; font-size: 0.8rem; width: 100%;" onclick="runSalesAutomation()">Run Automation</button>
+              <button class="btn btn-secondary" style="margin-top: 0.75rem; padding: 0.5rem 1rem; font-size: 0.8rem; width: 100%;" onclick="runSalesAutomation(event)">Run Automation</button>
             </div>
           </div>
         </div>
@@ -1211,7 +1211,7 @@
         document.getElementById('stat-active').textContent = allContacts.filter(c => c.stage === 'active_client' || c.stage === 'strategy').length;
         document.getElementById('nav-pipeline-count').textContent = allContacts.length;
 
-        const tasksRes = await fetch(`${API_BASE}/api/tasks&status=pending`);
+        const tasksRes = await fetch(`${API_BASE}/api/tasks?status=pending`);
         const tasksData = await tasksRes.json();
         document.getElementById('nav-tasks-count').textContent = tasksData.tasks?.length || 0;
         renderTasksList(tasksData.tasks || [], 'tasks-list');
@@ -1460,7 +1460,13 @@
       const container = document.getElementById(containerId);
       const div = document.createElement('div');
       div.className = `message ${role}`;
-      div.innerHTML = `<div class="message-content">${formatMessageContent(escapeHtml(content))}</div>`;
+      // For user messages, escape for XSS protection
+      // For bot messages (assistant), format trusted content
+      if (role === 'user') {
+        div.innerHTML = `<div class="message-content">${escapeHtml(content)}</div>`;
+      } else {
+        div.innerHTML = `<div class="message-content">${formatMessageContent(content)}</div>`;
+      }
       container.appendChild(div);
       container.scrollTop = container.scrollHeight;
     }
@@ -1488,7 +1494,7 @@
         const res = await fetch(`${API_BASE}${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message, conversationId, tenantId: TENANT_ID })
+          body: JSON.stringify({ message, conversationId })
         });
 
         const data = await res.json();
@@ -1521,7 +1527,7 @@
         const res = await fetch(`${API_BASE}${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message, conversationId: conversations[currentBot], tenantId: TENANT_ID })
+          body: JSON.stringify({ message, conversationId: conversations[currentBot] })
         });
 
         const data = await res.json();
@@ -1728,7 +1734,7 @@
 
     async function loadAutomationActivity() {
       try {
-        const res = await fetch(`${API_BASE}/api/contacts&limit=100`);
+        const res = await fetch(`${API_BASE}/api/contacts?limit=100`);
         const data = await res.json();
 
         // Get prospects from automation
