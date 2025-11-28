@@ -270,37 +270,104 @@ Find 5 real companies with verified signals ($5M+ revenue).`
     }
 
     // Extract company data directly from Perplexity response (FAST - no extra API call)
-    // Perplexity returns structured markdown with company sections
-    const companyPattern = /##?\s+\d+\.\s+\*?\*?([^\n*]+)\*?\*?\s*\n\s*\*?\*?(?:Leadership|CEO):\*?\*?\s+([^\n]+)\s*\n\s*\*?\*?(?:Recent Signal|What Happened):\*?\*?\s+([^\n]+(?:\n(?!\*\*)[^\n]+)*)/gi;
+    // Perplexity returns data in various formats - try table first, then markdown sections
 
     // prospects already declared at line 213, reuse it here
     prospects = [];
-    let match;
 
-    while ((match = companyPattern.exec(searchResults)) !== null) {
-      const companyName = match[1].trim();
-      const contactPerson = match[2].trim();
-      const recentSignal = match[3].trim().replace(/\n/g, ' ');
+    // METHOD 1: Try parsing markdown table format
+    // Format: | **Company Name** | CEO | What Happened | Size/Industry | Why Consulting |
+    const tableMatch = searchResults.match(/\|\s*Company Name\s*\|[\s\S]+?\n\|[-|\s]+\|\n([\s\S]+?)(?:\n\n|$)/i);
 
-      // Skip if looks fake
-      if (contactPerson.toLowerCase().includes('not public') ||
-          contactPerson.toLowerCase().includes('not specified') ||
-          contactPerson.toLowerCase().includes('not detailed')) {
-        console.log(`[Web Prospector] ⚠ Skipping ${companyName} - no CEO info`);
-        continue;
+    if (tableMatch) {
+      const tableRows = tableMatch[1].trim().split('\n');
+
+      for (const row of tableRows) {
+        const cells = row.split('|').map(c => c.trim()).filter(c => c);
+
+        if (cells.length >= 3) {
+          const companyName = cells[0].replace(/\*\*/g, '').trim();
+          const ceo = cells[1].trim();
+          const whatHappened = cells[2].trim();
+          const industry = cells.length >= 4 ? cells[3].trim() : 'Technology/Business Services';
+
+          // Skip empty or header rows
+          if (!companyName || companyName.toLowerCase() === 'company name') continue;
+
+          // Skip if CEO is not disclosed
+          if (ceo.toLowerCase().includes('not public') ||
+              ceo.toLowerCase().includes('not disclosed') ||
+              ceo.toLowerCase() === 'not specified') {
+            console.log(`[Web Prospector] ⚠ Skipping ${companyName} - CEO not public`);
+            continue;
+          }
+
+          prospects.push({
+            companyName,
+            contactPerson: ceo,
+            recentSignal: whatHappened,
+            whereFound: 'Perplexity Web Search',
+            intentScore: 85,
+            approachAngle: `Strategic consulting for ${whatHappened.toLowerCase().includes('acquisition') ? 'M&A integration' : whatHappened.toLowerCase().includes('funding') ? 'scaling operations' : 'growth strategy'}`,
+            industry,
+            companySize: '$5M+',
+            postUrl: citations[0] || 'https://www.perplexity.ai'
+          });
+        }
       }
 
-      prospects.push({
-        companyName,
-        contactPerson,
-        recentSignal,
-        whereFound: 'Perplexity Web Search',
-        intentScore: 85,
-        approachAngle: `Strategic consulting for ${recentSignal.includes('acquisition') ? 'M&A integration' : recentSignal.includes('funding') ? 'scaling operations' : 'growth strategy'}`,
-        industry: 'Technology/Business Services',
-        companySize: '$5M+',
-        postUrl: citations[0] || 'https://www.perplexity.ai'
-      });
+      console.log(`[Web Prospector] Extracted ${prospects.length} prospects from table format`);
+    }
+
+    // METHOD 2: If table parsing failed, try markdown section patterns
+    if (prospects.length === 0) {
+      // Pattern 1: ## 1. Company Name - Event\n**Company:** Name
+      const pattern1 = /##\s+\d+\.\s+([^\n-]+?)(?:\s*-\s*[^\n]+)?\s*\n+\*\*Company:\*\*\s+([^\n]+)/gi;
+
+      // Pattern 2: ### 1. **Company Name**\n- **CEO:** Name
+      const pattern2 = /###\s+\d+\.\s+\*\*([^\n*]+)\*\*\s*\n\s*-\s*\*\*CEO:\*\*\s+([^\n]+)/gi;
+
+      // Pattern 3: ## 1. **Company Name**\n**CEO:** Name
+      const pattern3 = /##?\s+\d+\.\s+\*?\*?([^\n*]+)\*?\*?\s*\n\s*\*?\*?CEO:\*?\*?\s+([^\n]+)/gi;
+
+      const patterns = [pattern1, pattern2, pattern3];
+
+      for (const pattern of patterns) {
+        let match;
+        while ((match = pattern.exec(searchResults)) !== null) {
+          const companyName = match[1].trim();
+          const companyInfo = match[2].trim();
+
+          // Extract signal from the section
+          const sectionStart = match.index + match[0].length;
+          const nextSectionMatch = searchResults.substring(sectionStart).match(/\n##[#]?\s+\d+\./);
+          const sectionEnd = nextSectionMatch ? sectionStart + nextSectionMatch.index : searchResults.length;
+          const sectionText = searchResults.substring(sectionStart, sectionEnd);
+
+          const signalMatch = sectionText.match(/\*\*(?:Signal Type|What Happened|Date):\*\*\s+([^\n]+)/i);
+          const recentSignal = signalMatch ? signalMatch[1].trim() : sectionText.substring(0, 200).trim();
+
+          const industryMatch = sectionText.match(/\*\*Industry:\*\*\s+([^\n]+)/i);
+          const industry = industryMatch ? industryMatch[1].trim() : 'Technology/Business Services';
+
+          prospects.push({
+            companyName: companyName.replace(/\*/g, '').trim(),
+            contactPerson: companyInfo,
+            recentSignal,
+            whereFound: 'Perplexity Web Search',
+            intentScore: 85,
+            approachAngle: `Strategic consulting for ${recentSignal.toLowerCase().includes('acquisition') ? 'M&A integration' : recentSignal.toLowerCase().includes('funding') ? 'scaling operations' : 'growth strategy'}`,
+            industry,
+            companySize: '$5M+',
+            postUrl: citations[0] || 'https://www.perplexity.ai'
+          });
+        }
+
+        if (prospects.length > 0) {
+          console.log(`[Web Prospector] Extracted ${prospects.length} prospects using markdown pattern`);
+          break;
+        }
+      }
     }
 
     console.log(`[Web Prospector] Fast extraction found ${prospects.length} prospects`);
