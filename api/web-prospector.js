@@ -304,6 +304,12 @@ Find 5 real companies with verified signals ($5M+ revenue).`
 
     console.log(`[Web Prospector] Fast extraction found ${prospects.length} prospects`);
 
+    // DEBUG: If no prospects found, log the search results format
+    if (prospects.length === 0) {
+      console.log('[Web Prospector] DEBUG: No prospects extracted from regex');
+      console.log('[Web Prospector] First 500 chars:', searchResults.substring(0, 500));
+    }
+
     // Validate: Filter out fake company names
     const fakeNames = ['TechCorp', 'Solutions LLC', 'Innovations Inc', 'Tech Innovations',
                       'FinTech', 'HealthTech', 'EduSmart', 'GreenTech', 'Retail Revolution'];
