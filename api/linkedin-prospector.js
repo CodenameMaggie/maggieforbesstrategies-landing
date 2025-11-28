@@ -139,7 +139,7 @@ async function findRealLinkedInProspects(criteria, tenantId) {
   try {
     // Use Perplexity to search LinkedIn for real people discussing challenges
     const perplexityResponse = await perplexity.chat.completions.create({
-      model: 'llama-3.1-sonar-small-128k-online',
+      model: 'sonar-pro',
       messages: [{
         role: 'user',
         content: `Search LinkedIn (site:linkedin.com/posts OR site:linkedin.com/pulse) for posts from the last 30 days where CEOs, Founders, or executives discuss:
