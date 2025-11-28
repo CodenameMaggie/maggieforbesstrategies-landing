@@ -1,12 +1,16 @@
 const { Pool } = require('pg');
 
-// Vercel Postgres connection - optimized for serverless
+// Supabase connection - optimized for serverless with strict connection limits
 const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: 10, // Vercel Postgres pooler handles connections efficiently
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false // Required for Supabase
+  },
+  max: 1, // Supabase free tier: 3 connections max. Use 1 to be safe in serverless
+  min: 0, // Don't maintain idle connections
+  idleTimeoutMillis: 500, // Aggressively close idle connections
+  connectionTimeoutMillis: 10000,
+  allowExitOnIdle: true // Allow pool to close completely when idle (important for serverless)
 });
 
 // Handle pool errors
@@ -17,7 +21,7 @@ pool.on('error', (err, client) => {
 // Log successful connections in development
 pool.on('connect', () => {
   if (process.env.NODE_ENV !== 'production') {
-    console.log('[DB] Client connected to Supabase');
+    console.log('[DB] Client connected to database');
   }
 });
 
