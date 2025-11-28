@@ -271,14 +271,32 @@ Find 5 REAL companies with recent, verified signals. These should be $5M+ revenu
     });
 
     const searchResults = perplexityResponse.choices[0].message.content;
-    console.log('[Web Prospector] High-value buying signals found:\n', searchResults);
+    console.log('[Web Prospector] ===== PERPLEXITY SEARCH RESULTS =====');
+    console.log(searchResults);
+    console.log('[Web Prospector] ===== END SEARCH RESULTS =====');
 
-    // Extract into structured format
-    const extractionResponse = await callAIWithFallback(`From these real search results, extract structured prospect data:
+    // CRITICAL: Only proceed if Perplexity found actual companies
+    if (!searchResults || searchResults.length < 100 ||
+        !searchResults.includes('http') ||
+        searchResults.toLowerCase().includes('i cannot') ||
+        searchResults.toLowerCase().includes('i don\'t have access')) {
+      console.error('[Web Prospector] Perplexity did not return real web search results');
+      console.error('[Web Prospector] Response was too short or contained no URLs');
+      return [];
+    }
+
+    // Extract into structured format - BE STRICT ABOUT REAL DATA
+    const extractionResponse = await callAIWithFallback(`From these REAL web search results, extract ONLY companies that were actually found in the search:
 
 ${searchResults}
 
-For each company with a verified buying signal, return JSON with EXACT field names:
+CRITICAL RULES:
+- ONLY extract companies explicitly mentioned in the search results above
+- ONLY include companies with actual dates, funding amounts, or specific signals
+- If a company name appears with "example" or hypothetical language, SKIP IT
+- Each company MUST have a real source URL from the search results
+
+For each REAL company with a verified buying signal, return JSON with EXACT field names:
 {
   "companyName": "exact company name",
   "contactPerson": "CEO/Founder name",
@@ -298,8 +316,41 @@ Return ONLY JSON array.`, 2000);
     // Parse prospects
     const jsonMatch = extractionResponse.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
-      prospects = JSON.parse(jsonMatch[0]);
-      console.log(`[Web Prospector] ✓ Found ${prospects.length} real help-seekers`);
+      const rawProspects = JSON.parse(jsonMatch[0]);
+
+      // VALIDATE: Filter out fake/generated data
+      prospects = rawProspects.filter(p => {
+        const companyName = p.companyName || p.company || '';
+        const signal = p.recentSignal || p.signal || '';
+        const source = p.whereFound || p.postUrl || '';
+
+        // Reject generic/fake company names
+        const fakeNames = ['TechCorp', 'Solutions LLC', 'Innovations Inc', 'Tech Innovations',
+                          'FinTech', 'HealthTech', 'EduSmart', 'GreenTech', 'Retail Revolution',
+                          'Solutions Consulting', 'Innovators Inc'];
+
+        if (fakeNames.some(fake => companyName.includes(fake))) {
+          console.log(`[Web Prospector] ❌ Rejected FAKE company: ${companyName}`);
+          return false;
+        }
+
+        // Require real URLs
+        if (!source.startsWith('http')) {
+          console.log(`[Web Prospector] ❌ Rejected - no URL: ${companyName}`);
+          return false;
+        }
+
+        // Require specific dates in signals
+        if (!signal.match(/202[4-5]|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/)) {
+          console.log(`[Web Prospector] ❌ Rejected - no date: ${companyName}`);
+          return false;
+        }
+
+        console.log(`[Web Prospector] ✓ VALIDATED real prospect: ${companyName}`);
+        return true;
+      });
+
+      console.log(`[Web Prospector] Found ${rawProspects.length} total, ${prospects.length} passed validation`);
     }
 
   } catch (error) {
