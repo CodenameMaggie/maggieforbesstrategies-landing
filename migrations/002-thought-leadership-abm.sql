@@ -314,6 +314,3 @@ CREATE INDEX IF NOT EXISTS idx_partners_tenant_type ON strategic_partners(tenant
 CREATE INDEX IF NOT EXISTS idx_partners_tier ON strategic_partners(tenant_id, tier);
 CREATE INDEX IF NOT EXISTS idx_partners_status ON strategic_partners(tenant_id, partnership_status);
 CREATE INDEX IF NOT EXISTS idx_partner_activities_partner ON partner_activities(partner_id, activity_date DESC);
-
--- Success message
-SELECT 'Thought Leadership, ABM & Strategic Partner tables created successfully!' as status;
