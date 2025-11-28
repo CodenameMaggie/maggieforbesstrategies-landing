@@ -51,7 +51,8 @@ module.exports = async (req, res) => {
       });
     }
 
-    const effectiveTenantId = tenantId || process.env.MFS_TENANT_ID || 'mfs-001';
+    // Single-user system: tenant ID always from environment
+    const TENANT_ID = process.env.MFS_TENANT_ID || 'mfs-001';
 
     // Verify user access
     if (userId) {
@@ -77,14 +78,14 @@ module.exports = async (req, res) => {
       `SELECT id, full_name, email, stage, client_type, updated_at
        FROM contacts WHERE tenant_id = $1
        ORDER BY updated_at DESC LIMIT 20`,
-      [effectiveTenantId]
+      [TENANT_ID]
     );
 
     const recentActivities = await db.queryAll(
       `SELECT id, contact_id, type, description, created_at
        FROM contact_activities WHERE tenant_id = $1
        ORDER BY created_at DESC LIMIT 10`,
-      [effectiveTenantId]
+      [TENANT_ID]
     );
 
     // Get conversation history
@@ -95,7 +96,7 @@ module.exports = async (req, res) => {
     if (conversationId) {
       conversation = await db.queryOne(
         'SELECT * FROM ai_conversations WHERE id = $1 AND tenant_id = $2',
-        [conversationId, effectiveTenantId]
+        [conversationId, TENANT_ID]
       );
 
       if (conversation) {
@@ -103,7 +104,7 @@ module.exports = async (req, res) => {
       }
     } else {
       const newConversation = await db.insert('ai_conversations', {
-        tenant_id: effectiveTenantId,
+        tenant_id: TENANT_ID,
         user_id: userId,
         bot_type: 'secretary',
         started_at: new Date(),
@@ -239,7 +240,7 @@ When Maggie asks "What do I need to do today?" or similar:
 4. Note any urgent items`;
 
     // Load persistent context
-    const { context: persistentContext } = await loadBotContext(effectiveTenantId, 'secretary');
+    const { context: persistentContext } = await loadBotContext(TENANT_ID, 'secretary');
 
     // Build enhanced system prompt
     let enhancedPrompt = injectContextIntoPrompt(baseSystemPrompt, persistentContext);
@@ -274,7 +275,7 @@ When Maggie asks "What do I need to do today?" or similar:
 
       // Save task to database
       const newTask = await db.insert('tasks', {
-        tenant_id: effectiveTenantId,
+        tenant_id: TENANT_ID,
         user_id: userId,
         title: task.description,
         priority: task.priority,

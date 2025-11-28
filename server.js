@@ -70,13 +70,17 @@ const vercelToExpress = (handlerPath) => async (req, res) => {
 };
 
 // API Routes - lazy load handlers
+// Auth routes (no auth required on these)
+app.all('/api/auth/login', vercelToExpress('./api/auth/login'));
+app.all('/api/auth/logout', vercelToExpress('./api/auth/logout'));
+
+// Data routes
 app.all('/api/contacts', vercelToExpress('./api/contacts'));
 app.all('/api/tasks', vercelToExpress('./api/tasks'));
 app.all('/api/memory', vercelToExpress('./api/memory'));
 app.all('/api/ai-marketing-bot', vercelToExpress('./api/ai-marketing-bot'));
 app.all('/api/ai-secretary-bot', vercelToExpress('./api/ai-secretary-bot'));
 app.all('/api/sales-automation', vercelToExpress('./api/sales-automation'));
-app.all('/api/linkedin-prospector', vercelToExpress('./api/linkedin-prospector'));
 app.all('/api/web-prospector', vercelToExpress('./api/web-prospector'));
 app.all('/api/automation-scheduler', vercelToExpress('./api/automation-scheduler'));
 app.all('/api/automation-settings', vercelToExpress('./api/automation-settings'));

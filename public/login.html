@@ -205,17 +205,12 @@
   </div>
 
   <script>
-    // Simple authentication - in production, use proper auth like Supabase Auth
-    const VALID_CREDENTIALS = {
-      email: 'maggie@maggieforbesstrategies.com',
-      // This is a simple hash - in production use proper password hashing
-      passwordHash: 'mfs2024admin'
-    };
+    // SERVER-SIDE AUTHENTICATION (secure, password in environment variable)
+    const API_BASE = window.location.origin;
 
-    function handleLogin(e) {
+    async function handleLogin(e) {
       e.preventDefault();
 
-      const email = document.getElementById('email').value.trim().toLowerCase();
       const password = document.getElementById('password').value;
       const btn = document.getElementById('login-btn');
       const errorMsg = document.getElementById('error-message');
@@ -224,18 +219,21 @@
       btn.textContent = 'Signing in...';
       errorMsg.classList.remove('show');
 
-      // Simulate network delay
-      setTimeout(() => {
-        if (email === VALID_CREDENTIALS.email && password === VALID_CREDENTIALS.passwordHash) {
-          // Set session
-          const session = {
-            email: email,
-            name: 'Maggie',
-            loggedInAt: new Date().toISOString(),
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
-          };
-          localStorage.setItem('mfs_session', JSON.stringify(session));
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', // Important: send cookies
+          body: JSON.stringify({ password })
+        });
 
+        if (res.ok) {
+          const data = await res.json();
+          // Save expiration for client-side check
+          localStorage.setItem('mfs_session', JSON.stringify({
+            loggedIn: true,
+            expiresAt: data.expiresAt
+          }));
           // Redirect to dashboard
           window.location.href = '/dashboard';
         } else {
@@ -244,7 +242,13 @@
           btn.disabled = false;
           btn.textContent = 'Sign In';
         }
-      }, 500);
+      } catch (error) {
+        console.error('Login error:', error);
+        errorMsg.textContent = 'Connection error. Please try again.';
+        errorMsg.classList.add('show');
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+      }
     }
 
     // Check if already logged in

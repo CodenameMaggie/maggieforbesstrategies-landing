@@ -27,7 +27,8 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  const tenantId = req.query.tenant_id || req.headers['x-tenant-id'] || process.env.MFS_TENANT_ID || 'mfs-001';
+  // Single-user system: tenant ID always from environment
+  const TENANT_ID = process.env.MFS_TENANT_ID || 'mfs-001';
 
   try {
     // GET - List contacts
@@ -35,7 +36,7 @@ module.exports = async (req, res) => {
       const { stage, limit = 50 } = req.query;
 
       let query = 'SELECT * FROM contacts WHERE tenant_id = $1';
-      const params = [tenantId];
+      const params = [TENANT_ID];
 
       if (stage) {
         query += ' AND stage = $2';
@@ -67,7 +68,7 @@ module.exports = async (req, res) => {
       const lastName = nameParts.slice(1).join(' ') || '';
 
       const contact = await db.insert('contacts', {
-        tenant_id: tenantId,
+        tenant_id: TENANT_ID,
         full_name,
         first_name: firstName,
         last_name: lastName,
@@ -104,7 +105,7 @@ module.exports = async (req, res) => {
       const setClause = keys.map((key, i) => `${key} = $${i + 1}`).join(', ');
 
       const query = `UPDATE contacts SET ${setClause} WHERE id = $${keys.length + 1} AND tenant_id = $${keys.length + 2} RETURNING *`;
-      const result = await db.queryOne(query, [...values, id, tenantId]);
+      const result = await db.queryOne(query, [...values, id, TENANT_ID]);
 
       return res.status(200).json({
         success: true,

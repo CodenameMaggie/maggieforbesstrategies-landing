@@ -51,7 +51,8 @@ module.exports = async (req, res) => {
       });
     }
 
-    const effectiveTenantId = tenantId || process.env.MFS_TENANT_ID || 'mfs-001';
+    // Single-user system: tenant ID always from environment
+    const TENANT_ID = process.env.MFS_TENANT_ID || 'mfs-001';
 
     // Verify user access (MFS admin only)
     if (userId) {
@@ -80,7 +81,7 @@ module.exports = async (req, res) => {
     if (conversationId) {
       conversation = await db.queryOne(
         'SELECT * FROM ai_conversations WHERE id = $1 AND tenant_id = $2',
-        [conversationId, effectiveTenantId]
+        [conversationId, TENANT_ID]
       );
 
       if (conversation) {
@@ -88,7 +89,7 @@ module.exports = async (req, res) => {
       }
     } else {
       const newConversation = await db.insert('ai_conversations', {
-        tenant_id: effectiveTenantId,
+        tenant_id: TENANT_ID,
         user_id: userId,
         bot_type: 'marketing',
         started_at: new Date(),
@@ -192,7 +193,7 @@ SPECIALTIES:
 - Case study development`;
 
     // Load persistent context
-    const { context: persistentContext } = await loadBotContext(effectiveTenantId, 'marketing');
+    const { context: persistentContext } = await loadBotContext(TENANT_ID, 'marketing');
 
     // Build enhanced system prompt
     let enhancedPrompt = injectContextIntoPrompt(baseSystemPrompt, persistentContext);
@@ -223,7 +224,7 @@ SPECIALTIES:
       console.log(`[MFS Marketing] Creating ${platform} post...`);
 
       const newPost = await db.insert('social_posts', {
-        tenant_id: effectiveTenantId,
+        tenant_id: TENANT_ID,
         user_id: userId,
         platform: platform,
         post_type: 'ai_generated',

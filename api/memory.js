@@ -27,7 +27,8 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  const tenantId = req.query.tenant_id || req.headers['x-tenant-id'] || process.env.MFS_TENANT_ID || 'mfs-001';
+  // Single-user system: tenant ID always from environment
+  const TENANT_ID = process.env.MFS_TENANT_ID || 'mfs-001';
 
   try {
     // GET - List memories
@@ -35,7 +36,7 @@ module.exports = async (req, res) => {
       const { category } = req.query;
 
       let query = 'SELECT * FROM ai_memory_store WHERE tenant_id = $1';
-      const params = [tenantId];
+      const params = [TENANT_ID];
 
       if (category) {
         query += ' AND category = $2';
@@ -63,7 +64,7 @@ module.exports = async (req, res) => {
       // Check if memory exists
       const existing = await db.queryOne(
         'SELECT id FROM ai_memory_store WHERE tenant_id = $1 AND category = $2 AND key = $3',
-        [tenantId, category, key]
+        [TENANT_ID, category, key]
       );
 
       let result;
@@ -77,7 +78,7 @@ module.exports = async (req, res) => {
       } else {
         // Create new
         result = await db.insert('ai_memory_store', {
-          tenant_id: tenantId,
+          tenant_id: TENANT_ID,
           category,
           key,
           value,
@@ -96,11 +97,11 @@ module.exports = async (req, res) => {
       const { id, category, key } = req.query;
 
       if (id) {
-        await db.query('DELETE FROM ai_memory_store WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
+        await db.query('DELETE FROM ai_memory_store WHERE id = $1 AND tenant_id = $2', [id, TENANT_ID]);
       } else if (category && key) {
         await db.query(
           'DELETE FROM ai_memory_store WHERE tenant_id = $1 AND category = $2 AND key = $3',
-          [tenantId, category, key]
+          [TENANT_ID, category, key]
         );
       } else {
         return res.status(400).json({ error: 'ID or category+key required' });

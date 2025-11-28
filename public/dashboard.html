@@ -1162,11 +1162,19 @@
 
   <script>
     const API_BASE = window.location.origin;
-    const TENANT_ID = '00000000-0000-0000-0000-000000000001';
+    // Tenant ID now handled server-side
     const CALENDLY_DISCOVERY = 'https://calendly.com/maggie-maggieforbesstrategies/discovery-call';
 
     let currentBot = 'secretary';
     let conversationId = null;
+
+    // XSS Protection: Escape HTML entities
+    function escapeHtml(text) {
+      if (!text) return '-';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
     let conversations = {};
     let allContacts = [];
     let selectedContact = null;
@@ -1193,7 +1201,7 @@
     // Dashboard
     async function loadDashboard() {
       try {
-        const res = await fetch(`${API_BASE}/api/contacts?tenant_id=${TENANT_ID}`);
+        const res = await fetch(`${API_BASE}/api/contacts`);
         const data = await res.json();
         allContacts = data.contacts || [];
 
@@ -1203,7 +1211,7 @@
         document.getElementById('stat-active').textContent = allContacts.filter(c => c.stage === 'active_client' || c.stage === 'strategy').length;
         document.getElementById('nav-pipeline-count').textContent = allContacts.length;
 
-        const tasksRes = await fetch(`${API_BASE}/api/tasks?tenant_id=${TENANT_ID}&status=pending`);
+        const tasksRes = await fetch(`${API_BASE}/api/tasks&status=pending`);
         const tasksData = await tasksRes.json();
         document.getElementById('nav-tasks-count').textContent = tasksData.tasks?.length || 0;
         renderTasksList(tasksData.tasks || [], 'tasks-list');
@@ -1224,7 +1232,7 @@
       ];
 
       try {
-        const res = await fetch(`${API_BASE}/api/contacts?tenant_id=${TENANT_ID}`);
+        const res = await fetch(`${API_BASE}/api/contacts`);
         const data = await res.json();
         allContacts = data.contacts || [];
 
@@ -1239,8 +1247,8 @@
               </div>
               ${stageContacts.map(contact => `
                 <div class="pipeline-card" onclick="openContactDetail('${contact.id}')">
-                  <div class="pipeline-card-name">${contact.full_name || 'Unknown'}</div>
-                  <div class="pipeline-card-email">${contact.email || '-'}</div>
+                  <div class="pipeline-card-name">${escapeHtml(contact.full_name) || 'Unknown'}</div>
+                  <div class="pipeline-card-email">${escapeHtml(contact.email) || '-'}</div>
                   <div class="pipeline-card-actions">
                     ${getStageActions(stage.id, contact.id)}
                   </div>
@@ -1277,7 +1285,7 @@
         const res = await fetch(`${API_BASE}/api/contacts`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: contactId, stage: newStage, tenant_id: TENANT_ID })
+          body: JSON.stringify({ id: contactId, stage: newStage })
         });
         if (!res.ok) throw new Error(`Failed to advance stage: ${res.status}`);
         loadPipeline();
@@ -1300,7 +1308,7 @@
     async function loadContacts() {
       const tbody = document.getElementById('contacts-table');
       try {
-        const res = await fetch(`${API_BASE}/api/contacts?tenant_id=${TENANT_ID}`);
+        const res = await fetch(`${API_BASE}/api/contacts`);
         const data = await res.json();
         allContacts = data.contacts || [];
 
@@ -1311,8 +1319,8 @@
 
         tbody.innerHTML = allContacts.map(contact => `
           <tr>
-            <td style="padding: 0.75rem; font-weight: 500;">${contact.full_name || '-'}</td>
-            <td style="padding: 0.75rem; color: #666;">${contact.email || '-'}</td>
+            <td style="padding: 0.75rem; font-weight: 500;">${escapeHtml(contact.full_name) || '-'}</td>
+            <td style="padding: 0.75rem; color: #666;">${escapeHtml(contact.email) || '-'}</td>
             <td style="padding: 0.75rem;"><span style="background: #f0f0f0; padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.8rem;">${formatStage(contact.stage)}</span></td>
             <td style="padding: 0.75rem;">
               <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="openContactDetail('${contact.id}')">View</button>
@@ -1349,7 +1357,7 @@
         const res = await fetch(`${API_BASE}/api/contacts`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: selectedContact.id, stage: newStage, tenant_id: TENANT_ID })
+          body: JSON.stringify({ id: selectedContact.id, stage: newStage })
         });
         if (!res.ok) throw new Error(`Failed to update stage: ${res.status}`);
 
@@ -1385,8 +1393,8 @@
           <div class="priority-indicator priority-${task.priority || 'medium'}"></div>
           <input type="checkbox" class="task-checkbox" onchange="completeTask('${task.id}')">
           <div class="task-content">
-            <div class="task-title">${task.title}</div>
-            <div class="task-meta">${task.due_date_text || 'No due date'} - ${task.priority || 'medium'} priority</div>
+            <div class="task-title">${escapeHtml(task.title)}</div>
+            <div class="task-meta">${escapeHtml(task.due_date_text) || 'No due date'} - ${task.priority || 'medium'} priority</div>
           </div>
         </div>
       `).join('');
@@ -1394,7 +1402,7 @@
 
     async function loadTasksFull() {
       try {
-        const res = await fetch(`${API_BASE}/api/tasks?tenant_id=${TENANT_ID}`);
+        const res = await fetch(`${API_BASE}/api/tasks`);
         const data = await res.json();
         renderTasksList(data.tasks || [], 'tasks-list-full');
       } catch (error) {
@@ -1407,7 +1415,7 @@
         const res = await fetch(`${API_BASE}/api/tasks`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: taskId, status: 'completed', tenant_id: TENANT_ID })
+          body: JSON.stringify({ id: taskId, status: 'completed' })
         });
         if (!res.ok) throw new Error(`Failed to complete task: ${res.status}`);
         loadDashboard();
@@ -1452,7 +1460,7 @@
       const container = document.getElementById(containerId);
       const div = document.createElement('div');
       div.className = `message ${role}`;
-      div.innerHTML = `<div class="message-content">${formatMessageContent(content)}</div>`;
+      div.innerHTML = `<div class="message-content">${formatMessageContent(escapeHtml(content))}</div>`;
       container.appendChild(div);
       container.scrollTop = container.scrollHeight;
     }
@@ -1578,7 +1586,7 @@
         const res = await fetch(`${API_BASE}/api/contacts`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ full_name: name, email, phone, company, stage, notes, tenant_id: TENANT_ID })
+          body: JSON.stringify({ full_name: name, email, phone, company, stage, notes })
         });
         if (!res.ok) throw new Error(`Failed to add contact: ${res.status}`);
 
@@ -1610,7 +1618,7 @@
         const res = await fetch(`${API_BASE}/api/tasks`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, priority, due_date_text: due, tenant_id: TENANT_ID })
+          body: JSON.stringify({ title, priority, due_date_text: due })
         });
         if (!res.ok) throw new Error(`Failed to add task: ${res.status}`);
 
@@ -1638,7 +1646,15 @@
       return stages[stage] || 'New';
     }
 
-    function logout() {
+    async function logout() {
+      try {
+        await fetch(`${API_BASE}/api/auth/logout`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+      } catch (e) {
+        console.error('Logout error:', e);
+      }
       localStorage.removeItem('mfs_session');
       window.location.href = '/login';
     }
@@ -1671,7 +1687,7 @@
     // Automation & Prospecting
     async function loadAutomationPage() {
       try {
-        const res = await fetch(`${API_BASE}/api/automation-settings?tenant_id=${TENANT_ID}`);
+        const res = await fetch(`${API_BASE}/api/automation-settings`);
         const data = await res.json();
 
         if (data.success) {
@@ -1712,7 +1728,7 @@
 
     async function loadAutomationActivity() {
       try {
-        const res = await fetch(`${API_BASE}/api/contacts?tenant_id=${TENANT_ID}&limit=100`);
+        const res = await fetch(`${API_BASE}/api/contacts&limit=100`);
         const data = await res.json();
 
         // Get prospects from automation
@@ -1731,10 +1747,10 @@
         container.innerHTML = automationContacts.map(contact => `
           <div class="task-item" onclick="openContactDetail('${contact.id}')" style="cursor: pointer;">
             <div style="flex: 1;">
-              <div class="task-title">${contact.full_name || contact.company || 'Unknown'}</div>
+              <div class="task-title">${escapeHtml(contact.full_name) || escapeHtml(contact.company) || 'Unknown'}</div>
               <div class="task-meta">
                 ${formatLeadSource(contact.lead_source)} •
-                ${contact.company || 'No company'} •
+                ${escapeHtml(contact.company) || 'No company'} •
                 ${formatStage(contact.stage)}
               </div>
             </div>

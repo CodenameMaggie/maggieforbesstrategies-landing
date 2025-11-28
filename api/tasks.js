@@ -27,7 +27,8 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  const tenantId = req.query.tenant_id || req.headers['x-tenant-id'] || process.env.MFS_TENANT_ID || 'mfs-001';
+  // Single-user system: tenant ID always from environment
+  const TENANT_ID = process.env.MFS_TENANT_ID || 'mfs-001';
 
   try {
     // GET - List tasks
@@ -35,7 +36,7 @@ module.exports = async (req, res) => {
       const { status, priority, limit = 50 } = req.query;
 
       let query = 'SELECT * FROM tasks WHERE tenant_id = $1';
-      const params = [tenantId];
+      const params = [TENANT_ID];
       let paramIndex = 2;
 
       if (status) {
@@ -70,7 +71,7 @@ module.exports = async (req, res) => {
       }
 
       const task = await db.insert('tasks', {
-        tenant_id: tenantId,
+        tenant_id: TENANT_ID,
         title,
         description,
         priority: priority || 'medium',
@@ -107,7 +108,7 @@ module.exports = async (req, res) => {
       const setClause = keys.map((key, i) => `${key} = $${i + 1}`).join(', ');
 
       const query = `UPDATE tasks SET ${setClause} WHERE id = $${keys.length + 1} AND tenant_id = $${keys.length + 2} RETURNING *`;
-      const result = await db.queryOne(query, [...values, id, tenantId]);
+      const result = await db.queryOne(query, [...values, id, TENANT_ID]);
 
       return res.status(200).json({
         success: true,
@@ -123,7 +124,7 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'Task ID is required' });
       }
 
-      await db.query('DELETE FROM tasks WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
+      await db.query('DELETE FROM tasks WHERE id = $1 AND tenant_id = $2', [id, TENANT_ID]);
 
       return res.status(200).json({
         success: true,
