@@ -376,6 +376,62 @@ Find 5 real companies with verified signals ($5M+ revenue).`
     if (prospects.length === 0) {
       console.log('[Web Prospector] DEBUG: No prospects extracted from regex');
       console.log('[Web Prospector] First 500 chars:', searchResults.substring(0, 500));
+
+      // FALLBACK: Use Claude to parse whatever format Perplexity returned
+      console.log('[Web Prospector] Using Claude to parse Perplexity results...');
+      try {
+        const parsePrompt = `Parse this list of companies and extract structured data.
+
+${searchResults}
+
+Return ONLY a JSON array like this (no other text):
+[
+  {
+    "companyName": "Company Name",
+    "contactPerson": "CEO Name",
+    "recentSignal": "What happened (e.g., raised $50M Series B)",
+    "industry": "Industry",
+    "companySize": "$5M+"
+  }
+]
+
+If you found companies, return the JSON array. If no companies found, return []`;
+
+        const claudeResponse = await anthropic.messages.create({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 2000,
+          messages: [{ role: 'user', content: parsePrompt }]
+        });
+
+        const parsed = claudeResponse.content[0].text.trim();
+        console.log('[Web Prospector] Claude parsed response:', parsed.substring(0, 200));
+
+        // Extract JSON array from response (handle markdown code blocks)
+        let jsonStr = parsed;
+        if (parsed.includes('```')) {
+          const match = parsed.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
+          if (match) jsonStr = match[1];
+        }
+
+        const parsedProspects = JSON.parse(jsonStr);
+
+        if (Array.isArray(parsedProspects) && parsedProspects.length > 0) {
+          prospects = parsedProspects.map(p => ({
+            companyName: p.companyName,
+            contactPerson: p.contactPerson,
+            recentSignal: p.recentSignal,
+            whereFound: 'Perplexity Web Search',
+            intentScore: 85,
+            approachAngle: `Strategic consulting for ${p.recentSignal?.toLowerCase().includes('acquisition') ? 'M&A integration' : p.recentSignal?.toLowerCase().includes('funding') ? 'scaling operations' : 'growth strategy'}`,
+            industry: p.industry || 'Technology/Business Services',
+            companySize: p.companySize || '$5M+',
+            postUrl: citations[0] || 'https://www.perplexity.ai'
+          }));
+          console.log(`[Web Prospector] ✅ Claude extracted ${prospects.length} prospects`);
+        }
+      } catch (parseError) {
+        console.error('[Web Prospector] Claude parsing failed:', parseError.message);
+      }
     }
 
     // Validate: Filter out fake company names
