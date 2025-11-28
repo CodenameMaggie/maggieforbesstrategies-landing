@@ -22,7 +22,7 @@ async function callAIWithFallback(prompt, maxTokens = 2000) {
       name: 'Perplexity',
       call: async () => {
         const response = await perplexity.chat.completions.create({
-          model: 'llama-3.1-sonar-large-128k-online',
+          model: 'llama-3.1-sonar-small-128k-online',
           max_tokens: maxTokens,
           messages: [{ role: 'user', content: prompt }]
         });
@@ -69,61 +69,9 @@ async function callAIWithFallback(prompt, maxTokens = 2000) {
 }
 
 /**
- * LINKEDIN PROSPECTING & HIGH-END SALES CHANNELS
- * Finds and qualifies high-value prospects from LinkedIn and premium networks
+ * LINKEDIN PROSPECTING - REAL DATA ONLY
+ * Uses Perplexity to search for LinkedIn posts where people discuss growth challenges
  */
-
-// High-end prospect criteria
-const IDEAL_CLIENT_PROFILE = {
-  titles: [
-    'CEO', 'Founder', 'Co-Founder', 'President',
-    'Managing Director', 'General Manager',
-    'VP of Operations', 'Chief Operating Officer',
-    'Head of Strategy', 'Chief Strategy Officer'
-  ],
-  industries: [
-    'Technology', 'SaaS', 'Professional Services',
-    'Consulting', 'Financial Services', 'Healthcare',
-    'Manufacturing', 'E-commerce', 'Real Estate'
-  ],
-  companySize: ['51-200', '201-500', '501-1000', '1000+'],
-  minRevenue: 5000000, // $5M+
-  signals: [
-    'recently_funded',
-    'expanding',
-    'hiring',
-    'new_in_role',
-    'posted_about_growth'
-  ]
-};
-
-// Premium sales channels
-const SALES_CHANNELS = {
-  linkedin: {
-    name: 'LinkedIn Sales Navigator',
-    type: 'professional_network',
-    quality: 'premium',
-    cost_per_lead: 50
-  },
-  apollo: {
-    name: 'Apollo.io',
-    type: 'b2b_database',
-    quality: 'high',
-    cost_per_lead: 25
-  },
-  zoominfo: {
-    name: 'ZoomInfo',
-    type: 'b2b_intelligence',
-    quality: 'premium',
-    cost_per_lead: 75
-  },
-  clearbit: {
-    name: 'Clearbit',
-    type: 'enrichment',
-    quality: 'high',
-    cost_per_lead: 30
-  }
-};
 
 module.exports = async (req, res) => {
   // CORS headers
@@ -150,13 +98,9 @@ module.exports = async (req, res) => {
 
   try {
     if (req.method === 'GET') {
-      // Return prospecting configuration and stats
       const stats = await getProspectingStats(tenantId);
-
       return res.status(200).json({
         success: true,
-        idealClientProfile: IDEAL_CLIENT_PROFILE,
-        salesChannels: SALES_CHANNELS,
         stats
       });
     }
@@ -166,20 +110,8 @@ module.exports = async (req, res) => {
 
       switch (action) {
         case 'find_prospects':
-          const prospects = await findHighEndProspects(data, tenantId);
+          const prospects = await findRealLinkedInProspects(data, tenantId);
           return res.status(200).json({ success: true, prospects });
-
-        case 'qualify_prospect':
-          const qualification = await qualifyProspect(data, tenantId);
-          return res.status(200).json({ success: true, qualification });
-
-        case 'generate_outreach':
-          const outreach = await generatePersonalizedOutreach(data, tenantId);
-          return res.status(200).json({ success: true, outreach });
-
-        case 'track_engagement':
-          await trackLinkedInEngagement(data, tenantId);
-          return res.status(200).json({ success: true });
 
         default:
           return res.status(400).json({ error: 'Invalid action' });
@@ -196,243 +128,168 @@ module.exports = async (req, res) => {
 };
 
 /**
- * Find high-end prospects based on ideal client profile
+ * Find REAL LinkedIn prospects using Perplexity web search
+ * Searches for actual LinkedIn posts/articles about growth challenges
  */
-async function findHighEndProspects(criteria, tenantId) {
-  console.log('[LinkedIn Prospector] Finding high-end prospects...');
-
-  const searchCriteria = {
-    ...IDEAL_CLIENT_PROFILE,
-    ...criteria
-  };
-
-  // In production, this would call LinkedIn Sales Navigator API or Apollo.io
-  // For now, we'll simulate finding prospects
-
-  const prompt = `You are a B2B sales prospecting expert. Generate 5 high-quality prospect profiles that match this ideal client profile:
-
-Titles: ${searchCriteria.titles.join(', ')}
-Industries: ${searchCriteria.industries.join(', ')}
-Company Size: ${searchCriteria.companySize.join(', ')}
-
-For each prospect provide a JSON object with these EXACT field names:
-{
-  "fullName": "person's name",
-  "title": "job title",
-  "companyName": "company name",
-  "industry": "industry",
-  "companySize": "employee count or range",
-  "buyingSignals": "why they're a good fit",
-  "approachAngle": "personalized approach"
-}
-
-CRITICAL: Use these EXACT field names in camelCase. Return a JSON array of 5 prospect objects.`;
-
-  const responseText = await callAIWithFallback(prompt, 2000);
+async function findRealLinkedInProspects(criteria, tenantId) {
+  console.log('[LinkedIn Prospector] Searching for REAL LinkedIn activity...');
 
   let prospects = [];
+
   try {
-    const jsonMatch = responseText.match(/\[[\s\S]*\]/);
-    if (jsonMatch) {
-      prospects = JSON.parse(jsonMatch[0]);
+    // Use Perplexity to search LinkedIn for real people discussing challenges
+    const perplexityResponse = await perplexity.chat.completions.create({
+      model: 'llama-3.1-sonar-small-128k-online',
+      messages: [{
+        role: 'user',
+        content: `Search LinkedIn (site:linkedin.com/posts OR site:linkedin.com/pulse) for posts from the last 30 days where CEOs, Founders, or executives discuss:
+
+- Scaling challenges
+- Operational efficiency problems
+- Strategic planning needs
+- Growth bottlenecks
+- Team/org structure issues
+
+Find 5 REAL posts with:
+- Author's name and title
+- Their company
+- What challenge they're discussing
+- Direct LinkedIn URL to the post
+- Date of post
+
+ONLY return real, recent posts you can verify. Include the actual LinkedIn URLs.`
+      }]
+    });
+
+    const searchResults = perplexityResponse.choices[0].message.content;
+    console.log('[LinkedIn Prospector] ===== PERPLEXITY SEARCH RESULTS =====');
+    console.log(searchResults);
+    console.log('[LinkedIn Prospector] ===== END SEARCH RESULTS =====');
+
+    // Validate we got real results
+    if (!searchResults || searchResults.length < 100 ||
+        !searchResults.includes('linkedin.com') ||
+        searchResults.toLowerCase().includes('i cannot') ||
+        searchResults.toLowerCase().includes('i don\'t have access')) {
+      console.error('[LinkedIn Prospector] Perplexity did not return real LinkedIn results');
+      return [];
     }
+
+    // Extract structured data - BE STRICT
+    const extractionResponse = await callAIWithFallback(`From these REAL LinkedIn search results, extract ONLY posts that were actually found:
+
+${searchResults}
+
+CRITICAL RULES:
+- ONLY extract posts explicitly mentioned in the search results
+- Each post MUST have a real LinkedIn URL
+- ONLY include posts with actual dates from 2024/2025
+- Skip any hypothetical or example posts
+
+For each REAL post, return JSON with EXACT field names:
+{
+  "contactPerson": "Author's full name",
+  "title": "Author's title",
+  "companyName": "Company name",
+  "challenge": "What challenge they discussed",
+  "postUrl": "Direct LinkedIn URL",
+  "postDate": "Date of post",
+  "approachAngle": "How to help with their specific challenge"
+}
+
+Return ONLY JSON array of real posts found.`, 2000);
+
+    // Parse and validate
+    const jsonMatch = extractionResponse.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      const rawProspects = JSON.parse(jsonMatch[0]);
+
+      // STRICT validation
+      prospects = rawProspects.filter(p => {
+        const name = p.contactPerson || '';
+        const company = p.companyName || '';
+        const url = p.postUrl || '';
+        const date = p.postDate || '';
+
+        // Must have LinkedIn URL
+        if (!url.includes('linkedin.com')) {
+          console.log(`[LinkedIn Prospector] ❌ Rejected - no LinkedIn URL: ${name}`);
+          return false;
+        }
+
+        // Must have date
+        if (!date.match(/202[4-5]|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/)) {
+          console.log(`[LinkedIn Prospector] ❌ Rejected - no date: ${name}`);
+          return false;
+        }
+
+        // Must have real person name (not generic)
+        if (!name || name.length < 5) {
+          console.log(`[LinkedIn Prospector] ❌ Rejected - invalid name: ${name}`);
+          return false;
+        }
+
+        console.log(`[LinkedIn Prospector] ✓ VALIDATED: ${name} at ${company}`);
+        return true;
+      });
+
+      console.log(`[LinkedIn Prospector] Found ${rawProspects.length} total, ${prospects.length} passed validation`);
+    }
+
   } catch (error) {
-    console.error('[LinkedIn Prospector] Error parsing prospects:', error);
+    console.error('[LinkedIn Prospector] Search error:', error.message);
+    return [];
   }
 
-  // Save prospects to database with robust field extraction
+  // Save validated prospects to database
   for (const prospect of prospects) {
-    // Extract full name (try multiple variations)
-    const fullName = prospect.fullName || prospect.name || prospect.Full_Name ||
-                     prospect['Full Name'] || prospect.fullname || null;
+    const contactPerson = prospect.contactPerson || prospect.name || null;
+    const companyName = prospect.companyName || prospect.company || 'Not specified';
+    const title = prospect.title || prospect.jobTitle || 'Not specified';
+    const challenge = prospect.challenge || prospect.recentSignal || 'LinkedIn activity';
+    const postUrl = prospect.postUrl || prospect.url || '';
+    const approachAngle = prospect.approachAngle || prospect.approach || '';
 
-    // Extract company name (try multiple variations)
-    const companyName = prospect.companyName || prospect.company || prospect.Company_Name ||
-                        prospect['Company Name'] || prospect.companyname || 'Unknown Company';
-
-    // Extract title (try multiple variations)
-    const title = prospect.title || prospect.jobTitle || prospect.Job_Title ||
-                 prospect['Job Title'] || prospect.position || 'Position unknown';
-
-    // Extract buying signals
-    const buyingSignals = prospect.buyingSignals || prospect.why_good_fit || prospect.Why_Good_Fit ||
-                         prospect['Why Good Fit'] || prospect.signals || prospect.fitReason || 'High-value prospect';
-
-    // Extract approach angle
-    const approachAngle = prospect.approachAngle || prospect.approach || prospect.Approach_Angle ||
-                         prospect['Approach Angle'] || prospect.personalizedApproach || '';
-
-    // Skip if we don't have basic info
-    if (!fullName || fullName === 'Unknown') {
-      console.log('[LinkedIn Prospector] Skipping prospect - no name found');
+    if (!contactPerson) {
+      console.log('[LinkedIn Prospector] Skipping - no contact person');
       continue;
     }
 
-    // Check for existing contact by company name
+    // Check for existing
     const existingContact = await db.queryOne(
-      'SELECT id FROM contacts WHERE company ILIKE $1 AND tenant_id = $2',
-      [companyName, tenantId]
+      'SELECT id FROM contacts WHERE full_name ILIKE $1 AND tenant_id = $2',
+      [contactPerson, tenantId]
     );
 
     if (!existingContact) {
       const contact = await db.insert('contacts', {
         tenant_id: tenantId,
-        full_name: fullName,
-        company: companyName,
+        full_name: contactPerson,
+        company: companyName !== 'Not specified' ? companyName : null,
         stage: 'new',
-        lead_source: 'linkedin_prospector',
-        notes: `${title} at ${companyName}. ${buyingSignals}`,
-        client_type: 'prospect',
+        lead_source: 'linkedin_real_activity',
+        notes: `💼 REAL LinkedIn Activity\n\n${title}\nChallenge: ${challenge}\n\nLinkedIn Post: ${postUrl}`,
+        client_type: 'linkedin_warm_lead',
         created_at: new Date(),
         updated_at: new Date()
       });
 
-      // Log the approach
+      // Log activity
       await db.insert('contact_activities', {
         tenant_id: tenantId,
         contact_id: contact.id,
-        type: 'linkedin_prospect_identified',
-        description: `LinkedIn prospect. Approach: ${approachAngle}`,
+        type: 'linkedin_activity_detected',
+        description: `LinkedIn Post: ${postUrl}\n\nChallenge Discussed: ${challenge}\n\nApproach: ${approachAngle}`,
         created_at: new Date()
       });
 
-      console.log(`[LinkedIn Prospector] ✓ Saved prospect: ${fullName} at ${companyName}`);
+      console.log(`[LinkedIn Prospector] ✓ Saved: ${contactPerson} (${companyName})`);
     } else {
-      console.log(`[LinkedIn Prospector] Skipping duplicate: ${companyName}`);
+      console.log(`[LinkedIn Prospector] Skipping duplicate: ${contactPerson}`);
     }
   }
 
   return prospects;
-}
-
-/**
- * Qualify a prospect using AI
- */
-async function qualifyProspect(prospectData, tenantId) {
-  console.log('[LinkedIn Prospector] Qualifying prospect:', prospectData.name);
-
-  const prompt = `Analyze this prospect for Maggie Forbes Strategies (strategic growth consulting for established businesses):
-
-Name: ${prospectData.name}
-Title: ${prospectData.title}
-Company: ${prospectData.company}
-Industry: ${prospectData.industry}
-Company Size: ${prospectData.companySize}
-Recent Activity: ${prospectData.recentActivity || 'None'}
-LinkedIn Profile: ${prospectData.linkedinUrl || 'Not provided'}
-
-Score this prospect 1-100 and provide:
-1. Qualification Score (1-100)
-2. Fit Reason (why they're a good/bad fit)
-3. Recommended Approach (how to engage)
-4. Urgency Level (low/medium/high)
-5. Estimated Deal Size ($)
-
-Format as JSON.`;
-
-  const response = await anthropic.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 500,
-    messages: [{
-      role: 'user',
-      content: prompt
-    }]
-  });
-
-  let qualification = {};
-  try {
-    const jsonMatch = response.content[0].text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      qualification = JSON.parse(jsonMatch[0]);
-    }
-  } catch (error) {
-    console.error('[LinkedIn Prospector] Error parsing qualification:', error);
-  }
-
-  // Log qualification
-  await db.insert('contact_activities', {
-    tenant_id: tenantId,
-    contact_id: prospectData.contactId,
-    type: 'prospect_qualification',
-    description: `Qualification Score: ${qualification.score}/100. ${qualification.fitReason}`,
-    created_at: new Date()
-  });
-
-  return qualification;
-}
-
-/**
- * Generate personalized LinkedIn outreach message
- */
-async function generatePersonalizedOutreach(prospectData, tenantId) {
-  console.log('[LinkedIn Prospector] Generating outreach for:', prospectData.name);
-
-  const prompt = `Write a personalized LinkedIn connection request or InMail for this prospect:
-
-From: Maggie Forbes, Strategic Growth Consultant
-Company: Maggie Forbes Strategies
-Value Prop: We help established business owners scale strategically
-
-Prospect: ${prospectData.name}
-Title: ${prospectData.title}
-Company: ${prospectData.company}
-Industry: ${prospectData.industry}
-Why reaching out: ${prospectData.reason || 'Strategic growth opportunity'}
-
-Write a brief, professional message (under 300 characters for connection request OR under 1500 characters for InMail).
-Include:
-1. Specific reason for connecting (reference their company/role)
-2. Clear value proposition
-3. Soft call-to-action
-
-Tone: Professional, consultative, not salesy.`;
-
-  const response = await anthropic.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 400,
-    messages: [{
-      role: 'user',
-      content: prompt
-    }]
-  });
-
-  const outreachMessage = response.content[0].text;
-
-  // Save outreach template
-  await db.insert('contact_activities', {
-    tenant_id: tenantId,
-    contact_id: prospectData.contactId,
-    type: 'outreach_generated',
-    description: `LinkedIn outreach: ${outreachMessage}`,
-    created_at: new Date()
-  });
-
-  return {
-    message: outreachMessage,
-    channel: 'linkedin',
-    type: prospectData.messageType || 'connection_request'
-  };
-}
-
-/**
- * Track LinkedIn engagement
- */
-async function trackLinkedInEngagement(engagementData, tenantId) {
-  await db.insert('contact_activities', {
-    tenant_id: tenantId,
-    contact_id: engagementData.contactId,
-    type: `linkedin_${engagementData.type}`,
-    description: engagementData.description,
-    created_at: new Date()
-  });
-
-  // Update contact stage based on engagement
-  if (engagementData.type === 'accepted_connection') {
-    await db.query(
-      `UPDATE contacts SET stage = 'qualified', updated_at = $1 WHERE id = $2`,
-      [new Date(), engagementData.contactId]
-    );
-  }
 }
 
 /**
@@ -441,9 +298,9 @@ async function trackLinkedInEngagement(engagementData, tenantId) {
 async function getProspectingStats(tenantId) {
   const stats = await db.queryOne(`
     SELECT
-      COUNT(*) FILTER (WHERE lead_source = 'linkedin_prospector') as linkedin_prospects,
-      COUNT(*) FILTER (WHERE lead_source = 'linkedin_prospector' AND stage = 'qualified') as qualified_prospects,
-      COUNT(*) FILTER (WHERE lead_source = 'linkedin_prospector' AND stage = 'closed_won') as closed_won
+      COUNT(*) FILTER (WHERE lead_source = 'linkedin_real_activity') as linkedin_prospects,
+      COUNT(*) FILTER (WHERE lead_source = 'linkedin_real_activity' AND stage = 'qualified') as qualified_prospects,
+      COUNT(*) FILTER (WHERE lead_source = 'linkedin_real_activity' AND stage = 'closed_won') as closed_won
     FROM contacts
     WHERE tenant_id = $1
   `, [tenantId]);

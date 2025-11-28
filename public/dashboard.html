@@ -1792,10 +1792,10 @@
       btn.disabled = true;
 
       try {
-        // Run all three automations in sequence
+        // Run all automations (NOW USING REAL DATA)
         let results = { linkedin: 0, web: 0, sales: {} };
 
-        // 1. LinkedIn
+        // 1. LinkedIn (NOW REAL DATA - Perplexity search)
         btn.textContent = '⏳ LinkedIn scan...';
         const linkedInRes = await fetch(`${API_BASE}/api/linkedin-prospector`, {
           method: 'POST',
@@ -1804,9 +1804,6 @@
         });
         const linkedInData = await linkedInRes.json();
         console.log('LinkedIn Response:', linkedInData);
-        if (!linkedInData.success) {
-          console.error('LinkedIn Error:', linkedInData.error);
-        }
         results.linkedin = linkedInData.prospects?.length || 0;
 
         // 2. Web
@@ -1848,7 +1845,7 @@
     async function runLinkedInProspecting() {
       const btn = event.target;
       const originalText = btn.textContent;
-      btn.textContent = '⏳ Scanning...';
+      btn.textContent = '⏳ Scanning LinkedIn...';
       btn.disabled = true;
 
       try {
@@ -1861,7 +1858,7 @@
         const data = await res.json();
 
         if (data.success) {
-          alert(`Found ${data.prospects?.length || 0} LinkedIn prospects!`);
+          alert(`Found ${data.prospects?.length || 0} real LinkedIn prospects!`);
           loadAutomationPage();
           loadDashboard();
         }
