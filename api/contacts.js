@@ -43,7 +43,8 @@ module.exports = async (req, res) => {
         params.push(stage);
       }
 
-      query += ' ORDER BY updated_at DESC LIMIT $' + (params.length + 1);
+      const limitParamIndex = params.length + 1;
+      query += ` ORDER BY updated_at DESC LIMIT $${limitParamIndex}`;
       params.push(parseInt(limit));
 
       const contacts = await db.queryAll(query, params);

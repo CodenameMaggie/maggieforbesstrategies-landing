@@ -1188,7 +1188,7 @@
       document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
       document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
       document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
-      document.getElementById(`page-${page}`).classList.add('active');
+      document.getElementById(`page-${page}`)?.classList.add('active');
 
       if (page === 'pipeline') loadPipeline();
       if (page === 'contacts') loadContacts();
