@@ -141,7 +141,8 @@ async function findRealLinkedInProspects(criteria, tenantId) {
 
   try {
     // Use Perplexity SEARCH API (not chat) for real web search
-    const searchQuery = `site:linkedin.com/posts OR site:linkedin.com/pulse CEOs Founders executives discuss scaling challenges operational efficiency strategic planning growth bottlenecks last 30 days`;
+    // Search for LinkedIn posts about business challenges
+    const searchQuery = `LinkedIn posts CEOs Founders discuss scaling challenges operational efficiency growth`;
 
     const perplexityResponse = await fetch('https://api.perplexity.ai/search', {
       method: 'POST',
@@ -151,7 +152,8 @@ async function findRealLinkedInProspects(criteria, tenantId) {
       },
       body: JSON.stringify({
         query: searchQuery,
-        search_recency_filter: 'month'
+        search_recency_filter: 'month',
+        search_domain_filter: ['linkedin.com']  // Filter to LinkedIn domain only
       })
     });
 
