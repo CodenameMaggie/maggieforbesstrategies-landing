@@ -1769,20 +1769,10 @@
       btn.disabled = true;
 
       try {
-        // Run all automations (NOW USING REAL DATA)
-        let results = { linkedin: 0, web: 0, sales: {} };
+        // Run all automations
+        let results = { web: 0, sales: {} };
 
-        // 1. LinkedIn (NOW REAL DATA - Perplexity search)
-        btn.textContent = '⏳ LinkedIn scan...';
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'find_prospects', data: {} })
-        });
-        const linkedInData = await linkedInRes.json();
-        console.log('LinkedIn Response:', linkedInData);
-        results.linkedin = linkedInData.prospects?.length || 0;
-
-        // 2. Web
+        // 1. Web Prospecting
         btn.textContent = '⏳ Web scan...';
         const webRes = await fetch(`${API_BASE}/api/web-prospector`, {
           method: 'POST',
@@ -1796,7 +1786,7 @@
         }
         results.web = webData.prospects?.length || 0;
 
-        // 3. Sales Automation
+        // 2. Sales Automation
         btn.textContent = '⏳ Sales automation...';
         const salesRes = await fetch(`${API_BASE}/api/sales-automation`, {
           method: 'POST',
@@ -1805,7 +1795,7 @@
         const salesData = await salesRes.json();
         results.sales = salesData.results || {};
 
-        alert(`Automation Complete!\n\n✅ LinkedIn: ${results.linkedin} prospects\n✅ Web: ${results.web} prospects\n✅ Qualified: ${results.sales?.leadsQualified || 0}\n✅ Follow-ups: ${results.sales?.followUpsSent || 0}`);
+        alert(`Automation Complete!\n\n✅ Web: ${results.web} prospects\n✅ Qualified: ${results.sales?.leadsQualified || 0}\n✅ Follow-ups: ${results.sales?.followUpsSent || 0}`);
 
         loadAutomationPage();
         loadDashboard();
