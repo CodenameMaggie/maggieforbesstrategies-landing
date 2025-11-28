@@ -15,7 +15,7 @@ const perplexity = new OpenAI({
   baseURL: 'https://api.perplexity.ai',
 });
 
-// AI provider fallback - tries Perplexity first (main), then OpenAI, then Claude
+// AI provider fallback
 async function callAIWithFallback(prompt, maxTokens = 2000) {
   const providers = [
     {
@@ -61,20 +61,13 @@ async function callAIWithFallback(prompt, maxTokens = 2000) {
       return result;
     } catch (error) {
       console.error(`[AI] ✗ ${provider.name} failed:`, error.message);
-      // Continue to next provider
     }
   }
 
   throw new Error('All AI providers failed');
 }
 
-/**
- * LINKEDIN PROSPECTING - REAL DATA ONLY
- * Uses Perplexity to search for LinkedIn posts where people discuss growth challenges
- */
-
 module.exports = async (req, res) => {
-  // CORS headers
   const allowedOrigins = [
     process.env.NEXT_PUBLIC_APP_URL,
     'https://maggieforbesstrategies.com',
@@ -129,180 +122,125 @@ module.exports = async (req, res) => {
   }
 };
 
-/**
- * Find REAL LinkedIn prospects using Perplexity web search
- * Searches for actual LinkedIn posts/articles about growth challenges
- */
 async function findRealLinkedInProspects(criteria, tenantId) {
-  console.log('[LinkedIn Prospector] Searching for REAL LinkedIn activity...');
+  console.log('[LinkedIn Prospector] Searching with Sonar + Citations...');
 
   let prospects = [];
-  let debugInfo = { perplexityResponse: null, validationFailed: null, error: null };
+  let debugInfo = { response: null, citations: null, linkedInCitations: null, error: null };
 
   try {
-    // Use Perplexity SEARCH API (not chat) for real web search
-    // Search for LinkedIn posts about business challenges
-    const searchQuery = `LinkedIn posts CEOs Founders discuss scaling challenges operational efficiency growth`;
-
-    const perplexityResponse = await fetch('https://api.perplexity.ai/search', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        query: searchQuery,
-        search_recency_filter: 'month',
-        search_domain_filter: ['linkedin.com']  // Filter to LinkedIn domain only
-      })
+    // Use Sonar with return_citations for REAL web search
+    const perplexityResponse = await perplexity.chat.completions.create({
+      model: 'sonar',
+      messages: [{
+        role: 'user',
+        content: `Find 5 LinkedIn posts from the last month where CEOs or Founders discuss scaling challenges, operational efficiency, or business growth. Provide author names, titles, companies, and what they discussed.`
+      }],
+      return_citations: true,
+      search_recency_filter: 'month'
     });
 
-    if (!perplexityResponse.ok) {
-      throw new Error(`Perplexity Search API error: ${perplexityResponse.status} ${perplexityResponse.statusText}`);
-    }
+    const responseText = perplexityResponse.choices[0].message.content;
+    const citations = perplexityResponse.citations || [];
 
-    const searchData = await perplexityResponse.json();
+    debugInfo.response = responseText.substring(0, 300);
+    debugInfo.citations = citations.length;
 
-    // Search API returns: { results: [{url, title, snippet, ...}], ... }
-    const searchResults = searchData.results || [];
-    debugInfo.perplexityResponse = JSON.stringify(searchData).substring(0, 500);
+    console.log('[LinkedIn Prospector] Response:', responseText);
+    console.log('[LinkedIn Prospector] Citations:', JSON.stringify(citations));
 
-    console.log('[LinkedIn Prospector] ===== PERPLEXITY SEARCH RESULTS =====');
-    console.log(JSON.stringify(searchData, null, 2));
-    console.log('[LinkedIn Prospector] ===== END SEARCH RESULTS =====');
-
-    // Validate we got real search results
-    if (!searchResults || searchResults.length === 0) {
-      debugInfo.validationFailed = 'Perplexity Search returned no results';
-      console.error('[LinkedIn Prospector] Perplexity Search returned no results');
+    if (!citations || citations.length === 0) {
+      debugInfo.error = 'No citations returned';
       prospects._debug = debugInfo;
       return prospects;
     }
 
-    // Filter for LinkedIn URLs only
-    const linkedInResults = searchResults.filter(r =>
-      r.url && r.url.includes('linkedin.com')
+    const linkedInCitations = citations.filter(url =>
+      url && url.includes('linkedin.com')
     );
 
-    if (linkedInResults.length === 0) {
-      debugInfo.validationFailed = 'No LinkedIn URLs in search results';
-      console.error('[LinkedIn Prospector] No LinkedIn URLs in search results');
+    debugInfo.linkedInCitations = linkedInCitations.length;
+
+    if (linkedInCitations.length === 0) {
+      debugInfo.error = 'No LinkedIn URLs in citations';
       prospects._debug = debugInfo;
       return prospects;
     }
 
-    // Extract structured data using AI
-    const resultsText = linkedInResults.map(r =>
-      `URL: ${r.url}\nTitle: ${r.title || 'N/A'}\nSnippet: ${r.snippet || 'N/A'}\n`
-    ).join('\n---\n');
+    // Extract structured data
+    const extractionPrompt = `From this response, extract prospects as JSON array:
 
-    const extractionResponse = await callAIWithFallback(`From these REAL LinkedIn search results, extract prospect information:
+${responseText}
 
-${resultsText}
+LinkedIn URLs: ${linkedInCitations.join(', ')}
 
-For each result, try to extract:
-{
-  "contactPerson": "Author's name if mentioned",
-  "title": "Author's title/role if mentioned",
-  "companyName": "Company name if mentioned",
-  "challenge": "What challenge/topic is discussed",
-  "postUrl": "The LinkedIn URL",
-  "postDate": "Date if mentioned",
-  "approachAngle": "How to help based on the topic"
-}
+Format:
+[{
+  "contactPerson": "Name",
+  "title": "Title",
+  "companyName": "Company",
+  "challenge": "Challenge",
+  "postUrl": "LinkedIn URL",
+  "approachAngle": "How to help"
+}]
 
-Return ONLY a JSON array. If author name is not clear, use "LinkedIn Professional" as contactPerson.`, 2000);
+Return ONLY the JSON array.`;
 
-    // Parse and validate
+    const extractionResponse = await callAIWithFallback(extractionPrompt, 2000);
+
     const jsonMatch = extractionResponse.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
       const rawProspects = JSON.parse(jsonMatch[0]);
 
-      // Validation - URLs are already real from Perplexity Search API
       prospects = rawProspects.filter(p => {
-        const name = p.contactPerson || '';
-        const url = p.postUrl || '';
-
-        // Must have LinkedIn URL
-        if (!url.includes('linkedin.com')) {
-          console.log(`[LinkedIn Prospector] ❌ Rejected - no LinkedIn URL`);
-          return false;
-        }
-
-        // Must have contact person
-        if (!name || name.length < 3) {
-          console.log(`[LinkedIn Prospector] ❌ Rejected - no contact person`);
-          return false;
-        }
-
-        console.log(`[LinkedIn Prospector] ✓ VALIDATED: ${name}`);
-        return true;
+        return p.contactPerson && p.contactPerson.length > 2 &&
+               p.postUrl && p.postUrl.includes('linkedin.com');
       });
 
-      console.log(`[LinkedIn Prospector] Found ${rawProspects.length} total, ${prospects.length} passed validation`);
+      console.log(`[LinkedIn Prospector] Found ${prospects.length} prospects`);
+    }
+
+    // Save to database
+    for (const prospect of prospects) {
+      const existingContact = await db.queryOne(
+        'SELECT id FROM contacts WHERE full_name ILIKE $1 AND tenant_id = $2',
+        [prospect.contactPerson, tenantId]
+      );
+
+      if (!existingContact) {
+        const contact = await db.insert('contacts', {
+          tenant_id: tenantId,
+          full_name: prospect.contactPerson,
+          company: prospect.companyName || null,
+          stage: 'new',
+          lead_source: 'linkedin_real_activity',
+          notes: `💼 LinkedIn Activity\n\n${prospect.title || ''}\nChallenge: ${prospect.challenge}\n\nPost: ${prospect.postUrl}`,
+          client_type: 'linkedin_warm_lead',
+          created_at: new Date(),
+          updated_at: new Date()
+        });
+
+        await db.insert('contact_activities', {
+          tenant_id: tenantId,
+          contact_id: contact.id,
+          type: 'linkedin_activity_detected',
+          description: `Post: ${prospect.postUrl}\n\nChallenge: ${prospect.challenge}\n\nApproach: ${prospect.approachAngle}`,
+          created_at: new Date()
+        });
+
+        console.log(`[LinkedIn Prospector] ✓ Saved: ${prospect.contactPerson}`);
+      }
     }
 
   } catch (error) {
     debugInfo.error = error.message;
-    console.error('[LinkedIn Prospector] Search error:', error.message);
-    prospects._debug = debugInfo;
-    return prospects;
+    console.error('[LinkedIn Prospector] Error:', error.message);
   }
 
-  // Save validated prospects to database
-  for (const prospect of prospects) {
-    const contactPerson = prospect.contactPerson || prospect.name || null;
-    const companyName = prospect.companyName || prospect.company || 'Not specified';
-    const title = prospect.title || prospect.jobTitle || 'Not specified';
-    const challenge = prospect.challenge || prospect.recentSignal || 'LinkedIn activity';
-    const postUrl = prospect.postUrl || prospect.url || '';
-    const approachAngle = prospect.approachAngle || prospect.approach || '';
-
-    if (!contactPerson) {
-      console.log('[LinkedIn Prospector] Skipping - no contact person');
-      continue;
-    }
-
-    // Check for existing
-    const existingContact = await db.queryOne(
-      'SELECT id FROM contacts WHERE full_name ILIKE $1 AND tenant_id = $2',
-      [contactPerson, tenantId]
-    );
-
-    if (!existingContact) {
-      const contact = await db.insert('contacts', {
-        tenant_id: tenantId,
-        full_name: contactPerson,
-        company: companyName !== 'Not specified' ? companyName : null,
-        stage: 'new',
-        lead_source: 'linkedin_real_activity',
-        notes: `💼 REAL LinkedIn Activity\n\n${title}\nChallenge: ${challenge}\n\nLinkedIn Post: ${postUrl}`,
-        client_type: 'linkedin_warm_lead',
-        created_at: new Date(),
-        updated_at: new Date()
-      });
-
-      // Log activity
-      await db.insert('contact_activities', {
-        tenant_id: tenantId,
-        contact_id: contact.id,
-        type: 'linkedin_activity_detected',
-        description: `LinkedIn Post: ${postUrl}\n\nChallenge Discussed: ${challenge}\n\nApproach: ${approachAngle}`,
-        created_at: new Date()
-      });
-
-      console.log(`[LinkedIn Prospector] ✓ Saved: ${contactPerson} (${companyName})`);
-    } else {
-      console.log(`[LinkedIn Prospector] Skipping duplicate: ${contactPerson}`);
-    }
-  }
-
+  prospects._debug = debugInfo;
   return prospects;
 }
 
-/**
- * Get prospecting statistics
- */
 async function getProspectingStats(tenantId) {
   const stats = await db.queryOne(`
     SELECT
