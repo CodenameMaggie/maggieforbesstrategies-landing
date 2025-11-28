@@ -140,103 +140,100 @@ async function findRealLinkedInProspects(criteria, tenantId) {
   let debugInfo = { perplexityResponse: null, validationFailed: null, error: null };
 
   try {
-    // Use Perplexity to search LinkedIn for real people discussing challenges
-    const perplexityResponse = await perplexity.chat.completions.create({
-      model: 'sonar',
-      messages: [{
-        role: 'user',
-        content: `Search LinkedIn (site:linkedin.com/posts OR site:linkedin.com/pulse) for posts from the last 30 days where CEOs, Founders, or executives discuss:
+    // Use Perplexity SEARCH API (not chat) for real web search
+    const searchQuery = `site:linkedin.com/posts OR site:linkedin.com/pulse CEOs Founders executives discuss scaling challenges operational efficiency strategic planning growth bottlenecks last 30 days`;
 
-- Scaling challenges
-- Operational efficiency problems
-- Strategic planning needs
-- Growth bottlenecks
-- Team/org structure issues
-
-Find 5 REAL posts with:
-- Author's name and title
-- Their company
-- What challenge they're discussing
-- Direct LinkedIn URL to the post
-- Date of post
-
-ONLY return real, recent posts you can verify. Include the actual LinkedIn URLs.`
-      }]
+    const perplexityResponse = await fetch('https://api.perplexity.ai/search', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        query: searchQuery,
+        search_recency_filter: 'month'
+      })
     });
 
-    const searchResults = perplexityResponse.choices[0].message.content;
-    debugInfo.perplexityResponse = searchResults.substring(0, 500); // First 500 chars for debugging
+    if (!perplexityResponse.ok) {
+      throw new Error(`Perplexity Search API error: ${perplexityResponse.status} ${perplexityResponse.statusText}`);
+    }
+
+    const searchData = await perplexityResponse.json();
+
+    // Search API returns: { results: [{url, title, snippet, ...}], ... }
+    const searchResults = searchData.results || [];
+    debugInfo.perplexityResponse = JSON.stringify(searchData).substring(0, 500);
 
     console.log('[LinkedIn Prospector] ===== PERPLEXITY SEARCH RESULTS =====');
-    console.log(searchResults);
+    console.log(JSON.stringify(searchData, null, 2));
     console.log('[LinkedIn Prospector] ===== END SEARCH RESULTS =====');
 
-    // Validate we got real results
-    if (!searchResults || searchResults.length < 100 ||
-        !searchResults.includes('linkedin.com') ||
-        searchResults.toLowerCase().includes('i cannot') ||
-        searchResults.toLowerCase().includes('i don\'t have access')) {
-      debugInfo.validationFailed = 'Perplexity did not return real LinkedIn results';
-      console.error('[LinkedIn Prospector] Perplexity did not return real LinkedIn results');
+    // Validate we got real search results
+    if (!searchResults || searchResults.length === 0) {
+      debugInfo.validationFailed = 'Perplexity Search returned no results';
+      console.error('[LinkedIn Prospector] Perplexity Search returned no results');
       prospects._debug = debugInfo;
       return prospects;
     }
 
-    // Extract structured data - BE STRICT
-    const extractionResponse = await callAIWithFallback(`From these REAL LinkedIn search results, extract ONLY posts that were actually found:
+    // Filter for LinkedIn URLs only
+    const linkedInResults = searchResults.filter(r =>
+      r.url && r.url.includes('linkedin.com')
+    );
 
-${searchResults}
+    if (linkedInResults.length === 0) {
+      debugInfo.validationFailed = 'No LinkedIn URLs in search results';
+      console.error('[LinkedIn Prospector] No LinkedIn URLs in search results');
+      prospects._debug = debugInfo;
+      return prospects;
+    }
 
-CRITICAL RULES:
-- ONLY extract posts explicitly mentioned in the search results
-- Each post MUST have a real LinkedIn URL
-- ONLY include posts with actual dates from 2024/2025
-- Skip any hypothetical or example posts
+    // Extract structured data using AI
+    const resultsText = linkedInResults.map(r =>
+      `URL: ${r.url}\nTitle: ${r.title || 'N/A'}\nSnippet: ${r.snippet || 'N/A'}\n`
+    ).join('\n---\n');
 
-For each REAL post, return JSON with EXACT field names:
+    const extractionResponse = await callAIWithFallback(`From these REAL LinkedIn search results, extract prospect information:
+
+${resultsText}
+
+For each result, try to extract:
 {
-  "contactPerson": "Author's full name",
-  "title": "Author's title",
-  "companyName": "Company name",
-  "challenge": "What challenge they discussed",
-  "postUrl": "Direct LinkedIn URL",
-  "postDate": "Date of post",
-  "approachAngle": "How to help with their specific challenge"
+  "contactPerson": "Author's name if mentioned",
+  "title": "Author's title/role if mentioned",
+  "companyName": "Company name if mentioned",
+  "challenge": "What challenge/topic is discussed",
+  "postUrl": "The LinkedIn URL",
+  "postDate": "Date if mentioned",
+  "approachAngle": "How to help based on the topic"
 }
 
-Return ONLY JSON array of real posts found.`, 2000);
+Return ONLY a JSON array. If author name is not clear, use "LinkedIn Professional" as contactPerson.`, 2000);
 
     // Parse and validate
     const jsonMatch = extractionResponse.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
       const rawProspects = JSON.parse(jsonMatch[0]);
 
-      // STRICT validation
+      // Validation - URLs are already real from Perplexity Search API
       prospects = rawProspects.filter(p => {
         const name = p.contactPerson || '';
-        const company = p.companyName || '';
         const url = p.postUrl || '';
-        const date = p.postDate || '';
 
         // Must have LinkedIn URL
         if (!url.includes('linkedin.com')) {
-          console.log(`[LinkedIn Prospector] ❌ Rejected - no LinkedIn URL: ${name}`);
+          console.log(`[LinkedIn Prospector] ❌ Rejected - no LinkedIn URL`);
           return false;
         }
 
-        // Must have date
-        if (!date.match(/202[4-5]|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/)) {
-          console.log(`[LinkedIn Prospector] ❌ Rejected - no date: ${name}`);
+        // Must have contact person
+        if (!name || name.length < 3) {
+          console.log(`[LinkedIn Prospector] ❌ Rejected - no contact person`);
           return false;
         }
 
-        // Must have real person name (not generic)
-        if (!name || name.length < 5) {
-          console.log(`[LinkedIn Prospector] ❌ Rejected - invalid name: ${name}`);
-          return false;
-        }
-
-        console.log(`[LinkedIn Prospector] ✓ VALIDATED: ${name} at ${company}`);
+        console.log(`[LinkedIn Prospector] ✓ VALIDATED: ${name}`);
         return true;
       });
 
