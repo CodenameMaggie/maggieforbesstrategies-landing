@@ -6,9 +6,13 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false // Required for Supabase
   },
-  max: 20, // Maximum number of clients in the pool
-  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 10000, // Return error after 10 seconds if connection fails
+  max: 10, // Reduced for serverless (was 20)
+  idleTimeoutMillis: 10000, // Close idle clients faster (was 30000)
+  connectionTimeoutMillis: 20000, // Increased timeout for slow connections (was 10000)
+  statement_timeout: 20000, // SQL query timeout
+  query_timeout: 20000, // Query execution timeout
+  keepAlive: true, // Keep connections alive
+  keepAliveInitialDelayMillis: 10000
 });
 
 // Handle pool errors
@@ -144,20 +148,40 @@ const initDb = async () => {
   }
 };
 
-// Query helper with automatic connection and error handling
-const query = async (text, params) => {
-  const client = await pool.connect();
-  try {
-    const result = await client.query(text, params);
-    return result;
-  } catch (error) {
-    console.error('[DB Query Error]:', error.message);
-    console.error('[DB Query]:', text);
-    console.error('[DB Params]:', params);
-    throw error;
-  } finally {
-    client.release();
+// Query helper with automatic connection, retry logic, and error handling
+const query = async (text, params, retries = 2) => {
+  let lastError;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    let client;
+    try {
+      client = await pool.connect();
+      const result = await client.query(text, params);
+      client.release();
+      return result;
+    } catch (error) {
+      if (client) client.release();
+
+      lastError = error;
+      const isRetryable = error.message.includes('timeout') ||
+                         error.message.includes('Connection terminated') ||
+                         error.code === 'ECONNRESET' ||
+                         error.code === '57P01';
+
+      if (attempt < retries && isRetryable) {
+        console.log(`[DB] Retry ${attempt + 1}/${retries} after error: ${error.message}`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1))); // Exponential backoff
+        continue;
+      }
+
+      console.error('[DB Query Error]:', error.message);
+      console.error('[DB Query]:', text.substring(0, 200));
+      console.error('[DB Params]:', params);
+      throw error;
+    }
   }
+
+  throw lastError;
 };
 
 // Get single row
