@@ -23,7 +23,7 @@ async function callAIWithFallback(prompt, maxTokens = 2000) {
       name: 'Perplexity',
       call: async () => {
         const response = await perplexity.chat.completions.create({
-          model: 'llama-3.1-sonar-small-128k-online',
+          model: 'sonar-pro',
           max_tokens: maxTokens,
           messages: [{ role: 'user', content: prompt }]
         });
@@ -215,7 +215,7 @@ async function scanWebForProspects(criteria, tenantId) {
   try {
     // Search for HIGH-VALUE buying signals using Sonar ONLINE model
     const perplexityResponse = await perplexity.chat.completions.create({
-      model: 'llama-3.1-sonar-small-128k-online',
+      model: 'sonar-pro',
       messages: [{
         role: 'user',
         content: `Find companies in the last 30 days with high-value buying signals:
