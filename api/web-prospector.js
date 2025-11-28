@@ -240,42 +240,59 @@ Find 5 real companies with verified signals ($5M+ revenue).`
     });
 
     const searchResults = perplexityResponse.choices[0].message.content;
+    const citations = perplexityResponse.citations || [];
+
     console.log('[Web Prospector] ===== PERPLEXITY SEARCH RESULTS =====');
     console.log(searchResults);
+    console.log('[Web Prospector] Citations:', citations.length);
     console.log('[Web Prospector] ===== END SEARCH RESULTS =====');
 
     // CRITICAL: Only proceed if Perplexity found actual companies
     if (!searchResults || searchResults.length < 100 ||
-        !searchResults.includes('http') ||
         searchResults.toLowerCase().includes('i cannot') ||
-        searchResults.toLowerCase().includes('i don\'t have access')) {
+        searchResults.toLowerCase().includes('i don\'t have access') ||
+        searchResults.toLowerCase().includes('i can\'t browse')) {
       console.error('[Web Prospector] Perplexity did not return real web search results');
-      console.error('[Web Prospector] Response was too short or contained no URLs');
+      console.error('[Web Prospector] Response was invalid or too short');
+      return [];
+    }
+
+    // Check if we got real companies (look for company indicators)
+    const hasCompanies = searchResults.includes('CEO') ||
+                        searchResults.includes('acquisition') ||
+                        searchResults.includes('funding') ||
+                        searchResults.includes('Series') ||
+                        citations.length > 0;
+
+    if (!hasCompanies) {
+      console.error('[Web Prospector] No company data found in search results');
       return [];
     }
 
     // Extract into structured format - BE STRICT ABOUT REAL DATA
+    const citationsText = citations.length > 0 ? `\n\nCitations:\n${citations.map((c, i) => `[${i+1}] ${c}`).join('\n')}` : '';
+
     const extractionResponse = await callAIWithFallback(`From these REAL web search results, extract ONLY companies that were actually found in the search:
 
-${searchResults}
+${searchResults}${citationsText}
 
 CRITICAL RULES:
 - ONLY extract companies explicitly mentioned in the search results above
 - ONLY include companies with actual dates, funding amounts, or specific signals
 - If a company name appears with "example" or hypothetical language, SKIP IT
-- Each company MUST have a real source URL from the search results
+- Use citation URLs if available, otherwise use "Perplexity Search" as source
 
 For each REAL company with a verified buying signal, return JSON with EXACT field names:
 {
   "companyName": "exact company name",
   "contactPerson": "CEO/Founder name",
-  "recentSignal": "specific signal with date (e.g., 'Raised $15M Series B on Nov 20, 2024')",
-  "whereFound": "source publication and URL",
+  "recentSignal": "specific signal with date and details",
+  "whereFound": "Web Search via Perplexity",
   "intentScore": 85,
   "approachAngle": "how to position consulting based on their specific signal",
   "industry": "industry",
   "companySize": "employee count or revenue if mentioned",
-  "postUrl": "source URL for verification"
+  "postUrl": "citation URL if available, otherwise 'https://www.perplexity.ai'"
 }
 
 CRITICAL: Only include companies that are $5M+ revenue, have verified signals from last 30 days, and represent real strategic consulting opportunities.
@@ -303,15 +320,15 @@ Return ONLY JSON array.`, 2000);
           return false;
         }
 
-        // Require real URLs
-        if (!source.startsWith('http')) {
-          console.log(`[Web Prospector] ❌ Rejected - no URL: ${companyName}`);
+        // Require source (can be URL or "Perplexity" or "Web Search")
+        if (!source || source.trim() === '') {
+          console.log(`[Web Prospector] ❌ Rejected - no source: ${companyName}`);
           return false;
         }
 
-        // Require specific dates in signals
-        if (!signal.match(/202[4-5]|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/)) {
-          console.log(`[Web Prospector] ❌ Rejected - no date: ${companyName}`);
+        // Require specific dates or recent time indicators in signals
+        if (!signal.match(/202[4-5]|2025|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|last 30 days|recently/i)) {
+          console.log(`[Web Prospector] ❌ Rejected - no recent date: ${companyName}`);
           return false;
         }
 
