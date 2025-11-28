@@ -1237,6 +1237,7 @@
         allContacts = data.contacts || [];
 
         const container = document.getElementById('pipeline-stages');
+        if (!container) return;
         container.innerHTML = stages.map(stage => {
           const stageContacts = allContacts.filter(c => (c.stage || 'new') === stage.id);
           return `
@@ -1307,6 +1308,7 @@
     // Contacts
     async function loadContacts() {
       const tbody = document.getElementById('contacts-table');
+      if (!tbody) return;
       try {
         const res = await fetch(`${API_BASE}/api/contacts`);
         const data = await res.json();
@@ -1383,6 +1385,7 @@
     // Tasks
     function renderTasksList(tasks, containerId) {
       const container = document.getElementById(containerId);
+      if (!container) return;
       if (!tasks || tasks.length === 0) {
         container.innerHTML = '<div class="empty-state">No pending tasks</div>';
         return;
@@ -1458,6 +1461,7 @@
 
     function addMessage(role, content, containerId = 'chat-messages') {
       const container = document.getElementById(containerId);
+      if (!container) return;
       const div = document.createElement('div');
       div.className = `message ${role}`;
       // For user messages, escape for XSS protection
@@ -1480,6 +1484,7 @@
 
     async function sendMessage() {
       const input = document.getElementById('chat-input');
+      if (!input) return;
       const message = input.value.trim();
       if (!message) return;
 
@@ -1487,6 +1492,7 @@
       addMessage('user', message);
 
       const btn = document.getElementById('send-btn');
+      if (!btn) return;
       btn.disabled = true;
 
       try {
@@ -1513,6 +1519,7 @@
 
     async function sendMessageFull() {
       const input = document.getElementById('chat-input-full');
+      if (!input) return;
       const message = input.value.trim();
       if (!message) return;
 
@@ -1520,6 +1527,7 @@
       addMessage('user', message, 'chat-messages-full');
 
       const btn = document.getElementById('send-btn-full');
+      if (!btn) return;
       btn.disabled = true;
 
       try {
@@ -1576,12 +1584,24 @@
     }
 
     async function saveContact() {
-      const name = document.getElementById('contact-name').value.trim();
-      const email = document.getElementById('contact-email').value.trim();
-      const phone = document.getElementById('contact-phone').value.trim();
-      const company = document.getElementById('contact-company').value.trim();
-      const stage = document.getElementById('contact-stage').value;
-      const notes = document.getElementById('contact-notes').value.trim();
+      const nameEl = document.getElementById('contact-name');
+      const emailEl = document.getElementById('contact-email');
+      const phoneEl = document.getElementById('contact-phone');
+      const companyEl = document.getElementById('contact-company');
+      const stageEl = document.getElementById('contact-stage');
+      const notesEl = document.getElementById('contact-notes');
+
+      if (!nameEl || !emailEl) {
+        console.error('Form elements not found');
+        return;
+      }
+
+      const name = nameEl.value.trim();
+      const email = emailEl.value.trim();
+      const phone = phoneEl?.value.trim() || '';
+      const company = companyEl?.value.trim() || '';
+      const stage = stageEl?.value || 'new';
+      const notes = notesEl?.value.trim() || '';
 
       if (!name || !email) {
         alert('Please enter name and email');
@@ -1611,9 +1631,18 @@
     }
 
     async function saveTask() {
-      const title = document.getElementById('task-title').value.trim();
-      const priority = document.getElementById('task-priority').value;
-      const due = document.getElementById('task-due').value.trim();
+      const titleEl = document.getElementById('task-title');
+      const priorityEl = document.getElementById('task-priority');
+      const dueEl = document.getElementById('task-due');
+
+      if (!titleEl) {
+        console.error('Task form elements not found');
+        return;
+      }
+
+      const title = titleEl.value.trim();
+      const priority = priorityEl?.value || 'medium';
+      const due = dueEl?.value.trim() || '';
 
       if (!title) {
         alert('Please enter a task title');
@@ -1744,6 +1773,7 @@
         ).slice(0, 10);
 
         const container = document.getElementById('automation-activity');
+        if (!container) return;
 
         if (automationContacts.length === 0) {
           container.innerHTML = '<div class="empty-state">No automation activity yet. Run a scan to get started!</div>';
