@@ -39,25 +39,44 @@ module.exports = async (req, res) => {
           .map(s => s.trim())
           .filter(s => s && !s.startsWith('--') && !s.match(/^\/\*/));
 
+        let successCount = 0;
+        let errorCount = 0;
+        let lastError = null;
+
         for (const statement of statements) {
           if (statement) {
-            await db.query(statement);
+            try {
+              await db.query(statement);
+              successCount++;
+            } catch (stmtError) {
+              // Ignore "already exists" errors - those are fine
+              if (stmtError.message.includes('already exists')) {
+                console.log(`[Migrations] ⚠️  Skipping (already exists): ${statement.substring(0, 50)}...`);
+                successCount++; // Count as success
+              } else {
+                console.error(`[Migrations] Error on statement: ${statement.substring(0, 100)}...`);
+                console.error(`[Migrations] Error:`, stmtError.message);
+                errorCount++;
+                lastError = stmtError;
+              }
+            }
           }
         }
 
-        console.log(`[Migrations] ✅ ${file} completed`);
-        results.push({ file, status: 'success' });
+        if (errorCount === 0) {
+          console.log(`[Migrations] ✅ ${file} completed successfully (${successCount} statements)`);
+          results.push({ file, status: 'success', statements: successCount });
+        } else if (successCount > 0) {
+          console.log(`[Migrations] ⚠️  ${file} partially completed (${successCount} success, ${errorCount} errors)`);
+          results.push({ file, status: 'partial', success: successCount, errors: errorCount, lastError: lastError?.message });
+        } else {
+          console.error(`[Migrations] ❌ ${file} failed completely`);
+          results.push({ file, status: 'failed', error: lastError?.message });
+        }
 
       } catch (error) {
-        // Some errors are okay (table already exists, etc)
-        if (error.message.includes('already exists') ||
-            error.message.includes('does not exist')) {
-          console.log(`[Migrations] ⚠️  ${file} - ${error.message} (continuing...)`);
-          results.push({ file, status: 'skipped', reason: error.message });
-        } else {
-          console.error(`[Migrations] ❌ ${file} failed:`, error);
-          results.push({ file, status: 'failed', error: error.message });
-        }
+        console.error(`[Migrations] ❌ ${file} failed:`, error);
+        results.push({ file, status: 'failed', error: error.message });
       }
     }
 
