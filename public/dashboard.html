@@ -1760,7 +1760,7 @@
       return date.toLocaleDateString();
     }
 
-    async function runAutomation() {
+    async function runAutomation(event) {
       if (!confirm('Scan for new prospects? (Sales automation runs automatically every 6 hours via cron)')) return;
 
       const btn = event.target;
@@ -1799,7 +1799,7 @@
       }
     }
 
-    async function runWebProspecting() {
+    async function runWebProspecting(event) {
       const btn = event.target;
       const originalText = btn.textContent;
       btn.textContent = '⏳ Scanning...';
@@ -1827,7 +1827,7 @@
       }
     }
 
-    async function runSalesAutomation() {
+    async function runSalesAutomation(event) {
       const btn = event.target;
       const originalText = btn.textContent;
       btn.textContent = '⏳ Running...';
