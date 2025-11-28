@@ -6,13 +6,11 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false // Required for Supabase
   },
-  max: 10, // Reduced for serverless (was 20)
-  idleTimeoutMillis: 10000, // Close idle clients faster (was 30000)
-  connectionTimeoutMillis: 20000, // Increased timeout for slow connections (was 10000)
-  statement_timeout: 20000, // SQL query timeout
-  query_timeout: 20000, // Query execution timeout
-  keepAlive: true, // Keep connections alive
-  keepAliveInitialDelayMillis: 10000
+  max: 2, // Supabase free tier has 3 connection limit, use max 2
+  min: 0, // Don't maintain idle connections
+  idleTimeoutMillis: 1000, // Close idle connections after 1 second
+  connectionTimeoutMillis: 10000,
+  allowExitOnIdle: true // Allow pool to close when idle
 });
 
 // Handle pool errors
