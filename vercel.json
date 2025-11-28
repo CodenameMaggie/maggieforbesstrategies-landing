@@ -8,6 +8,18 @@
     { "source": "/ai-chat", "destination": "/ai-chat-widget.html" },
     { "source": "/ai-assistants", "destination": "/ai-chat-widget.html" }
   ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,DELETE,PATCH,OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, X-Requested-With, X-Cron-Secret, X-Tenant-ID" },
+        { "key": "Access-Control-Expose-Headers", "value": "Content-Range, X-Content-Range" }
+      ]
+    }
+  ],
   "functions": {
     "api/**/*.js": {
       "maxDuration": 30
