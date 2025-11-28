@@ -1779,6 +1779,12 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'scan_web', data: {} })
         });
+
+        if (!webRes.ok) {
+          const errorText = await webRes.text();
+          throw new Error(`Web prospecting failed (${webRes.status}): ${errorText.substring(0, 200)}`);
+        }
+
         const webData = await webRes.json();
         console.log('Web Response:', webData);
         if (!webData.success) {
@@ -1792,6 +1798,12 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
         });
+
+        if (!salesRes.ok) {
+          const errorText = await salesRes.text();
+          throw new Error(`Sales automation failed (${salesRes.status}): ${errorText.substring(0, 200)}`);
+        }
+
         const salesData = await salesRes.json();
         results.sales = salesData.results || {};
 
