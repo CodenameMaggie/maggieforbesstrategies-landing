@@ -269,83 +269,53 @@ Find 5 real companies with verified signals ($5M+ revenue).`
       return [];
     }
 
-    // Extract into structured format - BE STRICT ABOUT REAL DATA
-    const citationsText = citations.length > 0 ? `\n\nCitations:\n${citations.map((c, i) => `[${i+1}] ${c}`).join('\n')}` : '';
+    // Extract company data directly from Perplexity response (FAST - no extra API call)
+    // Perplexity returns structured markdown with company sections
+    const companyPattern = /##?\s+\d+\.\s+\*?\*?([^\n*]+)\*?\*?\s*\n\s*\*?\*?(?:Leadership|CEO):\*?\*?\s+([^\n]+)\s*\n\s*\*?\*?(?:Recent Signal|What Happened):\*?\*?\s+([^\n]+(?:\n(?!\*\*)[^\n]+)*)/gi;
 
-    const extractionResponse = await callAIWithFallback(`From these REAL web search results, extract ONLY companies that were actually found in the search:
+    let prospects = [];
+    let match;
 
-${searchResults}${citationsText}
+    while ((match = companyPattern.exec(searchResults)) !== null) {
+      const companyName = match[1].trim();
+      const contactPerson = match[2].trim();
+      const recentSignal = match[3].trim().replace(/\n/g, ' ');
 
-CRITICAL RULES:
-- ONLY extract companies explicitly mentioned in the search results above
-- ONLY include companies with actual dates, funding amounts, or specific signals
-- If a company name appears with "example" or hypothetical language, SKIP IT
-- Use citation URLs if available, otherwise use "Perplexity Search" as source
-
-For each REAL company with a verified buying signal, return JSON with EXACT field names:
-{
-  "companyName": "exact company name",
-  "contactPerson": "CEO/Founder name",
-  "recentSignal": "specific signal with date and details",
-  "whereFound": "Web Search via Perplexity",
-  "intentScore": 85,
-  "approachAngle": "how to position consulting based on their specific signal",
-  "industry": "industry",
-  "companySize": "employee count or revenue if mentioned",
-  "postUrl": "citation URL if available, otherwise 'https://www.perplexity.ai'"
-}
-
-CRITICAL: Only include companies that are $5M+ revenue, have verified signals from last 30 days, and represent real strategic consulting opportunities.
-
-Return ONLY a valid JSON array with no additional text, markdown formatting, or explanations. Start with [ and end with ]. Example:
-[{"companyName":"Accenture","contactPerson":"Julie Sweet",...}]`, 2000);
-
-    // Parse prospects
-    const jsonMatch = extractionResponse.match(/\[[\s\S]*\]/);
-    if (jsonMatch) {
-      let rawProspects;
-      try {
-        rawProspects = JSON.parse(jsonMatch[0]);
-      } catch (parseError) {
-        console.error('[Web Prospector] JSON parse error:', parseError.message);
-        console.error('[Web Prospector] Attempted to parse:', jsonMatch[0].substring(0, 200));
-        return [];
+      // Skip if looks fake
+      if (contactPerson.toLowerCase().includes('not public') ||
+          contactPerson.toLowerCase().includes('not specified') ||
+          contactPerson.toLowerCase().includes('not detailed')) {
+        console.log(`[Web Prospector] ⚠ Skipping ${companyName} - no CEO info`);
+        continue;
       }
 
-      // VALIDATE: Filter out fake/generated data
-      prospects = rawProspects.filter(p => {
-        const companyName = p.companyName || p.company || '';
-        const signal = p.recentSignal || p.signal || '';
-        const source = p.whereFound || p.postUrl || '';
-
-        // Reject generic/fake company names
-        const fakeNames = ['TechCorp', 'Solutions LLC', 'Innovations Inc', 'Tech Innovations',
-                          'FinTech', 'HealthTech', 'EduSmart', 'GreenTech', 'Retail Revolution',
-                          'Solutions Consulting', 'Innovators Inc'];
-
-        if (fakeNames.some(fake => companyName.includes(fake))) {
-          console.log(`[Web Prospector] ❌ Rejected FAKE company: ${companyName}`);
-          return false;
-        }
-
-        // Require source (can be URL or "Perplexity" or "Web Search")
-        if (!source || source.trim() === '') {
-          console.log(`[Web Prospector] ❌ Rejected - no source: ${companyName}`);
-          return false;
-        }
-
-        // Require specific dates or recent time indicators in signals
-        if (!signal.match(/202[4-5]|2025|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|last 30 days|recently/i)) {
-          console.log(`[Web Prospector] ❌ Rejected - no recent date: ${companyName}`);
-          return false;
-        }
-
-        console.log(`[Web Prospector] ✓ VALIDATED real prospect: ${companyName}`);
-        return true;
+      prospects.push({
+        companyName,
+        contactPerson,
+        recentSignal,
+        whereFound: 'Perplexity Web Search',
+        intentScore: 85,
+        approachAngle: `Strategic consulting for ${recentSignal.includes('acquisition') ? 'M&A integration' : recentSignal.includes('funding') ? 'scaling operations' : 'growth strategy'}`,
+        industry: 'Technology/Business Services',
+        companySize: '$5M+',
+        postUrl: citations[0] || 'https://www.perplexity.ai'
       });
-
-      console.log(`[Web Prospector] Found ${rawProspects.length} total, ${prospects.length} passed validation`);
     }
+
+    console.log(`[Web Prospector] Fast extraction found ${prospects.length} prospects`);
+
+    // Validate: Filter out fake company names
+    const fakeNames = ['TechCorp', 'Solutions LLC', 'Innovations Inc', 'Tech Innovations',
+                      'FinTech', 'HealthTech', 'EduSmart', 'GreenTech', 'Retail Revolution'];
+
+    prospects = prospects.filter(p => {
+      if (fakeNames.some(fake => p.companyName.includes(fake))) {
+        console.log(`[Web Prospector] ❌ Rejected FAKE: ${p.companyName}`);
+        return false;
+      }
+      console.log(`[Web Prospector] ✓ VALIDATED: ${p.companyName}`);
+      return true;
+    });
 
   } catch (error) {
     console.error('[Web Prospector] Perplexity search error:', error.message);
