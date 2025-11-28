@@ -1766,10 +1766,16 @@
         const res = await fetch(`${API_BASE}/api/contacts?limit=100`);
         const data = await res.json();
 
-        // Get prospects from automation
+        // Get prospects from automation (includes web prospector, high-value signals, automation)
         const automationContacts = (data.contacts || []).filter(c =>
-          c.lead_source && (c.lead_source.includes('linkedin') || c.lead_source.includes('web') ||
-          c.lead_source.includes('business_news') || c.lead_source.includes('job'))
+          c.lead_source && (
+            c.lead_source.includes('linkedin') ||
+            c.lead_source.includes('web') ||
+            c.lead_source.includes('business_news') ||
+            c.lead_source.includes('job') ||
+            c.lead_source.includes('high_value_signal') ||
+            c.lead_source.includes('automation')
+          )
         ).slice(0, 10);
 
         const container = document.getElementById('automation-activity');
@@ -1799,6 +1805,17 @@
     }
 
     function formatLeadSource(source) {
+      if (!source) return '📍 Unknown';
+
+      // Handle high_value_signal sources
+      if (source.includes('high_value_signal')) {
+        if (source.includes('funding')) return '💎 Funding';
+        if (source.includes('executive_hiring')) return '💎 Exec Hire';
+        if (source.includes('expansion')) return '💎 Expansion';
+        return '💎 High Value';
+      }
+
+      // Handle other automation sources
       const sources = {
         'web_prospector': '🌐 Web',
         'web_prospector_web': '🌐 Web',
