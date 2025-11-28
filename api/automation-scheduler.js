@@ -76,28 +76,9 @@ module.exports = async (req, res) => {
       }
     }
 
-    // 2. Run LinkedIn Prospecting (if enabled and scheduled for today)
-    if (settings.linkedInProspectingEnabled && shouldRunToday(settings.linkedInSchedule)) {
-      try {
-        console.log('[Automation Scheduler] Running LinkedIn prospecting...');
-        const linkedInModule = require('./linkedin-prospector');
-        const mockReq = {
-          method: 'POST',
-          headers: {},
-          body: { action: 'find_prospects', data: {} }
-        };
-        const mockRes = {
-          status: (code) => mockRes,
-          json: (data) => { results.linkedInProspecting = data; return mockRes; },
-          setHeader: () => mockRes,
-          end: () => mockRes
-        };
-        await linkedInModule(mockReq, mockRes);
-      } catch (error) {
-        console.error('[Automation Scheduler] LinkedIn prospecting error:', error);
-        results.errors.push({ task: 'linkedin_prospecting', error: error.message });
-      }
-    }
+    // 2. LinkedIn Prospecting DISABLED - generates fake data
+    // Only using web prospecting with real search results
+    console.log('[Automation Scheduler] LinkedIn prospecting DISABLED (fake data issue)');
 
     // 3. Run Web Prospecting (if enabled and scheduled for today)
     if (settings.webProspectingEnabled && shouldRunToday(settings.webSchedule)) {
