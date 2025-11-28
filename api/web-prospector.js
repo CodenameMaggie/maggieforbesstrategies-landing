@@ -187,7 +187,7 @@ module.exports = async (req, res) => {
 
       switch (action) {
         case 'scan_web':
-          const prospects = await scanWebForProspects(data, tenantId);
+          const prospects = await scanWebForProspects(data, tenantId, req);
           return res.status(200).json({ success: true, prospects });
 
         default:
@@ -207,7 +207,7 @@ module.exports = async (req, res) => {
 /**
  * Find prospects who are ACTIVELY ASKING for help - real intent signals
  */
-async function scanWebForProspects(criteria, tenantId) {
+async function scanWebForProspects(criteria, tenantId, req) {
   console.log('[Web Prospector] Finding people actively seeking strategic help...');
 
   let prospects = [];
@@ -273,7 +273,8 @@ Find 5 real companies with verified signals ($5M+ revenue).`
     // Perplexity returns structured markdown with company sections
     const companyPattern = /##?\s+\d+\.\s+\*?\*?([^\n*]+)\*?\*?\s*\n\s*\*?\*?(?:Leadership|CEO):\*?\*?\s+([^\n]+)\s*\n\s*\*?\*?(?:Recent Signal|What Happened):\*?\*?\s+([^\n]+(?:\n(?!\*\*)[^\n]+)*)/gi;
 
-    let prospects = [];
+    // prospects already declared at line 213, reuse it here
+    prospects = [];
     let match;
 
     while ((match = companyPattern.exec(searchResults)) !== null) {
