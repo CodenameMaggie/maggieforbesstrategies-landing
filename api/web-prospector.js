@@ -277,7 +277,8 @@ Find 5 real companies with verified signals ($5M+ revenue).`
 
     // METHOD 1: Try parsing markdown table format
     // Format: | **Company Name** | CEO | What Happened | Size/Industry | Why Consulting |
-    const tableMatch = searchResults.match(/\|\s*Company Name\s*\|[\s\S]+?\n\|[-|\s]+\|\n([\s\S]+?)(?:\n\n|$)/i);
+    // Also try: | Company | CEO | Signal (Date) | Size/Industry | Strategic Consulting Need |
+    const tableMatch = searchResults.match(/\|\s*Company(?:\s+Name)?\s*\|[\s\S]+?\n\|[-|\s]+\|\n([\s\S]+?)(?:\n\n|$)/i);
 
     if (tableMatch) {
       const tableRows = tableMatch[1].trim().split('\n');
