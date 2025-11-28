@@ -22,7 +22,7 @@ async function callAIWithFallback(prompt, maxTokens = 2000) {
       name: 'Perplexity',
       call: async () => {
         const response = await perplexity.chat.completions.create({
-          model: 'sonar-pro',
+          model: 'sonar',
           max_tokens: maxTokens,
           messages: [{ role: 'user', content: prompt }]
         });
@@ -142,7 +142,7 @@ async function findRealLinkedInProspects(criteria, tenantId) {
   try {
     // Use Perplexity to search LinkedIn for real people discussing challenges
     const perplexityResponse = await perplexity.chat.completions.create({
-      model: 'sonar-pro',
+      model: 'sonar',
       messages: [{
         role: 'user',
         content: `Search LinkedIn (site:linkedin.com/posts OR site:linkedin.com/pulse) for posts from the last 30 days where CEOs, Founders, or executives discuss:
