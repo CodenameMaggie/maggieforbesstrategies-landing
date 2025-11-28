@@ -213,45 +213,30 @@ async function scanWebForProspects(criteria, tenantId) {
   let prospects = [];
 
   try {
-    // Search for HIGH-VALUE buying signals in the last 30 days
+    // Search for HIGH-VALUE buying signals using Sonar with citations
     const perplexityResponse = await perplexity.chat.completions.create({
       model: 'sonar',
       messages: [{
         role: 'user',
-        content: `Find companies in the last 30 days with these HIGH-VALUE buying signals:
+        content: `Find companies in the last 30 days with high-value buying signals:
 
-1. FUNDING ANNOUNCEMENTS:
-   - Series A, B, C funding ($5M+)
-   - Private equity investments
-   - Acquisition announcements
+1. FUNDING: Series A/B/C funding ($5M+), acquisitions
+2. EXECUTIVE HIRING: New CEO, COO, VP Operations, Chief Strategy Officer
+3. EXPANSION: New offices, entering new markets, product launches
+4. GROWTH: IPO prep, rapid hiring, scaling challenges
 
-2. EXECUTIVE HIRING:
-   - New CEO, COO, President hired
-   - VP of Operations, Chief Strategy Officer roles posted
-   - Interim executive roles (signals need for strategic help)
+Search sources: TechCrunch, Business Insider, Inc Magazine, Forbes, Crunchbase, PitchBook.
 
-3. EXPANSION SIGNALS:
-   - Opening new offices/locations
-   - Entering new markets
-   - Launching new product lines
+For each company:
+- Company name and CEO
+- What happened (with date)
+- Company size/industry
+- Why they need strategic consulting
 
-4. GROWTH CHALLENGES:
-   - Companies publicly discussing scaling pains
-   - IPO preparation announcements
-   - Rapid headcount growth (50+ employees in quarter)
-
-Search: TechCrunch, Business Insider, Inc Magazine, Forbes, LinkedIn company updates, Crunchbase, PitchBook.
-
-For each company found, provide:
-- Company name
-- What happened (specific signal with date)
-- CEO/Founder name
-- Company size and industry
-- Why this signals need for strategic consulting
-- Source URL
-
-Find 5 REAL companies with recent, verified signals. These should be $5M+ revenue companies.`
-      }]
+Find 5 real companies with verified signals ($5M+ revenue).`
+      }],
+      return_citations: true,
+      search_recency_filter: 'month'
     });
 
     const searchResults = perplexityResponse.choices[0].message.content;
