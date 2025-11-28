@@ -297,12 +297,20 @@ For each REAL company with a verified buying signal, return JSON with EXACT fiel
 
 CRITICAL: Only include companies that are $5M+ revenue, have verified signals from last 30 days, and represent real strategic consulting opportunities.
 
-Return ONLY JSON array.`, 2000);
+Return ONLY a valid JSON array with no additional text, markdown formatting, or explanations. Start with [ and end with ]. Example:
+[{"companyName":"Accenture","contactPerson":"Julie Sweet",...}]`, 2000);
 
     // Parse prospects
     const jsonMatch = extractionResponse.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
-      const rawProspects = JSON.parse(jsonMatch[0]);
+      let rawProspects;
+      try {
+        rawProspects = JSON.parse(jsonMatch[0]);
+      } catch (parseError) {
+        console.error('[Web Prospector] JSON parse error:', parseError.message);
+        console.error('[Web Prospector] Attempted to parse:', jsonMatch[0].substring(0, 200));
+        return [];
+      }
 
       // VALIDATE: Filter out fake/generated data
       prospects = rawProspects.filter(p => {
