@@ -229,55 +229,71 @@ async function scanWebForProspects(criteria, tenantId) {
   let prospects = [];
 
   try {
-    // Search for people actively asking for help in the last 7 days
+    // Search for HIGH-VALUE buying signals in the last 30 days
     const perplexityResponse = await perplexity.chat.completions.create({
       model: 'llama-3.1-sonar-small-128k-online',
       messages: [{
         role: 'user',
-        content: `Search Reddit, Quora, LinkedIn, Twitter/X, and business forums for posts from business owners/executives asking for help with:
+        content: `Find companies in the last 30 days with these HIGH-VALUE buying signals:
 
-- Scaling operations
-- Strategic planning
-- Business growth strategy
-- Operational efficiency
-- Revenue growth
-- Team/org structure
-- Process optimization
-- Market expansion
+1. FUNDING ANNOUNCEMENTS:
+   - Series A, B, C funding ($5M+)
+   - Private equity investments
+   - Acquisition announcements
 
-Find 5 recent posts (last 7 days) where someone is ACTIVELY SEEKING advice or help. For each:
-1. Platform and post title
-2. Poster's name/username
-3. Their company (if mentioned)
-4. What they're struggling with (exact quote)
-5. Direct link to post
-6. Their role/title (if mentioned)
+2. EXECUTIVE HIRING:
+   - New CEO, COO, President hired
+   - VP of Operations, Chief Strategy Officer roles posted
+   - Interim executive roles (signals need for strategic help)
 
-ONLY include posts where someone is genuinely asking for help or admitting they need guidance. Include the actual URL so we can verify.`
+3. EXPANSION SIGNALS:
+   - Opening new offices/locations
+   - Entering new markets
+   - Launching new product lines
+
+4. GROWTH CHALLENGES:
+   - Companies publicly discussing scaling pains
+   - IPO preparation announcements
+   - Rapid headcount growth (50+ employees in quarter)
+
+Search: TechCrunch, Business Insider, Inc Magazine, Forbes, LinkedIn company updates, Crunchbase, PitchBook.
+
+For each company found, provide:
+- Company name
+- What happened (specific signal with date)
+- CEO/Founder name
+- Company size and industry
+- Why this signals need for strategic consulting
+- Source URL
+
+Find 5 REAL companies with recent, verified signals. These should be $5M+ revenue companies.`
       }]
     });
 
     const searchResults = perplexityResponse.choices[0].message.content;
-    console.log('[Web Prospector] Active help-seekers found:\n', searchResults);
+    console.log('[Web Prospector] High-value buying signals found:\n', searchResults);
 
     // Extract into structured format
     const extractionResponse = await callAIWithFallback(`From these real search results, extract structured prospect data:
 
 ${searchResults}
 
-For each person actively seeking help, return JSON with EXACT field names:
+For each company with a verified buying signal, return JSON with EXACT field names:
 {
-  "contactPerson": "name or username",
-  "companyName": "company name if mentioned, otherwise 'Not specified'",
-  "recentSignal": "exact problem they posted about",
-  "whereFound": "platform and URL",
-  "intentScore": 95,
-  "approachAngle": "specific advice based on their exact problem",
-  "platform": "Reddit/Quora/LinkedIn/Twitter",
-  "postUrl": "direct link to post"
+  "companyName": "exact company name",
+  "contactPerson": "CEO/Founder name",
+  "recentSignal": "specific signal with date (e.g., 'Raised $15M Series B on Nov 20, 2024')",
+  "whereFound": "source publication and URL",
+  "intentScore": 85,
+  "approachAngle": "how to position consulting based on their specific signal",
+  "industry": "industry",
+  "companySize": "employee count or revenue if mentioned",
+  "postUrl": "source URL for verification"
 }
 
-Return ONLY JSON array of real people who posted.`, 2000);
+CRITICAL: Only include companies that are $5M+ revenue, have verified signals from last 30 days, and represent real strategic consulting opportunities.
+
+Return ONLY JSON array.`, 2000);
 
     // Parse prospects
     const jsonMatch = extractionResponse.match(/\[[\s\S]*\]/);
@@ -289,12 +305,11 @@ Return ONLY JSON array of real people who posted.`, 2000);
   } catch (error) {
     console.error('[Web Prospector] Perplexity search error:', error.message);
 
-    // Fallback: search for active intent on specific platforms
+    // Fallback: Try OpenAI to search for funding announcements
     try {
-      const fallbackResponse = await callAIWithFallback(`Search for recent Reddit posts in r/entrepreneur, r/startups, r/smallbusiness where business owners asked for help with scaling, operations, or strategy in the last 48 hours. Include usernames and post titles.`, 1500);
+      const fallbackResponse = await callAIWithFallback(`Search recent TechCrunch and Business Insider articles for companies that raised Series A, B, or C funding in the last 30 days. Include company names, funding amounts, and CEO names. Focus on companies with $5M+ funding.`, 1500);
 
-      console.log('[Web Prospector] Fallback search results:', fallbackResponse.substring(0, 300));
-      prospects = []; // Parse fallback results if needed
+      console.log('[Web Prospector] Fallback funding search:', fallbackResponse.substring(0, 300));
     } catch (fallbackError) {
       console.error('[Web Prospector] All search methods failed');
     }
@@ -329,50 +344,52 @@ Return ONLY JSON array of real people who posted.`, 2000);
     // Extract post URL for verification
     const postUrl = prospect.postUrl || prospect.url || prospect.link || prospect.whereFound || '';
 
-    // Extract platform
-    const platform = prospect.platform || prospect.Platform ||
-                    (whereFound.includes('reddit') ? 'Reddit' :
-                     whereFound.includes('linkedin') ? 'LinkedIn' :
-                     whereFound.includes('quora') ? 'Quora' : 'Web');
+    // Extract industry
+    const industry = prospect.industry || prospect.Industry || 'Not specified';
 
-    // Skip if we don't have at least a contact person (for active help-seekers)
-    if (!contactPerson) {
-      console.log('[Web Prospector] Skipping - no contact person found');
+    // Determine signal type
+    const signalType = recentSignal.toLowerCase().includes('fund') ? 'Funding' :
+                      recentSignal.toLowerCase().includes('hired') || recentSignal.toLowerCase().includes('ceo') || recentSignal.toLowerCase().includes('coo') ? 'Executive Hiring' :
+                      recentSignal.toLowerCase().includes('expansion') || recentSignal.toLowerCase().includes('new market') ? 'Expansion' :
+                      'Growth Signal';
+
+    // Skip if we don't have company name or contact person
+    if (companyName === 'Unknown Company' || !contactPerson) {
+      console.log('[Web Prospector] Skipping - missing company or contact info');
       continue;
     }
 
-    // Check if we already have this person
-    const searchName = contactPerson.replace('@', ''); // Remove @ for username
+    // Check if we already have this company
     const existingContact = await db.queryOne(
-      'SELECT id FROM contacts WHERE full_name ILIKE $1 AND tenant_id = $2',
-      [searchName, tenantId]
+      'SELECT id FROM contacts WHERE company ILIKE $1 AND tenant_id = $2',
+      [companyName, tenantId]
     );
 
     if (!existingContact) {
       const contact = await db.insert('contacts', {
         tenant_id: tenantId,
         full_name: contactPerson,
-        company: companyName !== 'Unknown Company' && companyName !== 'Not specified' ? companyName : null,
+        company: companyName,
         stage: 'new',
-        lead_source: `active_help_seeker_${platform.toLowerCase()}`,
-        notes: `🔥 ACTIVE HELP-SEEKER: ${recentSignal}\n\nPlatform: ${platform}\nPost: ${postUrl}`,
-        client_type: 'warm_inbound',
+        lead_source: `high_value_signal_${signalType.toLowerCase().replace(' ', '_')}`,
+        notes: `💎 HIGH-VALUE PROSPECT ($5M+)\n\nSignal: ${recentSignal}\n\nIndustry: ${industry}\nSource: ${whereFound}\nVerify: ${postUrl}`,
+        client_type: 'enterprise_prospect',
         created_at: new Date(),
         updated_at: new Date()
       });
 
-      // Log the intent signal with URL
+      // Log the buying signal
       await db.insert('contact_activities', {
         tenant_id: tenantId,
         contact_id: contact.id,
-        type: 'active_help_request_detected',
-        description: `Platform: ${platform}\nProblem: ${recentSignal}\nPost URL: ${postUrl}\n\nSuggested approach: ${approachAngle}`,
+        type: 'high_value_buying_signal',
+        description: `Signal Type: ${signalType}\nWhat Happened: ${recentSignal}\n\nWhy This Matters: Companies at this stage need strategic consulting to navigate growth successfully.\n\nApproach: ${approachAngle}\n\nSource: ${postUrl}`,
         created_at: new Date()
       });
 
-      console.log(`[Web Prospector] ✓ Saved WARM lead: ${contactPerson} from ${platform}`);
+      console.log(`[Web Prospector] ✓ Saved HIGH-VALUE prospect: ${companyName} - ${signalType}`);
     } else {
-      console.log(`[Web Prospector] Skipping duplicate: ${contactPerson}`);
+      console.log(`[Web Prospector] Skipping duplicate: ${companyName}`);
     }
   }
 
