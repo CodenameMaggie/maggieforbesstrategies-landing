@@ -933,6 +933,7 @@
                 <th style="text-align: left; padding: 0.75rem; font-size: 0.75rem; color: #888; text-transform: uppercase;">Name</th>
                 <th style="text-align: left; padding: 0.75rem; font-size: 0.75rem; color: #888; text-transform: uppercase;">Email</th>
                 <th style="text-align: left; padding: 0.75rem; font-size: 0.75rem; color: #888; text-transform: uppercase;">Stage</th>
+                <th style="text-align: left; padding: 0.75rem; font-size: 0.75rem; color: #888; text-transform: uppercase;">Tier</th>
                 <th style="text-align: left; padding: 0.75rem; font-size: 0.75rem; color: #888; text-transform: uppercase;">Actions</th>
               </tr>
             </thead>
@@ -1119,6 +1120,19 @@
           <button class="stage-btn" data-stage="discovery">Discovery</button>
           <button class="stage-btn" data-stage="strategy">Strategy</button>
           <button class="stage-btn" data-stage="active_client">Active Client</button>
+        </div>
+
+        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e0e0e0;">
+          <label style="font-size: 0.85rem; font-weight: 500; color: var(--navy); display: block; margin-bottom: 0.5rem;">Provision as Client:</label>
+          <div class="info-item" style="margin-bottom: 0.75rem;">
+            <label>Current Tier</label>
+            <p id="contact-detail-tier">-</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn" style="flex: 1; background: #e3f2fd; color: #1976d2; border: 1px solid #1976d2;" onclick="provisionClient(selectedContact.id, 'strategy')">Strategy ($2.5k)</button>
+            <button class="btn" style="flex: 1; background: #fce4ec; color: #c2185b; border: 1px solid #c2185b;" onclick="provisionClient(selectedContact.id, 'premium')">Premium ($5k)</button>
+            <button class="btn" style="flex: 1; background: #f3e5f5; color: #7b1fa2; border: 1px solid #7b1fa2;" onclick="provisionClient(selectedContact.id, 'enterprise')">Enterprise ($10k)</button>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -1324,6 +1338,7 @@
             <td style="padding: 0.75rem; font-weight: 500;">${escapeHtml(contact.full_name) || '-'}</td>
             <td style="padding: 0.75rem; color: #666;">${escapeHtml(contact.email) || '-'}</td>
             <td style="padding: 0.75rem;"><span style="background: #f0f0f0; padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.8rem;">${formatStage(contact.stage)}</span></td>
+            <td style="padding: 0.75rem;">${formatTier(contact.client_tier)}</td>
             <td style="padding: 0.75rem;">
               <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="openContactDetail('${contact.id}')">View</button>
             </td>
@@ -1343,6 +1358,7 @@
       document.getElementById('contact-detail-phone').textContent = selectedContact.phone || '-';
       document.getElementById('contact-detail-company').textContent = selectedContact.company || '-';
       document.getElementById('contact-detail-stage').textContent = formatStage(selectedContact.stage);
+      document.getElementById('contact-detail-tier').innerHTML = formatTier(selectedContact.client_tier);
 
       document.querySelectorAll('.stage-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.stage === (selectedContact.stage || 'new'));
@@ -1679,6 +1695,43 @@
         'past_client': 'Past Client'
       };
       return stages[stage] || 'New';
+    }
+
+    function formatTier(tier) {
+      if (!tier) return '-';
+      const tiers = {
+        'strategy': '<span style="background: #e3f2fd; color: #1976d2; padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.75rem; font-weight: 600;">Strategy</span>',
+        'premium': '<span style="background: #fce4ec; color: #c2185b; padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.75rem; font-weight: 600;">Premium</span>',
+        'enterprise': '<span style="background: #f3e5f5; color: #7b1fa2; padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.75rem; font-weight: 600;">Enterprise</span>'
+      };
+      return tiers[tier] || '-';
+    }
+
+    async function provisionClient(contactId, tier) {
+      if (!confirm(`Provision this contact as a ${tier.toUpperCase()} client?`)) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/provision-client`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contactId, tier })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          alert(`Client provisioned successfully!\\n\\nTier: ${tier}\\nMRR: $${data.mrr}\\nTasks Created: ${data.tasksCreated}${data.hasToolsAccess ? '\\nAI Tools: Enabled' : ''}`);
+          loadContacts();
+          loadDashboard();
+          if (selectedContact) {
+            closeModal('contact-detail-modal');
+          }
+        } else {
+          alert(`Error: ${data.error}`);
+        }
+      } catch (error) {
+        alert(`Failed to provision client: ${error.message}`);
+      }
     }
 
     async function logout() {
