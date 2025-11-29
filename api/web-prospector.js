@@ -508,9 +508,17 @@ If you found companies, return the JSON array. If no companies found, return []`
                       recentSignal.toLowerCase().includes('expansion') || recentSignal.toLowerCase().includes('new market') ? 'Expansion' :
                       'Growth Signal';
 
-    // Skip if we don't have company name or contact person
+    // Skip if we don't have company name, contact person, OR email
+    // Without email, we can't reach out - so don't save useless leads
     if (companyName === 'Unknown Company' || !contactPerson) {
-      console.log('[Web Prospector] Skipping - missing company or contact info');
+      console.log('[Web Prospector] ⚠️  Skipping - missing company or contact info');
+      continue;
+    }
+
+    // CRITICAL: Skip leads without email - they're useless for outreach
+    const contactEmail = prospect.email || prospect.contactEmail || null;
+    if (!contactEmail) {
+      console.log(`[Web Prospector] ⚠️  Skipping ${companyName} - no email found (can't reach out)`);
       continue;
     }
 
@@ -524,6 +532,7 @@ If you found companies, return the JSON array. If no companies found, return []`
       const contact = await db.insert('contacts', {
         tenant_id: tenantId,
         full_name: contactPerson,
+        email: contactEmail,
         company: companyName,
         stage: 'new',
         lead_source: `high_value_signal_${signalType.toLowerCase().replace(' ', '_')}`,
