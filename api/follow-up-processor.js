@@ -1,8 +1,4 @@
-const { createClient } = require('@supabase/supabase-js');
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const db = require('./utils/db');
 
 /**
  * MFS Follow-up Processor
@@ -46,19 +42,17 @@ module.exports = async (req, res) => {
     // ============================================
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data: staleContacts, error: staleError } = await supabase
-      .from('contacts')
-      .select('id, full_name, email, stage, updated_at')
-      .eq('tenant_id', tenantId)
-      .lt('updated_at', sevenDaysAgo)
-      .in('stage', ['new', 'consultation_scheduled', 'discovery', 'strategy'])
-      .order('updated_at', { ascending: true })
-      .limit(20);
+    const staleContacts = await db.queryAll(`
+      SELECT id, full_name, email, stage, updated_at
+      FROM contacts
+      WHERE tenant_id = $1
+      AND updated_at < $2
+      AND stage IN ('new', 'consultation_scheduled', 'discovery', 'strategy')
+      ORDER BY updated_at ASC
+      LIMIT 20
+    `, [tenantId, sevenDaysAgo]);
 
-    if (staleError) {
-      console.error('[MFS Follow-up] Error fetching stale contacts:', staleError);
-      results.errors.push({ type: 'stale_fetch', error: staleError.message });
-    } else if (staleContacts && staleContacts.length > 0) {
+    if (staleContacts && staleContacts.length > 0) {
       console.log(`[MFS Follow-up] Found ${staleContacts.length} stale contacts`);
 
       for (const contact of staleContacts) {
@@ -75,20 +69,13 @@ module.exports = async (req, res) => {
         });
 
         // Log activity
-        await supabase
-          .from('contact_activities')
-          .insert({
-            tenant_id: tenantId,
-            contact_id: contact.id,
-            type: 'followup_flagged',
-            description: `Flagged for follow-up - ${daysSinceContact} days since last contact`,
-            metadata: {
-              days_stale: daysSinceContact,
-              stage: contact.stage,
-              flagged_by: 'cron_processor'
-            },
-            created_at: new Date().toISOString()
-          });
+        await db.insert('contact_activities', {
+          tenant_id: tenantId,
+          contact_id: contact.id,
+          type: 'followup_flagged',
+          description: `Flagged for follow-up - ${daysSinceContact} days since last contact`,
+          created_at: new Date()
+        });
 
         results.stale_contacts++;
       }
@@ -97,14 +84,15 @@ module.exports = async (req, res) => {
     // ============================================
     // Find contacts with no-response status
     // ============================================
-    const { data: noResponseContacts, error: noResponseError } = await supabase
-      .from('contacts')
-      .select('id, full_name, email, stage, booking_response_status')
-      .eq('tenant_id', tenantId)
-      .eq('booking_response_status', 'no_response')
-      .limit(10);
+    const noResponseContacts = await db.queryAll(`
+      SELECT id, full_name, email, stage, booking_response_status
+      FROM contacts
+      WHERE tenant_id = $1
+      AND booking_response_status = 'no_response'
+      LIMIT 10
+    `, [tenantId]);
 
-    if (!noResponseError && noResponseContacts) {
+    if (noResponseContacts) {
       for (const contact of noResponseContacts) {
         if (!results.needs_followup.find(c => c.id === contact.id)) {
           results.needs_followup.push({
@@ -122,18 +110,16 @@ module.exports = async (req, res) => {
     // Create summary task if there are follow-ups needed
     // ============================================
     if (results.needs_followup.length > 0) {
-      await supabase
-        .from('tasks')
-        .insert({
-          tenant_id: tenantId,
-          title: `${results.needs_followup.length} contacts need follow-up`,
-          description: `Contacts flagged: ${results.needs_followup.map(c => c.name || c.email).join(', ')}`,
-          priority: 'high',
-          status: 'pending',
-          source: 'cron_followup',
-          due_date_text: 'Today',
-          created_at: new Date().toISOString()
-        });
+      await db.insert('tasks', {
+        tenant_id: tenantId,
+        title: `${results.needs_followup.length} contacts need follow-up`,
+        description: `Contacts flagged: ${results.needs_followup.map(c => c.name || c.email).join(', ')}`,
+        priority: 'high',
+        status: 'pending',
+        source: 'cron_followup',
+        due_date_text: 'Today',
+        created_at: new Date()
+      });
     }
 
     console.log('[MFS Follow-up] Complete');

@@ -1,8 +1,5 @@
-const { createClient } = require('@supabase/supabase-js');
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const db = require('./utils/db');
+const emailService = require('./utils/email-service');
 
 /**
  * MFS Consultation Reminders Processor
@@ -54,66 +51,57 @@ async function process24HourReminders(tenantId) {
 
   for (const config of MEETING_TABLES) {
     try {
-      const { data: meetings, error } = await supabase
-        .from(config.table)
-        .select(`
-          id,
-          contact_id,
-          scheduled_at,
-          zoom_meeting_url,
-          status,
-          contacts (id, full_name, email)
-        `)
-        .eq('tenant_id', tenantId)
-        .gte('scheduled_at', in24Hours.toISOString())
-        .lte('scheduled_at', in25Hours.toISOString())
-        .in('status', ['scheduled', 'confirmed']);
+      const meetings = await db.queryAll(`
+        SELECT m.id, m.contact_id, m.scheduled_at, m.meeting_link as zoom_meeting_url, m.status,
+               c.id as contact_id, c.full_name as contact_name, c.email as contact_email
+        FROM ${config.table} m
+        LEFT JOIN contacts c ON m.contact_id = c.id
+        WHERE m.tenant_id = $1
+        AND m.scheduled_at >= $2
+        AND m.scheduled_at <= $3
+        AND m.status IN ('scheduled', 'confirmed')
+      `, [tenantId, in24Hours.toISOString(), in25Hours.toISOString()]);
 
-      if (error) {
-        console.error(`[MFS Reminders] Error fetching ${config.type}:`, error);
-        continue;
-      }
+      console.log(`[MFS Reminders] Found ${meetings.length} ${config.type} meetings in 24hr window`);
 
-      console.log(`[MFS Reminders] Found ${meetings?.length || 0} ${config.type} meetings in 24hr window`);
+      for (const meeting of meetings) {
+        if (!meeting.contact_email) continue;
 
-      for (const meeting of meetings || []) {
-        const contact = meeting.contacts;
-        if (!contact) continue;
+        const { dateStr, timeStr} = formatMeetingDateTime(meeting.scheduled_at);
 
-        const { dateStr, timeStr } = formatMeetingDateTime(meeting.scheduled_at);
+        // Send email reminder
+        await emailService.sendConsultationReminder({
+          type: config.type,
+          scheduled_at: meeting.scheduled_at,
+          contact_name: meeting.contact_name,
+          contact_email: meeting.contact_email,
+          meeting_link: meeting.zoom_meeting_url
+        });
 
         // Create task for Maggie
-        await supabase
-          .from('tasks')
-          .insert({
-            tenant_id: tenantId,
-            contact_id: contact.id,
-            title: `24hr reminder: ${config.type} with ${contact.full_name}`,
-            description: `Scheduled for ${dateStr} at ${timeStr}. Zoom: ${meeting.zoom_meeting_url || 'Check Calendly'}`,
-            priority: 'high',
-            status: 'pending',
-            source: 'cron_reminder',
-            due_date_text: 'Tomorrow',
-            created_at: new Date().toISOString()
-          });
+        await db.insert('tasks', {
+          tenant_id: tenantId,
+          contact_id: meeting.contact_id,
+          title: `24hr reminder: ${config.type} with ${meeting.contact_name}`,
+          description: `Scheduled for ${dateStr} at ${timeStr}. Zoom: ${meeting.zoom_meeting_url || 'Check Calendly'}`,
+          priority: 'high',
+          status: 'pending',
+          source: 'cron_reminder',
+          due_date_text: 'Tomorrow',
+          created_at: new Date()
+        });
 
         // Log activity
-        await supabase
-          .from('contact_activities')
-          .insert({
-            tenant_id: tenantId,
-            contact_id: contact.id,
-            type: 'reminder_24hr',
-            description: `24-hour reminder for ${config.type} - ${dateStr} at ${timeStr}`,
-            metadata: {
-              meeting_type: config.type,
-              scheduled_at: meeting.scheduled_at
-            },
-            created_at: new Date().toISOString()
-          });
+        await db.insert('contact_activities', {
+          tenant_id: tenantId,
+          contact_id: meeting.contact_id,
+          type: 'reminder_24hr',
+          description: `24-hour reminder for ${config.type} - ${dateStr} at ${timeStr}`,
+          created_at: new Date()
+        });
 
         totalFlagged++;
-        console.log(`[MFS Reminders] Flagged: ${config.type} with ${contact.full_name}`);
+        console.log(`[MFS Reminders] Flagged: ${config.type} with ${meeting.contact_name}`);
       }
 
     } catch (tableError) {
@@ -138,43 +126,34 @@ async function process1HourReminders(tenantId) {
 
   for (const config of MEETING_TABLES) {
     try {
-      const { data: meetings, error } = await supabase
-        .from(config.table)
-        .select(`
-          id,
-          contact_id,
-          scheduled_at,
-          zoom_meeting_url,
-          status,
-          contacts (id, full_name, email)
-        `)
-        .eq('tenant_id', tenantId)
-        .gte('scheduled_at', in1Hour.toISOString())
-        .lte('scheduled_at', in90Min.toISOString())
-        .in('status', ['scheduled', 'confirmed']);
+      const meetings = await db.queryAll(`
+        SELECT m.id, m.contact_id, m.scheduled_at, m.meeting_link as zoom_meeting_url, m.status,
+               c.id as contact_id, c.full_name as contact_name, c.email as contact_email
+        FROM ${config.table} m
+        LEFT JOIN contacts c ON m.contact_id = c.id
+        WHERE m.tenant_id = $1
+        AND m.scheduled_at >= $2
+        AND m.scheduled_at <= $3
+        AND m.status IN ('scheduled', 'confirmed')
+      `, [tenantId, in1Hour.toISOString(), in90Min.toISOString()]);
 
-      if (error) continue;
-
-      for (const meeting of meetings || []) {
-        const contact = meeting.contacts;
-        if (!contact) continue;
+      for (const meeting of meetings) {
+        if (!meeting.contact_email) continue;
 
         const { timeStr } = formatMeetingDateTime(meeting.scheduled_at);
 
         // Create urgent task
-        await supabase
-          .from('tasks')
-          .insert({
-            tenant_id: tenantId,
-            contact_id: contact.id,
-            title: `STARTING SOON: ${config.type} with ${contact.full_name}`,
-            description: `Starting at ${timeStr}. Zoom: ${meeting.zoom_meeting_url || 'Check Calendly'}`,
-            priority: 'high',
-            status: 'pending',
-            source: 'cron_reminder',
-            due_date_text: 'Now',
-            created_at: new Date().toISOString()
-          });
+        await db.insert('tasks', {
+          tenant_id: tenantId,
+          contact_id: meeting.contact_id,
+          title: `STARTING SOON: ${config.type} with ${meeting.contact_name}`,
+          description: `Starting at ${timeStr}. Zoom: ${meeting.zoom_meeting_url || 'Check Calendly'}`,
+          priority: 'high',
+          status: 'pending',
+          source: 'cron_reminder',
+          due_date_text: 'Now',
+          created_at: new Date()
+        });
 
         totalFlagged++;
       }
@@ -200,52 +179,40 @@ async function detectNoShows(tenantId) {
 
   for (const config of MEETING_TABLES) {
     try {
-      const { data: meetings, error } = await supabase
-        .from(config.table)
-        .select(`
-          id,
-          contact_id,
-          scheduled_at,
-          contacts (id, full_name, email)
-        `)
-        .eq('tenant_id', tenantId)
-        .lt('scheduled_at', twoHoursAgo.toISOString())
-        .in('status', ['scheduled', 'confirmed']);
+      const meetings = await db.queryAll(`
+        SELECT m.id, m.contact_id, m.scheduled_at,
+               c.id as contact_id, c.full_name as contact_name, c.email as contact_email
+        FROM ${config.table} m
+        LEFT JOIN contacts c ON m.contact_id = c.id
+        WHERE m.tenant_id = $1
+        AND m.scheduled_at < $2
+        AND m.status IN ('scheduled', 'confirmed')
+      `, [tenantId, twoHoursAgo.toISOString()]);
 
-      if (error) continue;
-
-      for (const meeting of meetings || []) {
-        const contact = meeting.contacts;
-
+      for (const meeting of meetings) {
         // Mark as no-show
-        await supabase
-          .from(config.table)
-          .update({
-            status: 'no_show',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', meeting.id);
+        await db.query(`
+          UPDATE ${config.table}
+          SET status = 'no_show', updated_at = $1
+          WHERE id = $2
+        `, [new Date(), meeting.id]);
 
         // Update contact
-        if (contact) {
-          await supabase
-            .from('contacts')
-            .update({
-              booking_response_status: 'no_show',
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', contact.id);
+        if (meeting.contact_id) {
+          await db.query(`
+            UPDATE contacts
+            SET booking_response_status = 'no_show', updated_at = $1
+            WHERE id = $2
+          `, [new Date(), meeting.contact_id]);
 
           // Log activity
-          await supabase
-            .from('contact_activities')
-            .insert({
-              tenant_id: tenantId,
-              contact_id: contact.id,
-              type: 'no_show',
-              description: `No-show for ${config.type} scheduled at ${meeting.scheduled_at}`,
-              created_at: new Date().toISOString()
-            });
+          await db.insert('contact_activities', {
+            tenant_id: tenantId,
+            contact_id: meeting.contact_id,
+            type: 'no_show',
+            description: `No-show for ${config.type} scheduled at ${meeting.scheduled_at}`,
+            created_at: new Date()
+          });
         }
 
         totalNoShows++;

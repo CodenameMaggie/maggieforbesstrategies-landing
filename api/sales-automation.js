@@ -1,5 +1,6 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const db = require('./utils/db');
+const emailService = require('./utils/email-service');
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -241,11 +242,14 @@ Write a brief, professional follow-up message (2-3 sentences) to re-engage them.
 
   const message = response.content[0].text;
 
+  // Actually send the email
+  const emailResult = await emailService.sendFollowUpEmail(contact, message);
+
   await db.insert('contact_activities', {
     tenant_id: tenantId,
     contact_id: contact.id,
     type: 'automated_follow_up',
-    description: `Auto follow-up sent: ${message}`,
+    description: `Auto follow-up sent: ${message}${emailResult.success ? ' (Email delivered)' : ' (Email failed)'}`,
     created_at: new Date()
   });
 
@@ -324,20 +328,32 @@ async function createAutomatedTask(contact, tenantId) {
 async function executeAction(action, contact, tenantId) {
   const actions = {
     'send_booking_link': async () => {
+      const emailResult = await emailService.sendBookingLink(contact);
       await db.insert('contact_activities', {
         tenant_id: tenantId,
         contact_id: contact.id,
         type: 'booking_link_sent',
-        description: 'Calendly booking link sent: https://calendly.com/maggie-maggieforbesstrategies/discovery-call',
+        description: `Calendly booking link sent: https://calendly.com/maggie-maggieforbesstrategies/discovery-call${emailResult.success ? ' (Email delivered)' : ' (Email failed)'}`,
         created_at: new Date()
       });
     },
     'send_thank_you': async () => {
+      const emailResult = await emailService.sendThankYouEmail(contact);
       await db.insert('contact_activities', {
         tenant_id: tenantId,
         contact_id: contact.id,
         type: 'thank_you_sent',
-        description: 'Thank you message sent after discovery call',
+        description: `Thank you message sent after discovery call${emailResult.success ? ' (Email delivered)' : ' (Email failed)'}`,
+        created_at: new Date()
+      });
+    },
+    'follow_up_proposal': async () => {
+      const emailResult = await emailService.sendProposalFollowUp(contact);
+      await db.insert('contact_activities', {
+        tenant_id: tenantId,
+        contact_id: contact.id,
+        type: 'proposal_follow_up',
+        description: `Proposal follow-up sent${emailResult.success ? ' (Email delivered)' : ' (Email failed)'}`,
         created_at: new Date()
       });
     }

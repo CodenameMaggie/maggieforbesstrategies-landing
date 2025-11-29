@@ -1,8 +1,4 @@
-const { createClient } = require('@supabase/supabase-js');
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const db = require('./utils/db');
 
 /**
  * MFS Social Post Publisher
@@ -48,48 +44,37 @@ module.exports = async (req, res) => {
     };
 
     // Find posts scheduled for now or past that haven't been published
-    const { data: scheduledPosts, error } = await supabase
-      .from('social_posts')
-      .select('*')
-      .eq('tenant_id', tenantId)
-      .eq('status', 'scheduled')
-      .lte('scheduled_for', now.toISOString())
-      .order('scheduled_for', { ascending: true });
+    const scheduledPosts = await db.queryAll(`
+      SELECT *
+      FROM social_posts
+      WHERE tenant_id = $1
+      AND status = 'scheduled'
+      AND scheduled_for <= $2
+      ORDER BY scheduled_for ASC
+    `, [tenantId, now.toISOString()]);
 
-    if (error) {
-      console.error('[MFS Social Publisher] Error fetching posts:', error);
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to fetch scheduled posts'
-      });
-    }
+    console.log(`[MFS Social Publisher] Found ${scheduledPosts.length} posts ready to publish`);
 
-    console.log(`[MFS Social Publisher] Found ${scheduledPosts?.length || 0} posts ready to publish`);
-
-    for (const post of scheduledPosts || []) {
+    for (const post of scheduledPosts) {
       try {
         // Create task to manually publish
-        await supabase
-          .from('tasks')
-          .insert({
-            tenant_id: tenantId,
-            title: `Publish ${post.platform} post`,
-            description: `Post content:\n\n${post.content.substring(0, 200)}${post.content.length > 200 ? '...' : ''}`,
-            priority: 'medium',
-            status: 'pending',
-            source: 'cron_social',
-            due_date_text: 'Now',
-            created_at: new Date().toISOString()
-          });
+        await db.insert('tasks', {
+          tenant_id: tenantId,
+          title: `Publish ${post.platform} post`,
+          description: `Post content:\n\n${post.content.substring(0, 200)}${post.content.length > 200 ? '...' : ''}`,
+          priority: 'medium',
+          status: 'pending',
+          source: 'cron_social',
+          due_date_text: 'Now',
+          created_at: new Date()
+        });
 
         // Update post status to 'ready' (indicates it's been flagged for publishing)
-        await supabase
-          .from('social_posts')
-          .update({
-            status: 'ready',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', post.id);
+        await db.query(`
+          UPDATE social_posts
+          SET status = 'ready', updated_at = $1
+          WHERE id = $2
+        `, [new Date(), post.id]);
 
         results.posts_ready++;
         results.tasks_created++;
@@ -108,28 +93,27 @@ module.exports = async (req, res) => {
     // Also check for draft posts that might need attention (older than 3 days)
     const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data: staleDrafts } = await supabase
-      .from('social_posts')
-      .select('id, platform, content, created_at')
-      .eq('tenant_id', tenantId)
-      .eq('status', 'draft')
-      .lt('created_at', threeDaysAgo)
-      .limit(5);
+    const staleDrafts = await db.queryAll(`
+      SELECT id, platform, content, created_at
+      FROM social_posts
+      WHERE tenant_id = $1
+      AND status = 'draft'
+      AND created_at < $2
+      LIMIT 5
+    `, [tenantId, threeDaysAgo]);
 
     if (staleDrafts && staleDrafts.length > 0) {
       // Create a single task for stale drafts
-      await supabase
-        .from('tasks')
-        .insert({
-          tenant_id: tenantId,
-          title: `${staleDrafts.length} draft posts need attention`,
-          description: `You have ${staleDrafts.length} draft social posts older than 3 days. Review and schedule or delete them.`,
-          priority: 'low',
-          status: 'pending',
-          source: 'cron_social',
-          due_date_text: 'This week',
-          created_at: new Date().toISOString()
-        });
+      await db.insert('tasks', {
+        tenant_id: tenantId,
+        title: `${staleDrafts.length} draft posts need attention`,
+        description: `You have ${staleDrafts.length} draft social posts older than 3 days. Review and schedule or delete them.`,
+        priority: 'low',
+        status: 'pending',
+        source: 'cron_social',
+        due_date_text: 'This week',
+        created_at: new Date()
+      });
 
       console.log(`[MFS Social Publisher] Flagged ${staleDrafts.length} stale drafts`);
     }

@@ -29,6 +29,14 @@
     {
       "path": "/api/automation-scheduler",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/consultation-reminders",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/social-post-publisher",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
