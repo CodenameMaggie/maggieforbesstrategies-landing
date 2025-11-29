@@ -4,7 +4,7 @@ const db = require('./utils/db');
  * MFS Follow-up Processor
  * Runs as CRON job to identify contacts needing follow-up
  *
- * Schedule: Every 6 hours (0 */6 * * *)
+ * Schedule: Every 6 hours (0 star-slash-6 star star star)
  */
 module.exports = async (req, res) => {
   // CORS headers
