@@ -13,7 +13,7 @@ const openai = new OpenAI({
 // Perplexity for web search (uses OpenAI SDK)
 const perplexity = new OpenAI({
   apiKey: process.env.PERPLEXITY_API_KEY,
-  baseURL: 'https://api.perplexity.ai',
+  baseURL: 'https://api.perplexity.ai'
 });
 
 // AI provider fallback - tries Perplexity first (main), then OpenAI, then Claude
@@ -23,7 +23,7 @@ async function callAIWithFallback(prompt, maxTokens = 2000) {
       name: 'Perplexity',
       call: async () => {
         const response = await perplexity.chat.completions.create({
-          model: 'sonar',
+          model: 'sonar-pro',
           max_tokens: maxTokens,
           messages: [{ role: 'user', content: prompt }]
         });
@@ -213,9 +213,9 @@ async function scanWebForProspects(criteria, tenantId, req) {
   let prospects = [];
 
   try {
-    // Search for HIGH-VALUE buying signals using Sonar ONLINE model
+    // Search for HIGH-VALUE buying signals using Perplexity Sonar Pro
     const perplexityResponse = await perplexity.chat.completions.create({
-      model: 'sonar',
+      model: 'sonar-pro',
       messages: [{
         role: 'user',
         content: `Find companies in the last 30 days with high-value buying signals:
