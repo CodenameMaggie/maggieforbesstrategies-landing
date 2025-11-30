@@ -2,25 +2,40 @@ const Anthropic = require('@anthropic-ai/sdk');
 const OpenAI = require('openai');
 const db = require('./utils/db');
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+// Lazy initialization to prevent 404 when API keys are missing
+let anthropic, openai, perplexity;
 
-const openai = new OpenAI({
-  apiKey: process.env.OPEN_API_KEY,
-});
+function getAIClients() {
+  if (!anthropic && process.env.ANTHROPIC_API_KEY) {
+    anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+  }
 
-// Perplexity for web search (uses OpenAI SDK)
-const perplexity = new OpenAI({
-  apiKey: process.env.PERPLEXITY_API_KEY,
-  baseURL: 'https://api.perplexity.ai'
-});
+  if (!openai && process.env.OPEN_API_KEY) {
+    openai = new OpenAI({
+      apiKey: process.env.OPEN_API_KEY,
+    });
+  }
+
+  if (!perplexity && process.env.PERPLEXITY_API_KEY) {
+    perplexity = new OpenAI({
+      apiKey: process.env.PERPLEXITY_API_KEY,
+      baseURL: 'https://api.perplexity.ai'
+    });
+  }
+
+  return { anthropic, openai, perplexity };
+}
 
 // AI provider fallback - tries Perplexity first (main), then OpenAI, then Claude
 async function callAIWithFallback(prompt, maxTokens = 2000) {
+  const { anthropic, openai, perplexity } = getAIClients();
+
   const providers = [
     {
       name: 'Perplexity',
+      enabled: !!perplexity,
       call: async () => {
         const response = await perplexity.chat.completions.create({
           model: 'sonar-pro',
@@ -32,6 +47,7 @@ async function callAIWithFallback(prompt, maxTokens = 2000) {
     },
     {
       name: 'OpenAI',
+      enabled: !!openai,
       call: async () => {
         const response = await openai.chat.completions.create({
           model: 'gpt-4o-mini',
@@ -43,6 +59,7 @@ async function callAIWithFallback(prompt, maxTokens = 2000) {
     },
     {
       name: 'Claude',
+      enabled: !!anthropic,
       call: async () => {
         const response = await anthropic.messages.create({
           model: 'claude-3-5-sonnet-20241022',
@@ -54,7 +71,7 @@ async function callAIWithFallback(prompt, maxTokens = 2000) {
     }
   ];
 
-  for (const provider of providers) {
+  for (const provider of providers.filter(p => p.enabled)) {
     try {
       console.log(`[AI] Trying ${provider.name}...`);
       const result = await provider.call();
@@ -66,7 +83,7 @@ async function callAIWithFallback(prompt, maxTokens = 2000) {
     }
   }
 
-  throw new Error('All AI providers failed');
+  throw new Error('All AI providers failed or no API keys configured');
 }
 
 /**
@@ -210,10 +227,19 @@ module.exports = async (req, res) => {
 async function scanWebForProspects(criteria, tenantId, req) {
   console.log('[Web Prospector] Finding people actively seeking strategic help...');
 
+  const { anthropic, openai, perplexity } = getAIClients();
+
+  if (!perplexity && !anthropic) {
+    throw new Error('AI search requires PERPLEXITY_API_KEY or ANTHROPIC_API_KEY to be configured');
+  }
+
   let prospects = [];
 
   try {
     // Search for HIGH-VALUE buying signals using Perplexity Sonar Pro
+    if (!perplexity) {
+      throw new Error('Perplexity not configured, will use fallback');
+    }
     const perplexityResponse = await perplexity.chat.completions.create({
       model: 'sonar-pro',
       messages: [{
