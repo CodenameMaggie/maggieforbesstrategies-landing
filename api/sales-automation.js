@@ -118,9 +118,9 @@ module.exports = async (req, res) => {
         `SELECT * FROM contacts
          WHERE tenant_id = $1
          AND stage = $2
-         AND updated_at < NOW() - INTERVAL '${rules.autoProgressAfterDays} days'
+         AND updated_at < NOW() - ($3 || ' days')::interval
          LIMIT 5`,
-        [tenantId, stage]
+        [tenantId, stage, rules.autoProgressAfterDays]
       );
 
       for (const contact of readyToProgress) {

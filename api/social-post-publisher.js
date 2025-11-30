@@ -25,10 +25,20 @@ module.exports = async (req, res) => {
   }
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Cron-Secret');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  // CRON_SECRET protection - prevent unauthorized task creation
+  const cronSecret = process.env.CRON_SECRET;
+  if (cronSecret) {
+    const authHeader = req.headers['x-cron-secret'] || req.headers['authorization'];
+    if (authHeader !== cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+      console.error('[MFS Social Publisher] Unauthorized access attempt');
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
   }
 
   try {
