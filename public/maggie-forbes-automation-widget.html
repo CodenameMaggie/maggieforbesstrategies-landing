@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Automation Widget</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --gold: #B8935F;
+      --gold-light: #D4B896;
+      --navy: #1a2332;
+      --navy-light: #2c3e50;
+      --cream: #f8f6f3;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: white;
+      color: #2c2c2c;
+    }
+
+    .widget {
+      padding: 1.5rem;
+      background: white;
+    }
+
+    .widget-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid var(--gold);
+    }
+
+    .widget-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-weight: 400;
+      color: var(--navy);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .widget-badge {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.65rem;
+      padding: 0.25rem 0.6rem;
+      background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 100%);
+      color: white;
+      border-radius: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .widget-refresh {
+      background: white;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .widget-refresh:hover {
+      background: var(--gold);
+      color: white;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      padding: 1.5rem;
+      border-radius: 10px;
+      color: white;
+      border-top: 3px solid var(--gold);
+    }
+
+    .stat-card.success {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      border-top: 3px solid var(--gold);
+    }
+
+    .stat-card.warning {
+      background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 100%);
+    }
+
+    .stat-card.primary {
+      background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 100%);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      opacity: 0.9;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-change {
+      font-size: 0.75rem;
+      opacity: 0.85;
+    }
+
+    /* Activity Feed */
+    .activity-section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.25rem;
+      font-weight: 400;
+      color: var(--navy);
+      margin-bottom: 1rem;
+    }
+
+    .activity-feed {
+      background: var(--cream);
+      border-radius: 10px;
+      padding: 1rem;
+      max-height: 450px;
+      overflow-y: auto;
+    }
+
+    .activity-item {
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+      border-left: 4px solid var(--gold);
+      display: flex;
+      gap: 1rem;
+      align-items: start;
+      transition: transform 0.2s;
+    }
+
+    .activity-item:hover {
+      transform: translateX(4px);
+    }
+
+    .activity-item.leads {
+      border-left-color: var(--navy);
+    }
+
+    .activity-item.content {
+      border-left-color: var(--gold);
+    }
+
+    .activity-item.research {
+      border-left-color: var(--gold-light);
+    }
+
+    .activity-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .activity-content {
+      flex: 1;
+    }
+
+    .activity-title {
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 0.25rem;
+      font-size: 0.95rem;
+    }
+
+    .activity-description {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 0.25rem;
+    }
+
+    .activity-time {
+      font-size: 0.75rem;
+      color: #999;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: #999;
+    }
+
+    .spinner {
+      border: 3px solid var(--cream);
+      border-top: 3px solid var(--gold);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #999;
+    }
+
+    .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.3;
+    }
+
+    /* Scrollbar Styling */
+    .activity-feed::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .activity-feed::-webkit-scrollbar-track {
+      background: #f0f0f0;
+      border-radius: 10px;
+    }
+
+    .activity-feed::-webkit-scrollbar-thumb {
+      background: var(--gold);
+      border-radius: 10px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="widget">
+
+    <!-- Header -->
+    <div class="widget-header">
+      <div class="widget-title">
+        AI Automation Engine
+        <span class="widget-badge">Active</span>
+      </div>
+      <button class="widget-refresh" onclick="refreshWidget()">
+        🔄 Refresh
+      </button>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card success">
+        <div class="stat-label">Leads This Week</div>
+        <div class="stat-value" id="leads-count">--</div>
+        <div class="stat-change">↑ AI Generated</div>
+      </div>
+
+      <div class="stat-card warning">
+        <div class="stat-label">Content Ready</div>
+        <div class="stat-value" id="content-count">--</div>
+        <div class="stat-change">For Review</div>
+      </div>
+
+      <div class="stat-card primary">
+        <div class="stat-label">Avg Quality Score</div>
+        <div class="stat-value" id="fit-score">--</div>
+        <div class="stat-change">High Quality Leads</div>
+      </div>
+    </div>
+
+    <!-- Activity Feed -->
+    <h3 class="activity-section-title">Recent Automation Activity</h3>
+    <div class="activity-feed" id="activity-feed">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading automation activity...</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Configuration
+    const SUPABASE_URL = 'https://awgxauppcufwftcxrfez.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF3Z3hhdXBwY3Vmd2Z0Y3hyZmV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI1NjYzNDcsImV4cCI6MjA0ODE0MjM0N30.HfqUZ9pXZmAKJQcmUKdQKsYHbPUe_gS31-uOlbFVSO4';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Get tenant ID from URL parameter or parent window
+    function getTenantId() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('tenant_id') || urlParams.get('tenant') || 'maggie-forbes';
+    }
+
+    const tenantId = getTenantId();
+
+    // Load widget data
+    async function loadWidget() {
+      try {
+        await loadStats();
+        await loadActivityFeed();
+      } catch (error) {
+        console.error('Error loading widget:', error);
+        document.getElementById('activity-feed').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">⚠️</div>
+            <p>Error loading data. Please refresh.</p>
+          </div>
+        `;
+      }
+    }
+
+    // Load stats
+    async function loadStats() {
+      try {
+        // Get last 7 days
+        const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+
+        // Fetch leads
+        const { data: leads, error: leadsError } = await supabase
+          .from('generated_leads')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .gte('created_at', sevenDaysAgo);
+
+        if (leadsError) {
+          console.error('Error fetching leads:', leadsError);
+        }
+
+        // Update stats
+        const leadsCount = leads?.length || 0;
+        document.getElementById('leads-count').textContent = leadsCount;
+
+        // Calculate average fit score
+        if (leads && leads.length > 0) {
+          const avgScore = leads.reduce((sum, lead) => sum + (lead.fit_score || 0), 0) / leads.length;
+          document.getElementById('fit-score').textContent = avgScore.toFixed(1) + '/10';
+        } else {
+          document.getElementById('fit-score').textContent = '--';
+        }
+
+        // Fetch content
+        const { data: content, error: contentError } = await supabase
+          .from('generated_content')
+          .select('id')
+          .eq('tenant_id', tenantId)
+          .eq('status', 'draft');
+
+        if (contentError) {
+          console.error('Error fetching content:', contentError);
+        }
+
+        document.getElementById('content-count').textContent = content?.length || 0;
+
+      } catch (error) {
+        console.error('Error loading stats:', error);
+      }
+    }
+
+    // Load activity feed
+    async function loadActivityFeed() {
+      try {
+        const feed = document.getElementById('activity-feed');
+
+        // Fetch recent activity (last 7 days)
+        const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+
+        // Get leads
+        const { data: leads } = await supabase
+          .from('generated_leads')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .gte('created_at', sevenDaysAgo)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        // Get content
+        const { data: content } = await supabase
+          .from('generated_content')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .gte('created_at', sevenDaysAgo)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        // Get research
+        const { data: research } = await supabase
+          .from('market_research')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .gte('created_at', sevenDaysAgo)
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        // Combine and sort all activity
+        const allActivity = [
+          ...(leads || []).map(item => ({ ...item, type: 'leads', icon: '🎯' })),
+          ...(content || []).map(item => ({ ...item, type: 'content', icon: '📝' })),
+          ...(research || []).map(item => ({ ...item, type: 'research', icon: '🔬' }))
+        ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        if (allActivity.length === 0) {
+          feed.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">🤖</div>
+              <p>No recent activity</p>
+              <small style="color: #999;">Automation runs daily at 6am</small>
+            </div>
+          `;
+          return;
+        }
+
+        // Render activity feed
+        feed.innerHTML = allActivity.slice(0, 15).map(item => {
+          let title, description;
+
+          if (item.type === 'leads') {
+            title = `New Lead: ${item.name || 'Unknown'}`;
+            description = `${item.company || 'N/A'} • Quality Score: ${item.fit_score || 0}/10`;
+          } else if (item.type === 'content') {
+            title = `${(item.content_type || 'Content').charAt(0).toUpperCase() + (item.content_type || 'content').slice(1)} Generated`;
+            description = item.title || 'Untitled content';
+          } else if (item.type === 'research') {
+            title = `Market Research: ${(item.research_type || 'Analysis').replace('_', ' ')}`;
+            description = item.title || 'Research report';
+          }
+
+          const timeAgo = getTimeAgo(new Date(item.created_at));
+
+          return `
+            <div class="activity-item ${item.type}">
+              <div class="activity-icon">${item.icon}</div>
+              <div class="activity-content">
+                <div class="activity-title">${title}</div>
+                <div class="activity-description">${description}</div>
+                <div class="activity-time">${timeAgo}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (error) {
+        console.error('Error loading activity feed:', error);
+        document.getElementById('activity-feed').innerHTML = `
+          <div class="empty-state">
+            <p style="color: #e53935;">Error loading activity</p>
+          </div>
+        `;
+      }
+    }
+
+    // Get time ago string
+    function getTimeAgo(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+
+      const intervals = {
+        year: 31536000,
+        month: 2592000,
+        week: 604800,
+        day: 86400,
+        hour: 3600,
+        minute: 60
+      };
+
+      for (const [unit, secondsInUnit] of Object.entries(intervals)) {
+        const interval = Math.floor(seconds / secondsInUnit);
+        if (interval >= 1) {
+          return `${interval} ${unit}${interval > 1 ? 's' : ''} ago`;
+        }
+      }
+
+      return 'Just now';
+    }
+
+    // Refresh widget
+    function refreshWidget() {
+      loadWidget();
+    }
+
+    // Load on page load
+    loadWidget();
+
+    // Auto-refresh every 2 minutes
+    setInterval(loadWidget, 120000);
+
+    // Listen for messages from parent window (for iframe embedding)
+    window.addEventListener('message', (event) => {
+      if (event.data.type === 'updateTenant') {
+        window.location.href = `?tenant_id=${event.data.tenantId}`;
+      }
+    });
+  </script>
+
+</body>
+</html>
