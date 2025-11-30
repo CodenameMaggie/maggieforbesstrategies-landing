@@ -4,9 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MFS Admin Dashboard</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" href="/favicon.ico">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- MFS Design System -->
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/components.css">
+
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -1720,7 +1730,7 @@
         const data = await res.json();
 
         if (data.success) {
-          alert(`Client provisioned successfully!\\n\\nTier: ${tier}\\nMRR: $${data.mrr}\\nTasks Created: ${data.tasksCreated}${data.hasToolsAccess ? '\\nAI Tools: Enabled' : ''}`);
+          alert(`Client provisioned successfully!\\n\\nTier: ${tier}\\nMRR: $${data.mrr}\\nTasks Created: ${data.tasksCreated}${data.hasToolsAccess ? '\\nPlatform Access: Enabled' : ''}`);
           loadContacts();
           loadDashboard();
           if (selectedContact) {
