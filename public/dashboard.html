@@ -739,6 +739,184 @@
       .sidebar { width: 60px; }
       .nav-item span:not(.nav-icon) { display: none; }
     }
+
+    /* Automation Widget Styles */
+    .automation-widget {
+      padding: 1.5rem;
+      background: white;
+      border-radius: 10px;
+    }
+
+    .widget-header-inline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid var(--gold);
+    }
+
+    .widget-title-inline {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-weight: 400;
+      color: var(--navy);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .widget-badge-inline {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.65rem;
+      padding: 0.25rem 0.6rem;
+      background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 100%);
+      color: white;
+      border-radius: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .widget-refresh-inline {
+      background: white;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .widget-refresh-inline:hover {
+      background: var(--gold);
+      color: white;
+    }
+
+    .widget-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .widget-stat-card {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      padding: 1.5rem;
+      border-radius: 10px;
+      color: white;
+      border-top: 3px solid var(--gold);
+    }
+
+    .widget-stat-warning {
+      background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 100%);
+    }
+
+    .widget-stat-primary {
+      background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 100%);
+    }
+
+    .widget-stat-label {
+      font-size: 0.75rem;
+      opacity: 0.9;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .widget-stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .widget-stat-change {
+      font-size: 0.75rem;
+      opacity: 0.85;
+    }
+
+    .widget-activity-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.25rem;
+      font-weight: 400;
+      color: var(--navy);
+      margin-bottom: 1rem;
+    }
+
+    .widget-activity-feed {
+      background: #f8f6f3;
+      border-radius: 10px;
+      padding: 1rem;
+      max-height: 450px;
+      overflow-y: auto;
+    }
+
+    .widget-activity-item {
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+      border-left: 4px solid var(--gold);
+      display: flex;
+      gap: 1rem;
+      align-items: start;
+      transition: transform 0.2s;
+    }
+
+    .widget-activity-item:hover {
+      transform: translateX(4px);
+    }
+
+    .widget-activity-item.contact {
+      border-left-color: var(--navy);
+    }
+
+    .widget-activity-item.task {
+      border-left-color: var(--gold);
+    }
+
+    .widget-activity-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .widget-activity-content {
+      flex: 1;
+    }
+
+    .widget-activity-title-text {
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 0.25rem;
+      font-size: 0.95rem;
+    }
+
+    .widget-activity-description {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 0.25rem;
+    }
+
+    .widget-activity-time {
+      font-size: 0.75rem;
+      color: #999;
+    }
+
+    .widget-activity-feed::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .widget-activity-feed::-webkit-scrollbar-track {
+      background: #f0f0f0;
+      border-radius: 10px;
+    }
+
+    .widget-activity-feed::-webkit-scrollbar-thumb {
+      background: var(--gold);
+      border-radius: 10px;
+    }
   </style>
 </head>
 <body>
@@ -1040,13 +1218,50 @@
           </div>
         </div>
 
-        <!-- AI Automation Widget -->
+        <!-- AI Automation Widget - Integrated -->
         <div class="pipeline-section" style="margin-top: 1.5rem;">
-          <iframe
-            src="/maggie-forbes-automation-widget.html?tenant_id=maggie-forbes"
-            style="width: 100%; height: 800px; border: none; border-radius: 10px;"
-            title="AI Automation Widget"
-          ></iframe>
+          <div class="automation-widget">
+            <!-- Widget Header -->
+            <div class="widget-header-inline">
+              <div class="widget-title-inline">
+                AI Automation Engine
+                <span class="widget-badge-inline">Active</span>
+              </div>
+              <button class="widget-refresh-inline" onclick="refreshAutomationWidget()">
+                🔄 Refresh
+              </button>
+            </div>
+
+            <!-- Widget Stats Grid -->
+            <div class="widget-stats-grid">
+              <div class="widget-stat-card widget-stat-success">
+                <div class="widget-stat-label">New Contacts</div>
+                <div class="widget-stat-value" id="widget-leads-count">--</div>
+                <div class="widget-stat-change">↑ Last 7 Days</div>
+              </div>
+
+              <div class="widget-stat-card widget-stat-warning">
+                <div class="widget-stat-label">Pending Tasks</div>
+                <div class="widget-stat-value" id="widget-content-count">--</div>
+                <div class="widget-stat-change">To Complete</div>
+              </div>
+
+              <div class="widget-stat-card widget-stat-primary">
+                <div class="widget-stat-label">High Value Clients</div>
+                <div class="widget-stat-value" id="widget-fit-score">--</div>
+                <div class="widget-stat-change">Active & Strategy</div>
+              </div>
+            </div>
+
+            <!-- Widget Activity Feed -->
+            <h3 class="widget-activity-title">Recent Automation Activity</h3>
+            <div class="widget-activity-feed" id="widget-activity-feed">
+              <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading automation activity...</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -2001,9 +2216,172 @@
       alert('Automation settings coming soon! Currently using default settings:\n\n• LinkedIn: Daily scans\n• Web: Daily scans\n• Sales: Continuous automation');
     }
 
+    // Automation Widget Functions
+    async function loadAutomationWidget() {
+      try {
+        await loadWidgetStats();
+        await loadWidgetActivityFeed();
+      } catch (error) {
+        console.error('Error loading automation widget:', error);
+        const feed = document.getElementById('widget-activity-feed');
+        if (feed) {
+          feed.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">⚠️</div>
+              <p>Error loading data. Please refresh.</p>
+            </div>
+          `;
+        }
+      }
+    }
+
+    async function loadWidgetStats() {
+      try {
+        // Reuse allContacts if available
+        const contacts = allContacts || [];
+
+        // Filter last 7 days
+        const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000);
+        const recentContacts = contacts.filter(c =>
+          new Date(c.created_at) >= sevenDaysAgo
+        );
+
+        // Update stats
+        document.getElementById('widget-leads-count').textContent = recentContacts.length;
+
+        // Count high-value contacts
+        const highValue = contacts.filter(c =>
+          c.stage === 'active_client' || c.stage === 'strategy' || c.client_tier
+        ).length;
+        document.getElementById('widget-fit-score').textContent = highValue;
+
+        // Count pending tasks (fetch fresh)
+        const tasksRes = await fetch(`${API_BASE}/api/tasks?status=pending`, {
+          credentials: 'include'
+        });
+        if (tasksRes.ok) {
+          const tasksData = await tasksRes.json();
+          const tasks = tasksData.tasks || [];
+          document.getElementById('widget-content-count').textContent = tasks.length;
+        } else {
+          document.getElementById('widget-content-count').textContent = '0';
+        }
+      } catch (error) {
+        console.error('Error loading widget stats:', error);
+        document.getElementById('widget-leads-count').textContent = '0';
+        document.getElementById('widget-fit-score').textContent = '0';
+        document.getElementById('widget-content-count').textContent = '0';
+      }
+    }
+
+    async function loadWidgetActivityFeed() {
+      try {
+        const feed = document.getElementById('widget-activity-feed');
+        if (!feed) return;
+
+        // Reuse allContacts and fetch fresh tasks
+        const contacts = allContacts || [];
+
+        const tasksRes = await fetch(`${API_BASE}/api/tasks`, {
+          credentials: 'include'
+        });
+        const tasksData = await tasksRes.json();
+        const allTasks = tasksData.tasks || [];
+
+        // Filter last 7 days
+        const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000);
+        const recentContacts = contacts
+          .filter(c => new Date(c.created_at) >= sevenDaysAgo)
+          .slice(0, 10);
+        const recentTasks = allTasks
+          .filter(t => new Date(t.created_at) >= sevenDaysAgo)
+          .slice(0, 5);
+
+        // Combine activity
+        const allActivity = [
+          ...recentContacts.map(item => ({ ...item, type: 'contact', icon: '🎯' })),
+          ...recentTasks.map(item => ({ ...item, type: 'task', icon: '✓' }))
+        ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        if (allActivity.length === 0) {
+          feed.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">🤖</div>
+              <p>No recent activity</p>
+              <small style="color: #999;">Activity from the last 7 days will appear here</small>
+            </div>
+          `;
+          return;
+        }
+
+        // Render activity feed
+        feed.innerHTML = allActivity.slice(0, 15).map(item => {
+          let title, description;
+
+          if (item.type === 'contact') {
+            const stageName = item.stage || 'new';
+            title = `New Contact: ${escapeHtml(item.full_name) || 'Unknown'}`;
+            description = `${escapeHtml(item.company) || 'No company'} • Stage: ${stageName.replace('_', ' ')}`;
+          } else if (item.type === 'task') {
+            title = escapeHtml(item.title) || 'Task created';
+            description = `Priority: ${item.priority || 'medium'} • Status: ${item.status || 'pending'}`;
+          }
+
+          const timeAgo = getTimeAgo(new Date(item.created_at));
+
+          return `
+            <div class="widget-activity-item ${item.type}">
+              <div class="widget-activity-icon">${item.icon}</div>
+              <div class="widget-activity-content">
+                <div class="widget-activity-title-text">${title}</div>
+                <div class="widget-activity-description">${description}</div>
+                <div class="widget-activity-time">${timeAgo}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (error) {
+        console.error('Error loading widget activity:', error);
+        const feed = document.getElementById('widget-activity-feed');
+        if (feed) {
+          feed.innerHTML = `
+            <div class="empty-state">
+              <p style="color: #e53935;">Error loading activity</p>
+            </div>
+          `;
+        }
+      }
+    }
+
+    function getTimeAgo(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+      const intervals = {
+        year: 31536000,
+        month: 2592000,
+        week: 604800,
+        day: 86400,
+        hour: 3600,
+        minute: 60
+      };
+
+      for (const [unit, secondsInUnit] of Object.entries(intervals)) {
+        const interval = Math.floor(seconds / secondsInUnit);
+        if (interval >= 1) {
+          return `${interval} ${unit}${interval > 1 ? 's' : ''} ago`;
+        }
+      }
+      return 'Just now';
+    }
+
+    function refreshAutomationWidget() {
+      loadAutomationWidget();
+    }
+
     // Initialize
     if (checkAuth()) {
       loadDashboard();
+      loadAutomationWidget();
     }
   </script>
 </body>
