@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "outputDirectory": "public",
   "rewrites": [
     { "source": "/", "destination": "/mf-landing-page.html" },
     { "source": "/login", "destination": "/login.html" },
