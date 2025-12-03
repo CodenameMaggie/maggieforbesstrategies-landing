@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Automation Widget</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -301,19 +300,8 @@
   </div>
 
   <script>
-    // Configuration
-    const SUPABASE_URL = 'https://awgxauppcufwftcxrfez.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF3Z3hhdXBwY3Vmd2Z0Y3hyZmV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI1NjYzNDcsImV4cCI6MjA0ODE0MjM0N30.HfqUZ9pXZmAKJQcmUKdQKsYHbPUe_gS31-uOlbFVSO4';
-
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // Get tenant ID from URL parameter or parent window
-    function getTenantId() {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get('tenant_id') || urlParams.get('tenant') || 'maggie-forbes';
-    }
-
-    const tenantId = getTenantId();
+    // Configuration - Use API endpoints instead of direct Supabase
+    const API_BASE = window.location.origin;
 
     // Load widget data
     async function loadWidget() {
@@ -334,45 +322,42 @@
     // Load stats
     async function loadStats() {
       try {
-        // Get last 7 days
-        const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+        // Fetch contacts via API
+        const contactsRes = await fetch(`${API_BASE}/api/contacts`, {
+          credentials: 'include'
+        });
+        const contactsData = await contactsRes.json();
+        const contacts = contactsData.contacts || [];
 
-        // Fetch contacts (leads)
-        const { data: contacts, error: contactsError } = await supabase
-          .from('contacts')
-          .select('*')
-          .eq('tenant_id', tenantId)
-          .gte('created_at', sevenDaysAgo);
-
-        if (contactsError) {
-          console.error('Error fetching contacts:', contactsError);
-        }
+        // Filter last 7 days
+        const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000);
+        const recentContacts = contacts.filter(c =>
+          new Date(c.created_at) >= sevenDaysAgo
+        );
 
         // Update stats
-        const leadsCount = contacts?.length || 0;
-        document.getElementById('leads-count').textContent = leadsCount;
+        document.getElementById('leads-count').textContent = recentContacts.length;
 
         // Count high-value contacts (active clients and strategy tier)
-        const highValue = contacts?.filter(c =>
+        const highValue = contacts.filter(c =>
           c.stage === 'active_client' || c.stage === 'strategy' || c.client_tier
-        ).length || 0;
+        ).length;
         document.getElementById('fit-score').textContent = highValue;
 
-        // Fetch pending tasks
-        const { data: tasks, error: tasksError } = await supabase
-          .from('tasks')
-          .select('id')
-          .eq('tenant_id', tenantId)
-          .eq('status', 'pending');
+        // Fetch pending tasks via API
+        const tasksRes = await fetch(`${API_BASE}/api/tasks?status=pending`, {
+          credentials: 'include'
+        });
+        const tasksData = await tasksRes.json();
+        const tasks = tasksData.tasks || [];
 
-        if (tasksError) {
-          console.error('Error fetching tasks:', tasksError);
-        }
-
-        document.getElementById('content-count').textContent = tasks?.length || 0;
+        document.getElementById('content-count').textContent = tasks.length;
 
       } catch (error) {
         console.error('Error loading stats:', error);
+        document.getElementById('leads-count').textContent = '0';
+        document.getElementById('fit-score').textContent = '0';
+        document.getElementById('content-count').textContent = '0';
       }
     }
 
@@ -381,31 +366,33 @@
       try {
         const feed = document.getElementById('activity-feed');
 
-        // Fetch recent activity (last 7 days)
-        const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+        // Fetch contacts via API
+        const contactsRes = await fetch(`${API_BASE}/api/contacts`, {
+          credentials: 'include'
+        });
+        const contactsData = await contactsRes.json();
+        const allContacts = contactsData.contacts || [];
 
-        // Get contacts
-        const { data: contacts } = await supabase
-          .from('contacts')
-          .select('*')
-          .eq('tenant_id', tenantId)
-          .gte('created_at', sevenDaysAgo)
-          .order('created_at', { ascending: false })
-          .limit(10);
+        // Fetch tasks via API
+        const tasksRes = await fetch(`${API_BASE}/api/tasks`, {
+          credentials: 'include'
+        });
+        const tasksData = await tasksRes.json();
+        const allTasks = tasksData.tasks || [];
 
-        // Get tasks
-        const { data: tasks } = await supabase
-          .from('tasks')
-          .select('*')
-          .eq('tenant_id', tenantId)
-          .gte('created_at', sevenDaysAgo)
-          .order('created_at', { ascending: false })
-          .limit(5);
+        // Filter last 7 days
+        const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000);
+        const recentContacts = allContacts
+          .filter(c => new Date(c.created_at) >= sevenDaysAgo)
+          .slice(0, 10);
+        const recentTasks = allTasks
+          .filter(t => new Date(t.created_at) >= sevenDaysAgo)
+          .slice(0, 5);
 
         // Combine and sort all activity
         const allActivity = [
-          ...(contacts || []).map(item => ({ ...item, type: 'contact', icon: '🎯' })),
-          ...(tasks || []).map(item => ({ ...item, type: 'task', icon: '✓' }))
+          ...recentContacts.map(item => ({ ...item, type: 'contact', icon: '🎯' })),
+          ...recentTasks.map(item => ({ ...item, type: 'task', icon: '✓' }))
         ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
         if (allActivity.length === 0) {
