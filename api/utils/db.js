@@ -1,17 +1,26 @@
 const { Pool } = require('pg');
 
 // Supabase connection - optimized for serverless with strict connection limits
+// Use transaction mode pooler (port 6543) for faster connections
+let connectionString = process.env.DATABASE_URL;
+
+// Auto-fix: Change port 5432 to 6543 for transaction pooling
+if (connectionString && connectionString.includes(':5432/')) {
+  connectionString = connectionString.replace(':5432/', ':6543/');
+  console.log('[DB] Using transaction pooler on port 6543');
+}
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: connectionString,
   ssl: {
     rejectUnauthorized: false // Required for Supabase
   },
-  max: 2, // Increased from 1 to allow concurrent requests
+  max: 3, // Allow up to 3 concurrent connections
   min: 0, // Don't maintain idle connections
   idleTimeoutMillis: 1000, // Close idle connections after 1 second
-  connectionTimeoutMillis: 25000, // Increased to 25s (just under Vercel's 30s timeout)
-  query_timeout: 20000, // Add query timeout of 20s
-  statement_timeout: 20000, // Add statement timeout of 20s
+  connectionTimeoutMillis: 8000, // Faster timeout - transaction pooler should be quick
+  query_timeout: 10000, // Queries should complete in 10s or less with pooler
+  statement_timeout: 10000,
   allowExitOnIdle: true // Allow pool to close completely when idle (important for serverless)
 });
 
