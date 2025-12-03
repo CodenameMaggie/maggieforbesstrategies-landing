@@ -1,23 +1,11 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "public/**",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    { "src": "/", "dest": "/public/mf-landing-page.html" },
-    { "src": "/login", "dest": "/public/login.html" },
-    { "src": "/dashboard", "dest": "/public/dashboard.html" },
-    { "src": "/ai-chat", "dest": "/public/ai-chat-widget.html" },
-    { "src": "/ai-assistants", "dest": "/public/ai-chat-widget.html" },
-    { "src": "/maggie-forbes-automation-widget.html", "dest": "/public/maggie-forbes-automation-widget.html" },
-    { "src": "/(.*)", "dest": "/public/$1" }
+  "rewrites": [
+    { "source": "/", "destination": "/mf-landing-page.html" },
+    { "source": "/login", "destination": "/login.html" },
+    { "source": "/dashboard", "destination": "/dashboard.html" },
+    { "source": "/ai-chat", "destination": "/ai-chat-widget.html" },
+    { "source": "/ai-assistants", "destination": "/ai-chat-widget.html" }
   ],
   "headers": [
     {
