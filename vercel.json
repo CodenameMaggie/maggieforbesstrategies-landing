@@ -1,5 +1,8 @@
 {
   "version": 2,
+  "framework": null,
+  "buildCommand": null,
+  "installCommand": "npm install",
   "rewrites": [
     { "source": "/", "destination": "/mf-landing-page.html" },
     { "source": "/login", "destination": "/login.html" },
