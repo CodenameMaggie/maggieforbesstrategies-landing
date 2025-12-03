@@ -2,11 +2,8 @@
   "name": "maggieforbesstrategies-landing",
   "version": "1.0.0",
   "description": "Maggie Forbes Strategies - Strategic Growth Architecture",
-  "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
-    "build": "echo 'Build complete'"
+    "build": "echo 'Static site with serverless functions'"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",
