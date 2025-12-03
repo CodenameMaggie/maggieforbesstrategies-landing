@@ -6,10 +6,12 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false // Required for Supabase
   },
-  max: 1, // Supabase free tier: 3 connections max. Use 1 to be safe in serverless
+  max: 2, // Increased from 1 to allow concurrent requests
   min: 0, // Don't maintain idle connections
-  idleTimeoutMillis: 500, // Aggressively close idle connections
-  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 1000, // Close idle connections after 1 second
+  connectionTimeoutMillis: 25000, // Increased to 25s (just under Vercel's 30s timeout)
+  query_timeout: 20000, // Add query timeout of 20s
+  statement_timeout: 20000, // Add statement timeout of 20s
   allowExitOnIdle: true // Allow pool to close completely when idle (important for serverless)
 });
 
