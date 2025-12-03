@@ -271,21 +271,21 @@
     <!-- Stats Grid -->
     <div class="stats-grid">
       <div class="stat-card success">
-        <div class="stat-label">Leads This Week</div>
+        <div class="stat-label">New Contacts</div>
         <div class="stat-value" id="leads-count">--</div>
-        <div class="stat-change">↑ AI Generated</div>
+        <div class="stat-change">↑ Last 7 Days</div>
       </div>
 
       <div class="stat-card warning">
-        <div class="stat-label">Content Ready</div>
+        <div class="stat-label">Pending Tasks</div>
         <div class="stat-value" id="content-count">--</div>
-        <div class="stat-change">For Review</div>
+        <div class="stat-change">To Complete</div>
       </div>
 
       <div class="stat-card primary">
-        <div class="stat-label">Avg Quality Score</div>
+        <div class="stat-label">High Value Clients</div>
         <div class="stat-value" id="fit-score">--</div>
-        <div class="stat-change">High Quality Leads</div>
+        <div class="stat-change">Active & Strategy</div>
       </div>
     </div>
 
@@ -337,41 +337,39 @@
         // Get last 7 days
         const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString();
 
-        // Fetch leads
-        const { data: leads, error: leadsError } = await supabase
-          .from('generated_leads')
+        // Fetch contacts (leads)
+        const { data: contacts, error: contactsError } = await supabase
+          .from('contacts')
           .select('*')
           .eq('tenant_id', tenantId)
           .gte('created_at', sevenDaysAgo);
 
-        if (leadsError) {
-          console.error('Error fetching leads:', leadsError);
+        if (contactsError) {
+          console.error('Error fetching contacts:', contactsError);
         }
 
         // Update stats
-        const leadsCount = leads?.length || 0;
+        const leadsCount = contacts?.length || 0;
         document.getElementById('leads-count').textContent = leadsCount;
 
-        // Calculate average fit score
-        if (leads && leads.length > 0) {
-          const avgScore = leads.reduce((sum, lead) => sum + (lead.fit_score || 0), 0) / leads.length;
-          document.getElementById('fit-score').textContent = avgScore.toFixed(1) + '/10';
-        } else {
-          document.getElementById('fit-score').textContent = '--';
-        }
+        // Count high-value contacts (active clients and strategy tier)
+        const highValue = contacts?.filter(c =>
+          c.stage === 'active_client' || c.stage === 'strategy' || c.client_tier
+        ).length || 0;
+        document.getElementById('fit-score').textContent = highValue;
 
-        // Fetch content
-        const { data: content, error: contentError } = await supabase
-          .from('generated_content')
+        // Fetch pending tasks
+        const { data: tasks, error: tasksError } = await supabase
+          .from('tasks')
           .select('id')
           .eq('tenant_id', tenantId)
-          .eq('status', 'draft');
+          .eq('status', 'pending');
 
-        if (contentError) {
-          console.error('Error fetching content:', contentError);
+        if (tasksError) {
+          console.error('Error fetching tasks:', tasksError);
         }
 
-        document.getElementById('content-count').textContent = content?.length || 0;
+        document.getElementById('content-count').textContent = tasks?.length || 0;
 
       } catch (error) {
         console.error('Error loading stats:', error);
@@ -386,38 +384,28 @@
         // Fetch recent activity (last 7 days)
         const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString();
 
-        // Get leads
-        const { data: leads } = await supabase
-          .from('generated_leads')
+        // Get contacts
+        const { data: contacts } = await supabase
+          .from('contacts')
           .select('*')
           .eq('tenant_id', tenantId)
           .gte('created_at', sevenDaysAgo)
           .order('created_at', { ascending: false })
           .limit(10);
 
-        // Get content
-        const { data: content } = await supabase
-          .from('generated_content')
+        // Get tasks
+        const { data: tasks } = await supabase
+          .from('tasks')
           .select('*')
           .eq('tenant_id', tenantId)
           .gte('created_at', sevenDaysAgo)
           .order('created_at', { ascending: false })
           .limit(5);
 
-        // Get research
-        const { data: research } = await supabase
-          .from('market_research')
-          .select('*')
-          .eq('tenant_id', tenantId)
-          .gte('created_at', sevenDaysAgo)
-          .order('created_at', { ascending: false })
-          .limit(3);
-
         // Combine and sort all activity
         const allActivity = [
-          ...(leads || []).map(item => ({ ...item, type: 'leads', icon: '🎯' })),
-          ...(content || []).map(item => ({ ...item, type: 'content', icon: '📝' })),
-          ...(research || []).map(item => ({ ...item, type: 'research', icon: '🔬' }))
+          ...(contacts || []).map(item => ({ ...item, type: 'contact', icon: '🎯' })),
+          ...(tasks || []).map(item => ({ ...item, type: 'task', icon: '✓' }))
         ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
         if (allActivity.length === 0) {
@@ -425,7 +413,7 @@
             <div class="empty-state">
               <div class="empty-icon">🤖</div>
               <p>No recent activity</p>
-              <small style="color: #999;">Automation runs daily at 6am</small>
+              <small style="color: #999;">Activity from the last 7 days will appear here</small>
             </div>
           `;
           return;
@@ -435,15 +423,13 @@
         feed.innerHTML = allActivity.slice(0, 15).map(item => {
           let title, description;
 
-          if (item.type === 'leads') {
-            title = `New Lead: ${item.name || 'Unknown'}`;
-            description = `${item.company || 'N/A'} • Quality Score: ${item.fit_score || 0}/10`;
-          } else if (item.type === 'content') {
-            title = `${(item.content_type || 'Content').charAt(0).toUpperCase() + (item.content_type || 'content').slice(1)} Generated`;
-            description = item.title || 'Untitled content';
-          } else if (item.type === 'research') {
-            title = `Market Research: ${(item.research_type || 'Analysis').replace('_', ' ')}`;
-            description = item.title || 'Research report';
+          if (item.type === 'contact') {
+            const stageName = item.stage || 'new';
+            title = `New Contact: ${item.full_name || 'Unknown'}`;
+            description = `${item.company || 'No company'} • Stage: ${stageName.replace('_', ' ')}`;
+          } else if (item.type === 'task') {
+            title = item.title || 'Task created';
+            description = `Priority: ${item.priority || 'medium'} • Status: ${item.status || 'pending'}`;
           }
 
           const timeAgo = getTimeAgo(new Date(item.created_at));
@@ -452,8 +438,8 @@
             <div class="activity-item ${item.type}">
               <div class="activity-icon">${item.icon}</div>
               <div class="activity-content">
-                <div class="activity-title">${title}</div>
-                <div class="activity-description">${description}</div>
+                <div class="activity-title">${escapeHtml(title)}</div>
+                <div class="activity-description">${escapeHtml(description)}</div>
                 <div class="activity-time">${timeAgo}</div>
               </div>
             </div>
@@ -468,6 +454,14 @@
           </div>
         `;
       }
+    }
+
+    // Escape HTML for XSS protection
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
     // Get time ago string
