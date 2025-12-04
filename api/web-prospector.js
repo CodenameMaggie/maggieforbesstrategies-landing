@@ -636,13 +636,27 @@ If you found companies, return the JSON array. If no companies found, return []`
       continue;
     }
 
-    // Extract email if available - DO NOT create placeholders
-    const contactEmail = prospect.email || prospect.contactEmail;
+    // Extract email if available, generate educated guess if not
+    let contactEmail = prospect.email || prospect.contactEmail;
+    let needsEnrichment = false;
 
-    // SKIP contacts without real emails - don't save placeholders
+    // If no email provided, generate an educated guess for enrichment
     if (!contactEmail || contactEmail.includes('PLACEHOLDER')) {
-      console.log(`[Web Prospector] ⚠️  Skipping ${companyName} - ${contactPerson} - no real email found`);
-      continue;
+      // Generate common email pattern: firstname.lastname@company.com
+      const nameParts = contactPerson.toLowerCase().split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts[nameParts.length - 1];
+
+      // Try to extract domain from company name or use generic
+      const companyDomain = companyName.toLowerCase()
+        .replace(/\s+/g, '')
+        .replace(/[^a-z0-9]/g, '')
+        .replace(/inc|llc|corp|ltd|company|co$/i, '');
+
+      contactEmail = `${firstName}.${lastName}@${companyDomain}.com`;
+      needsEnrichment = true;
+
+      console.log(`[Web Prospector] 📧 Generated email guess: ${contactEmail} (needs enrichment)`);
     }
 
     // Check if we already have this company
