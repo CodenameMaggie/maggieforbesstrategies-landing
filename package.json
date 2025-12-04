@@ -5,7 +5,10 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "build": "echo 'Build complete - static site with API routes'"
+    "build": "echo 'Build complete - static site with API routes'",
+    "cleanup": "node cleanup-all-test-data.js",
+    "cleanup:test": "node remove-test-data.js",
+    "cleanup:tasks": "node cleanup-duplicate-tasks.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",
