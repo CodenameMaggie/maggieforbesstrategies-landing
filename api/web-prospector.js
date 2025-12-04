@@ -207,8 +207,31 @@ module.exports = async (req, res) => {
           const prospects = await scanWebForProspects(data, tenantId, req);
           return res.status(200).json({ success: true, prospects });
 
+        case 'enrich_email':
+          // Enrich a single contact's email
+          const { contactId, contactPerson, companyName, companyDomain } = data;
+          if (!contactId || !contactPerson || !companyName) {
+            return res.status(400).json({ error: 'Missing required fields: contactId, contactPerson, companyName' });
+          }
+
+          const enrichmentResult = await enrichEmail(contactPerson, companyName, companyDomain);
+
+          // Update contact in database
+          await db.queryOne(
+            'UPDATE contacts SET email = $1, notes = CONCAT(notes, $2), updated_at = $3 WHERE id = $4 AND tenant_id = $5 RETURNING *',
+            [
+              enrichmentResult.email,
+              `\n\n📧 Email Enriched: ${enrichmentResult.email}\nSource: ${enrichmentResult.source}\nConfidence: ${enrichmentResult.confidence}%\nDate: ${new Date().toISOString()}`,
+              new Date(),
+              contactId,
+              tenantId
+            ]
+          );
+
+          return res.status(200).json({ success: true, enrichment: enrichmentResult });
+
         default:
-          return res.status(400).json({ error: 'Invalid action. Only scan_web is supported.' });
+          return res.status(400).json({ error: 'Invalid action. Supported: scan_web, enrich_email' });
       }
     }
 
@@ -487,16 +510,7 @@ If you found companies, return the JSON array. If no companies found, return []`
     }
   }
 
-  // For manual dashboard calls, return prospects immediately without saving (avoid timeout)
-  // Cron jobs will save them in background with more time
-  const isManualCall = req.headers.origin && req.headers.origin.includes('maggieforbesstrategies.com');
-
-  if (isManualCall && prospects.length > 0) {
-    console.log(`[Web Prospector] Manual call - returning ${prospects.length} prospects without saving (cron will save)`);
-    return prospects;
-  }
-
-  // Save real help-seekers to database (cron jobs only)
+  // Save all prospects to database (both manual and cron calls)
   for (const prospect of prospects) {
     // Extract company name (try multiple field name variations)
     const companyName = prospect.companyName || prospect.company || prospect.Company_Name ||
@@ -534,18 +548,19 @@ If you found companies, return the JSON array. If no companies found, return []`
                       recentSignal.toLowerCase().includes('expansion') || recentSignal.toLowerCase().includes('new market') ? 'Expansion' :
                       'Growth Signal';
 
-    // Skip if we don't have company name, contact person, OR email
-    // Without email, we can't reach out - so don't save useless leads
+    // Skip if we don't have minimum company name and contact person
     if (companyName === 'Unknown Company' || !contactPerson) {
       console.log('[Web Prospector] ⚠️  Skipping - missing company or contact info');
       continue;
     }
 
-    // CRITICAL: Skip leads without email - they're useless for outreach
-    const contactEmail = prospect.email || prospect.contactEmail || null;
-    if (!contactEmail) {
-      console.log(`[Web Prospector] ⚠️  Skipping ${companyName} - no email found (can't reach out)`);
-      continue;
+    // Extract email if available, or create placeholder for enrichment
+    const contactEmail = prospect.email || prospect.contactEmail ||
+                        `${contactPerson.toLowerCase().replace(/\s+/g, '.')}@${companyName.toLowerCase().replace(/\s+/g, '')}.com.PLACEHOLDER`;
+
+    const needsEnrichment = contactEmail.includes('.PLACEHOLDER');
+    if (needsEnrichment) {
+      console.log(`[Web Prospector] 📧 ${companyName} - email needs enrichment`);
     }
 
     // Check if we already have this company
@@ -555,6 +570,13 @@ If you found companies, return the JSON array. If no companies found, return []`
     );
 
     if (!existingContact) {
+      // Build notes with enrichment status
+      let notes = `💎 HIGH-VALUE PROSPECT ($5M+)\n\nSignal: ${recentSignal}\n\nIndustry: ${industry}\nSource: ${whereFound}\nVerify: ${postUrl}`;
+
+      if (needsEnrichment) {
+        notes += `\n\n⚠️ EMAIL NEEDS ENRICHMENT\nPlaceholder: ${contactEmail}\nAction Required: Use email enrichment service to find real email`;
+      }
+
       const contact = await db.insert('contacts', {
         tenant_id: tenantId,
         full_name: contactPerson,
@@ -562,7 +584,7 @@ If you found companies, return the JSON array. If no companies found, return []`
         company: companyName,
         stage: 'new',
         lead_source: `high_value_signal_${signalType.toLowerCase().replace(' ', '_')}`,
-        notes: `💎 HIGH-VALUE PROSPECT ($5M+)\n\nSignal: ${recentSignal}\n\nIndustry: ${industry}\nSource: ${whereFound}\nVerify: ${postUrl}`,
+        notes: notes,
         client_type: 'enterprise_prospect',
         created_at: new Date(),
         updated_at: new Date()
@@ -584,6 +606,55 @@ If you found companies, return the JSON array. If no companies found, return []`
   }
 
   return prospects;
+}
+
+/**
+ * Email Enrichment Function
+ * Finds real email addresses for prospects using various strategies
+ *
+ * Integration options:
+ * - Hunter.io API: https://hunter.io/api-documentation/v2
+ * - Clearbit API: https://clearbit.com/docs
+ * - Apollo.io API: https://apolloio.github.io/apollo-api-docs/
+ * - RocketReach API: https://rocketreach.co/api
+ */
+async function enrichEmail(contactPerson, companyName, companyDomain = null) {
+  console.log(`[Email Enrichment] Attempting to find email for ${contactPerson} at ${companyName}`);
+
+  // TODO: Integrate with email enrichment service
+  // Example with Hunter.io:
+  // if (process.env.HUNTER_API_KEY) {
+  //   const response = await fetch(
+  //     `https://api.hunter.io/v2/email-finder?domain=${companyDomain}&first_name=${firstName}&last_name=${lastName}&api_key=${process.env.HUNTER_API_KEY}`
+  //   );
+  //   const data = await response.json();
+  //   if (data.data && data.data.email) {
+  //     return { email: data.data.email, confidence: data.data.score, source: 'Hunter.io' };
+  //   }
+  // }
+
+  // FALLBACK: Generate common email patterns
+  const firstName = contactPerson.split(' ')[0].toLowerCase();
+  const lastName = contactPerson.split(' ').slice(1).join('').toLowerCase();
+  const domain = companyDomain || `${companyName.toLowerCase().replace(/\s+/g, '')}.com`;
+
+  const patterns = [
+    `${firstName}.${lastName}@${domain}`,
+    `${firstName}${lastName}@${domain}`,
+    `${firstName}@${domain}`,
+    `${firstName[0]}${lastName}@${domain}`,
+    `${lastName}@${domain}`
+  ];
+
+  console.log(`[Email Enrichment] Generated patterns for ${contactPerson}:`, patterns);
+
+  return {
+    email: patterns[0], // Best guess
+    confidence: 30, // Low confidence - needs verification
+    source: 'pattern_generation',
+    allPatterns: patterns,
+    needsVerification: true
+  };
 }
 
 /**

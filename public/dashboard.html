@@ -1560,17 +1560,24 @@
           return;
         }
 
-        tbody.innerHTML = allContacts.map(contact => `
-          <tr>
+        tbody.innerHTML = allContacts.map(contact => {
+          const needsEnrichment = contact.email && contact.email.includes('.PLACEHOLDER');
+          const emailDisplay = needsEnrichment ? '⚠️ Needs Enrichment' : (escapeHtml(contact.email) || '-');
+          const emailStyle = needsEnrichment ? 'color: #fb8c00; font-weight: 500;' : 'color: #666;';
+
+          return `
+          <tr style="${needsEnrichment ? 'background: #fff8e1;' : ''}">
             <td style="padding: 0.75rem; font-weight: 500;">${escapeHtml(contact.full_name) || '-'}</td>
-            <td style="padding: 0.75rem; color: #666;">${escapeHtml(contact.email) || '-'}</td>
+            <td style="padding: 0.75rem; ${emailStyle}">${emailDisplay}</td>
             <td style="padding: 0.75rem;"><span style="background: #f0f0f0; padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.8rem;">${formatStage(contact.stage)}</span></td>
             <td style="padding: 0.75rem;">${formatTier(contact.client_tier)}</td>
             <td style="padding: 0.75rem;">
               <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="openContactDetail('${contact.id}')">View</button>
+              ${needsEnrichment ? `<button class="btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: #fb8c00; color: white; margin-left: 0.25rem;" onclick="enrichContactEmail('${contact.id}', '${escapeHtml(contact.full_name)}', '${escapeHtml(contact.company)}')">Enrich</button>` : ''}
             </td>
           </tr>
-        `).join('');
+        `;
+        }).join('');
       } catch (error) {
         tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Error loading contacts</td></tr>';
       }
@@ -2118,7 +2125,7 @@
     }
 
     async function runAutomation(event) {
-      if (!confirm('Scan for new prospects? (Sales automation runs automatically every 6 hours via cron)')) return;
+      if (!confirm('Scan for new prospects? This will search for companies with high-value buying signals (funding, executive hiring, expansion).')) return;
 
       const btn = event.target;
       const originalText = btn.textContent;
@@ -2126,10 +2133,11 @@
       btn.disabled = true;
 
       try {
-        // Run web prospecting only (sales automation via cron to avoid timeout)
+        // Run web prospecting
         const webRes = await fetch(`${API_BASE}/api/web-prospector`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ action: 'scan_web', data: {} })
         });
 
@@ -2143,10 +2151,16 @@
 
         const prospectsFound = webData.prospects?.length || 0;
 
-        alert(`Prospect Scan Complete!\n\n✅ Found: ${prospectsFound} new prospects\n\nℹ️ Sales automation runs automatically every 6 hours`);
+        if (prospectsFound > 0) {
+          alert(`✅ Prospect Scan Complete!\n\n🎯 Found & Saved: ${prospectsFound} high-value prospects\n\n💡 Check the Contacts page to view them.\n\nNote: Some emails may need enrichment - look for the ⚠️ indicator in contact notes.`);
+        } else {
+          alert(`Scan Complete\n\nNo new prospects found this time.\n\nTip: Prospecting works best when run daily to catch fresh signals.`);
+        }
 
-        loadAutomationPage();
-        loadDashboard();
+        // Reload all data to show new prospects
+        await loadAutomationPage();
+        await loadDashboard();
+        await loadAutomationWidget();
       } catch (error) {
         console.error('Automation error:', error);
         alert('Error running automation: ' + error.message);
@@ -2166,17 +2180,25 @@
         const res = await fetch(`${API_BASE}/api/web-prospector`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ action: 'scan_web', data: {} })
         });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+        }
 
         const data = await res.json();
 
         if (data.success) {
-          alert(`Found ${data.prospects?.length || 0} web prospects!`);
-          loadAutomationPage();
-          loadDashboard();
+          const count = data.prospects?.length || 0;
+          alert(`✅ Found & Saved: ${count} web prospects!\n\nView them in the Contacts page.`);
+          await loadAutomationPage();
+          await loadDashboard();
+          await loadAutomationWidget();
         }
       } catch (error) {
+        console.error('Web prospecting error:', error);
         alert('Error: ' + error.message);
       } finally {
         btn.textContent = originalText;
@@ -2214,6 +2236,48 @@
 
     function openAutomationSettings() {
       alert('Automation settings coming soon! Currently using default settings:\n\n• LinkedIn: Daily scans\n• Web: Daily scans\n• Sales: Continuous automation');
+    }
+
+    async function enrichContactEmail(contactId, fullName, companyName) {
+      if (!confirm(`Enrich email for ${fullName} at ${companyName}?\n\nThis will generate common email patterns based on the person's name and company.`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/web-prospector`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            action: 'enrich_email',
+            data: {
+              contactId,
+              contactPerson: fullName,
+              companyName
+            }
+          })
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        if (data.success) {
+          const patterns = data.enrichment.allPatterns || [];
+          alert(`✅ Email Enriched!\n\nPrimary: ${data.enrichment.email}\n\nAlternative patterns:\n${patterns.slice(1, 4).join('\n')}\n\nConfidence: ${data.enrichment.confidence}%\nSource: ${data.enrichment.source}\n\nNote: This is a best guess. Verify before sending emails.`);
+
+          // Reload contacts to show updated email
+          loadContacts();
+          loadDashboard();
+        } else {
+          alert('Enrichment failed: ' + (data.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Email enrichment error:', error);
+        alert('Error enriching email: ' + error.message);
+      }
     }
 
     // Automation Widget Functions
