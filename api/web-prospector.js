@@ -1,6 +1,7 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const OpenAI = require('openai');
 const db = require('./utils/db');
+const { findVerifiedEmail } = require('./utils/email-finder');
 
 // Lazy initialization to prevent 404 when API keys are missing
 let anthropic, openai, perplexity;
@@ -641,24 +642,22 @@ If you found companies, return the JSON array. If no companies found, return []`
     let needsEnrichment = false;
     let emailSource = 'provided';
 
-    // If no email provided, try to find real email using AI
+    // If no email provided, use SELF-RELIANT email discovery
     if (!contactEmail || contactEmail.includes('PLACEHOLDER')) {
-      console.log(`[Web Prospector] 🔍 No email for ${contactPerson} - attempting enrichment...`);
+      console.log(`[Web Prospector] 🔍 No email for ${contactPerson} - using self-reliant finder...`);
 
-      // Try to extract company domain from prospect data
-      const companyDomain = prospect.companyDomain || null;
+      // Use our own email discovery (no APIs, no big tech)
+      const emailResult = await findVerifiedEmail(contactPerson, companyName);
 
-      // Call email enrichment to find REAL email
-      const enrichmentResult = await enrichEmail(contactPerson, companyName, companyDomain);
+      if (emailResult && emailResult.email) {
+        contactEmail = emailResult.email;
+        emailSource = emailResult.source;
+        needsEnrichment = !emailResult.verified;
 
-      if (enrichmentResult && enrichmentResult.email) {
-        contactEmail = enrichmentResult.email;
-        emailSource = enrichmentResult.source;
-        needsEnrichment = enrichmentResult.needsVerification;
-
-        console.log(`[Web Prospector] ✓ Found email via ${emailSource}: ${contactEmail} (confidence: ${enrichmentResult.confidence}%)`);
+        const verifiedLabel = emailResult.verified ? 'VERIFIED ✓✓' : 'unverified';
+        console.log(`[Web Prospector] ✓ Found email via ${emailSource}: ${contactEmail} (${verifiedLabel}, ${emailResult.confidence}% confidence)`);
       } else {
-        // If enrichment fails, generate educated guess
+        // Shouldn't happen, but fallback just in case
         const nameParts = contactPerson.toLowerCase().split(' ');
         const firstName = nameParts[0];
         const lastName = nameParts[nameParts.length - 1];
@@ -670,9 +669,9 @@ If you found companies, return the JSON array. If no companies found, return []`
 
         contactEmail = `${firstName}.${lastName}@${companyDomainGuess}.com`;
         needsEnrichment = true;
-        emailSource = 'pattern_guess';
+        emailSource = 'fallback_pattern';
 
-        console.log(`[Web Prospector] ⚠️ Generated email pattern: ${contactEmail} (NEEDS VERIFICATION)`);
+        console.log(`[Web Prospector] ⚠️ Fallback email pattern: ${contactEmail}`);
       }
     }
 
@@ -687,12 +686,14 @@ If you found companies, return the JSON array. If no companies found, return []`
       let notes = `💎 HIGH-VALUE PROSPECT ($5M+)\n\nSignal: ${recentSignal}\n\nIndustry: ${industry}\nSource: ${whereFound}\nVerify: ${postUrl}`;
 
       // Add email verification status to notes
-      if (emailSource === 'perplexity_web_search') {
-        notes += `\n\n✅ EMAIL VERIFIED\nFound via: Web search (high confidence)`;
-      } else if (emailSource === 'Hunter.io') {
-        notes += `\n\n✅ EMAIL VERIFIED\nFound via: Hunter.io API`;
-      } else if (needsEnrichment) {
-        notes += `\n\n⚠️ EMAIL NEEDS VERIFICATION\nPattern guess: ${contactEmail}\nAction: Verify email before outreach`;
+      if (emailSource === 'website_scrape') {
+        notes += `\n\n✅✅ EMAIL VERIFIED (High Confidence)\nFound: Scraped from company website\nMethod: Direct web scraping (no APIs)`;
+      } else if (emailSource === 'smtp_verification') {
+        notes += `\n\n✅ EMAIL VERIFIED\nFound: SMTP verification confirmed mailbox exists\nMethod: Self-reliant (no big tech)`;
+      } else if (emailSource === 'pattern_guess' || emailSource === 'fallback_pattern') {
+        notes += `\n\n⚠️ EMAIL NEEDS VERIFICATION\nGenerated: ${contactEmail}\nMethod: Pattern-based guess\nAction: Verify before outreach`;
+      } else {
+        notes += `\n\n✅ EMAIL PROVIDED\nSource: ${emailSource}`;
       }
 
       const contact = await db.insert('contacts', {
