@@ -267,22 +267,33 @@ async function scanWebForProspects(criteria, tenantId, req) {
       model: 'sonar-pro',
       messages: [{
         role: 'user',
-        content: `Find companies in the last 30 days with high-value buying signals:
+        content: `CRITICAL: Only return REAL companies from verified news sources. No examples, no hypotheticals.
 
-1. FUNDING: Series A/B/C funding ($5M+), acquisitions
-2. EXECUTIVE HIRING: New CEO, COO, VP Operations, Chief Strategy Officer
-3. EXPANSION: New offices, entering new markets, product launches
-4. GROWTH: IPO prep, rapid hiring, scaling challenges
+Search recent business news (last 30 days) for companies with these HIGH-VALUE signals:
 
-Search sources: TechCrunch, Business Insider, Inc Magazine, Forbes, Crunchbase, PitchBook.
+1. FUNDING: Series A/B/C/D funding announcements ($5M+)
+2. EXECUTIVE HIRING: New C-level executives (CEO, COO, VP Operations, CSO)
+3. EXPANSION: Opening new offices, entering new markets, major product launches
+4. GROWTH: IPO preparation, rapid team expansion, major partnerships
 
-For each company:
-- Company name and CEO
-- What happened (with date)
-- Company size/industry
-- Why they need strategic consulting
+SOURCES TO CHECK:
+- TechCrunch funding announcements
+- Business Insider executive moves
+- Forbes growth company profiles
+- Crunchbase recent funding
+- LinkedIn executive hiring posts
 
-Find 5 real companies with verified signals ($5M+ revenue).`
+REQUIREMENTS:
+- Must be REAL companies (publicly verifiable)
+- Must have REAL executive names (not "CEO Name" or generic)
+- Must include SPECIFIC date and dollar amount if funding
+- Must be US-based companies with $5M+ revenue
+- Must include source URL for verification
+
+Return 3-5 companies in a table format with:
+| Company Name | CEO/Executive | Signal (Date) | Industry | Revenue Size |
+
+DO NOT use placeholder/example companies. Only real, verifiable businesses from actual news.`
       }],
       return_citations: true,
       search_recency_filter: 'month'
@@ -484,16 +495,41 @@ If you found companies, return the JSON array. If no companies found, return []`
       }
     }
 
-    // Validate: Filter out fake company names
-    const fakeNames = ['TechCorp', 'Solutions LLC', 'Innovations Inc', 'Tech Innovations',
-                      'FinTech', 'HealthTech', 'EduSmart', 'GreenTech', 'Retail Revolution'];
+    // Validate: Filter out fake/generic company names
+    const fakePatterns = [
+      'TechCorp', 'Solutions LLC', 'Innovations Inc', 'Tech Innovations',
+      'FinTech', 'HealthTech', 'EduSmart', 'GreenTech', 'Retail Revolution',
+      'Example Corp', 'Sample Company', 'Company Name', 'Acme Corp',
+      'XYZ Corp', 'ABC Company', 'Tech Startup', 'Generic Inc'
+    ];
+
+    const genericNames = ['CEO', 'Executive', 'Founder', 'Name', 'Person'];
 
     prospects = prospects.filter(p => {
-      if (fakeNames.some(fake => p.companyName.includes(fake))) {
-        console.log(`[Web Prospector] ❌ Rejected FAKE: ${p.companyName}`);
+      // Check for fake company names
+      if (fakePatterns.some(fake => p.companyName?.includes(fake))) {
+        console.log(`[Web Prospector] ❌ Rejected FAKE COMPANY: ${p.companyName}`);
         return false;
       }
-      console.log(`[Web Prospector] ✓ VALIDATED: ${p.companyName}`);
+
+      // Check for generic contact names
+      if (genericNames.some(generic => p.contactPerson?.includes(generic))) {
+        console.log(`[Web Prospector] ❌ Rejected GENERIC NAME: ${p.contactPerson} at ${p.companyName}`);
+        return false;
+      }
+
+      // Require minimum data quality
+      if (!p.companyName || p.companyName.length < 3) {
+        console.log(`[Web Prospector] ❌ Rejected INVALID: Missing company name`);
+        return false;
+      }
+
+      if (!p.contactPerson || p.contactPerson.length < 3) {
+        console.log(`[Web Prospector] ❌ Rejected INVALID: Missing contact person for ${p.companyName}`);
+        return false;
+      }
+
+      console.log(`[Web Prospector] ✓ VALIDATED: ${p.companyName} - ${p.contactPerson}`);
       return true;
     });
 
