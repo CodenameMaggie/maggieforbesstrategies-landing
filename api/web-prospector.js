@@ -636,27 +636,44 @@ If you found companies, return the JSON array. If no companies found, return []`
       continue;
     }
 
-    // Extract email if available, generate educated guess if not
+    // Extract email if available, or try to find real email
     let contactEmail = prospect.email || prospect.contactEmail;
     let needsEnrichment = false;
+    let emailSource = 'provided';
 
-    // If no email provided, generate an educated guess for enrichment
+    // If no email provided, try to find real email using AI
     if (!contactEmail || contactEmail.includes('PLACEHOLDER')) {
-      // Generate common email pattern: firstname.lastname@company.com
-      const nameParts = contactPerson.toLowerCase().split(' ');
-      const firstName = nameParts[0];
-      const lastName = nameParts[nameParts.length - 1];
+      console.log(`[Web Prospector] 🔍 No email for ${contactPerson} - attempting enrichment...`);
 
-      // Try to extract domain from company name or use generic
-      const companyDomain = companyName.toLowerCase()
-        .replace(/\s+/g, '')
-        .replace(/[^a-z0-9]/g, '')
-        .replace(/inc|llc|corp|ltd|company|co$/i, '');
+      // Try to extract company domain from prospect data
+      const companyDomain = prospect.companyDomain || null;
 
-      contactEmail = `${firstName}.${lastName}@${companyDomain}.com`;
-      needsEnrichment = true;
+      // Call email enrichment to find REAL email
+      const enrichmentResult = await enrichEmail(contactPerson, companyName, companyDomain);
 
-      console.log(`[Web Prospector] 📧 Generated email guess: ${contactEmail} (needs enrichment)`);
+      if (enrichmentResult && enrichmentResult.email) {
+        contactEmail = enrichmentResult.email;
+        emailSource = enrichmentResult.source;
+        needsEnrichment = enrichmentResult.needsVerification;
+
+        console.log(`[Web Prospector] ✓ Found email via ${emailSource}: ${contactEmail} (confidence: ${enrichmentResult.confidence}%)`);
+      } else {
+        // If enrichment fails, generate educated guess
+        const nameParts = contactPerson.toLowerCase().split(' ');
+        const firstName = nameParts[0];
+        const lastName = nameParts[nameParts.length - 1];
+
+        const companyDomainGuess = companyName.toLowerCase()
+          .replace(/\s+/g, '')
+          .replace(/[^a-z0-9]/g, '')
+          .replace(/inc|llc|corp|ltd|company|co$/i, '');
+
+        contactEmail = `${firstName}.${lastName}@${companyDomainGuess}.com`;
+        needsEnrichment = true;
+        emailSource = 'pattern_guess';
+
+        console.log(`[Web Prospector] ⚠️ Generated email pattern: ${contactEmail} (NEEDS VERIFICATION)`);
+      }
     }
 
     // Check if we already have this company
@@ -669,8 +686,13 @@ If you found companies, return the JSON array. If no companies found, return []`
       // Build notes with enrichment status
       let notes = `💎 HIGH-VALUE PROSPECT ($5M+)\n\nSignal: ${recentSignal}\n\nIndustry: ${industry}\nSource: ${whereFound}\nVerify: ${postUrl}`;
 
-      if (needsEnrichment) {
-        notes += `\n\n⚠️ EMAIL NEEDS ENRICHMENT\nPlaceholder: ${contactEmail}\nAction Required: Use email enrichment service to find real email`;
+      // Add email verification status to notes
+      if (emailSource === 'perplexity_web_search') {
+        notes += `\n\n✅ EMAIL VERIFIED\nFound via: Web search (high confidence)`;
+      } else if (emailSource === 'Hunter.io') {
+        notes += `\n\n✅ EMAIL VERIFIED\nFound via: Hunter.io API`;
+      } else if (needsEnrichment) {
+        notes += `\n\n⚠️ EMAIL NEEDS VERIFICATION\nPattern guess: ${contactEmail}\nAction: Verify email before outreach`;
       }
 
       const contact = await db.insert('contacts', {
@@ -715,42 +737,79 @@ If you found companies, return the JSON array. If no companies found, return []`
  * - RocketReach API: https://rocketreach.co/api
  */
 async function enrichEmail(contactPerson, companyName, companyDomain = null) {
-  console.log(`[Email Enrichment] Attempting to find email for ${contactPerson} at ${companyName}`);
+  console.log(`[Email Enrichment] Finding email for ${contactPerson} at ${companyName}`);
 
-  // TODO: Integrate with email enrichment service
-  // Example with Hunter.io:
-  // if (process.env.HUNTER_API_KEY) {
-  //   const response = await fetch(
-  //     `https://api.hunter.io/v2/email-finder?domain=${companyDomain}&first_name=${firstName}&last_name=${lastName}&api_key=${process.env.HUNTER_API_KEY}`
-  //   );
-  //   const data = await response.json();
-  //   if (data.data && data.data.email) {
-  //     return { email: data.data.email, confidence: data.data.score, source: 'Hunter.io' };
-  //   }
-  // }
+  const firstName = contactPerson.split(' ')[0];
+  const lastName = contactPerson.split(' ').slice(1).join(' ');
 
-  // FALLBACK: Generate common email patterns
-  const firstName = contactPerson.split(' ')[0].toLowerCase();
-  const lastName = contactPerson.split(' ').slice(1).join('').toLowerCase();
-  const domain = companyDomain || `${companyName.toLowerCase().replace(/\s+/g, '')}.com`;
+  try {
+    // STRATEGY 1: Use Perplexity to search for the executive's email
+    const { perplexity } = getAIClients();
 
-  const patterns = [
-    `${firstName}.${lastName}@${domain}`,
-    `${firstName}${lastName}@${domain}`,
-    `${firstName}@${domain}`,
-    `${firstName[0]}${lastName}@${domain}`,
-    `${lastName}@${domain}`
-  ];
+    if (perplexity) {
+      console.log(`[Email Enrichment] Searching web for ${contactPerson} email...`);
 
-  console.log(`[Email Enrichment] Generated patterns for ${contactPerson}:`, patterns);
+      const searchResponse = await perplexity.chat.completions.create({
+        model: 'sonar',
+        messages: [{
+          role: 'user',
+          content: `Find the email address for ${contactPerson} who is an executive at ${companyName}.
 
-  return {
-    email: patterns[0], // Best guess
-    confidence: 30, // Low confidence - needs verification
-    source: 'pattern_generation',
-    allPatterns: patterns,
-    needsVerification: true
-  };
+Search:
+- Company website contact page
+- LinkedIn profile
+- Press releases and news articles
+- Company announcements
+
+Return ONLY the email address if found. If not found, return "NOT_FOUND".
+Do not guess or generate emails - only return if you found a real, verified email address.`
+        }],
+        return_citations: true
+      });
+
+      const result = searchResponse.choices[0].message.content.trim();
+
+      // Check if we got a real email (contains @ and domain)
+      const emailMatch = result.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/);
+
+      if (emailMatch && !result.includes('NOT_FOUND')) {
+        const foundEmail = emailMatch[1];
+        console.log(`[Email Enrichment] ✓ FOUND real email: ${foundEmail}`);
+        return {
+          email: foundEmail,
+          confidence: 85,
+          source: 'perplexity_web_search',
+          needsVerification: false
+        };
+      }
+    }
+
+    // STRATEGY 2: Hunter.io API (if configured)
+    if (process.env.HUNTER_API_KEY && companyDomain) {
+      console.log(`[Email Enrichment] Trying Hunter.io for ${companyDomain}...`);
+
+      const hunterUrl = `https://api.hunter.io/v2/email-finder?domain=${companyDomain}&first_name=${firstName}&last_name=${lastName}&api_key=${process.env.HUNTER_API_KEY}`;
+      const response = await fetch(hunterUrl);
+      const data = await response.json();
+
+      if (data.data && data.data.email && data.data.score > 70) {
+        console.log(`[Email Enrichment] ✓ Hunter.io found: ${data.data.email} (${data.data.score}% confidence)`);
+        return {
+          email: data.data.email,
+          confidence: data.data.score,
+          source: 'Hunter.io',
+          needsVerification: false
+        };
+      }
+    }
+
+    console.log(`[Email Enrichment] ⚠️ No verified email found, returning null`);
+    return null;
+
+  } catch (error) {
+    console.error(`[Email Enrichment] Error:`, error.message);
+    return null;
+  }
 }
 
 /**
