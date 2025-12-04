@@ -269,7 +269,7 @@ async function scanWebForProspects(criteria, tenantId, req) {
         role: 'user',
         content: `CRITICAL: Only return REAL companies from verified news sources. No examples, no hypotheticals.
 
-Search recent business news (last 30 days) for companies with these HIGH-VALUE signals:
+Search recent business news (last 60 days) for companies with these HIGH-VALUE signals:
 
 1. FUNDING: Series A/B/C/D funding announcements ($5M+)
 2. EXECUTIVE HIRING: New C-level executives (CEO, COO, VP Operations, CSO)
@@ -296,7 +296,7 @@ Return 3-5 companies in a table format with:
 DO NOT use placeholder/example companies. Only real, verifiable businesses from actual news.`
       }],
       return_citations: true,
-      search_recency_filter: 'month'
+      search_recency_filter: 'auto'  // Changed from 'month' to 'auto' for better results
     });
 
     const searchResults = perplexityResponse.choices[0].message.content;
@@ -305,15 +305,17 @@ DO NOT use placeholder/example companies. Only real, verifiable businesses from 
     console.log('[Web Prospector] ===== PERPLEXITY SEARCH RESULTS =====');
     console.log(searchResults);
     console.log('[Web Prospector] Citations:', citations.length);
+    console.log('[Web Prospector] Response length:', searchResults?.length || 0);
     console.log('[Web Prospector] ===== END SEARCH RESULTS =====');
 
     // CRITICAL: Only proceed if Perplexity found actual companies
-    if (!searchResults || searchResults.length < 100 ||
+    if (!searchResults || searchResults.length < 50 ||  // Relaxed from 100 to 50
         searchResults.toLowerCase().includes('i cannot') ||
         searchResults.toLowerCase().includes('i don\'t have access') ||
         searchResults.toLowerCase().includes('i can\'t browse')) {
       console.error('[Web Prospector] Perplexity did not return real web search results');
       console.error('[Web Prospector] Response was invalid or too short');
+      console.error('[Web Prospector] Response preview:', searchResults?.substring(0, 200));
       return [];
     }
 
