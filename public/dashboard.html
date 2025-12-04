@@ -917,7 +917,69 @@
       background: var(--gold);
       border-radius: 10px;
     }
-  </style>
+  
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Scrollbar styling for widget */
+#widget-activity-feed::-webkit-scrollbar {
+  width: 8px;
+}
+
+#widget-activity-feed::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 10px;
+}
+
+#widget-activity-feed::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--gold) 0%, #9A7B4F 100%);
+  border-radius: 10px;
+}
+
+#widget-activity-feed::-webkit-scrollbar-thumb:hover {
+  background: #9A7B4F;
+}
+
+/* Activity item hover effect */
+.widget-activity-item-premium {
+  background: white;
+  padding: 1.25rem;
+  border-radius: 10px;
+  margin-bottom: 0.875rem;
+  border-left: 3px solid var(--gold);
+  display: flex;
+  gap: 1rem;
+  align-items: start;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  cursor: pointer;
+}
+
+.widget-activity-item-premium:last-child {
+  margin-bottom: 0;
+}
+
+.widget-activity-item-premium:hover {
+  transform: translateX(6px);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  border-left-width: 4px;
+}
+
+.widget-activity-item-premium.contact {
+  border-left-color: var(--navy);
+}
+
+.widget-activity-item-premium.task {
+  border-left-color: var(--gold);
+}
+</style>
 </head>
 <body>
   <div class="auth-loading">
@@ -1208,59 +1270,95 @@
           </div>
         </div>
 
-        <!-- Recent Activity -->
-        <div class="pipeline-section" style="margin-top: 1.5rem;">
-          <div class="pipeline-header">
-            <span class="pipeline-title">Recent Automation Activity</span>
-          </div>
-          <div id="automation-activity" style="margin-top: 1rem;">
-            <div class="empty-state">Loading activity...</div>
-          </div>
-        </div>
+        <!-- Premium Automation Widget -->
+        <div class="pipeline-section" style="margin-top: 1.5rem; padding: 0;">
 
-        <!-- AI Automation Widget - Integrated -->
-        <div class="pipeline-section" style="margin-top: 1.5rem;">
-          <div class="automation-widget">
+          <!-- Premium Widget Container -->
+          <div style="padding: 2rem; background: white; border-radius: 10px;">
+
             <!-- Widget Header -->
-            <div class="widget-header-inline">
-              <div class="widget-title-inline">
-                AI Automation Engine
-                <span class="widget-badge-inline">Active</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #e5e7eb;">
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--gold) 0%, #9A7B4F 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">⚡</div>
+                <div>
+                  <div style="font-family: 'Cormorant Garamond', serif; font-size: 1.75rem; font-weight: 400; color: var(--navy); letter-spacing: -0.02em;">Strategic Automation Intelligence</div>
+                  <div style="font-size: 0.875rem; color: #6b7280; font-weight: 400; margin-top: 0.25rem;">Real-time performance metrics powered by AI</div>
+                </div>
               </div>
-              <button class="widget-refresh-inline" onclick="refreshAutomationWidget()">
-                🔄 Refresh
-              </button>
-            </div>
-
-            <!-- Widget Stats Grid -->
-            <div class="widget-stats-grid">
-              <div class="widget-stat-card widget-stat-success">
-                <div class="widget-stat-label">New Contacts</div>
-                <div class="widget-stat-value" id="widget-leads-count">--</div>
-                <div class="widget-stat-change">↑ Last 7 Days</div>
-              </div>
-
-              <div class="widget-stat-card widget-stat-warning">
-                <div class="widget-stat-label">Pending Tasks</div>
-                <div class="widget-stat-value" id="widget-content-count">--</div>
-                <div class="widget-stat-change">To Complete</div>
-              </div>
-
-              <div class="widget-stat-card widget-stat-primary">
-                <div class="widget-stat-label">High Value Clients</div>
-                <div class="widget-stat-value" id="widget-fit-score">--</div>
-                <div class="widget-stat-change">Active & Strategy</div>
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span style="font-size: 0.75rem; padding: 0.375rem 0.875rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border-radius: 20px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);">
+                  <span style="width: 6px; height: 6px; background: white; border-radius: 50%; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;"></span>
+                  Live
+                </span>
+                <button style="background: white; border: 1.5px solid var(--gold); color: var(--gold); padding: 0.625rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: all 0.3s; display: flex; align-items: center; gap: 0.5rem;" onclick="refreshAutomationWidget()" onmouseover="this.style.background='var(--gold)'; this.style.color='white'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 6px -1px rgb(0 0 0 / 0.1)'" onmouseout="this.style.background='white'; this.style.color='var(--gold)'; this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                  <span>🔄</span>
+                  <span>Refresh</span>
+                </button>
               </div>
             </div>
 
-            <!-- Widget Activity Feed -->
-            <h3 class="widget-activity-title">Recent Automation Activity</h3>
-            <div class="widget-activity-feed" id="widget-activity-feed">
-              <div class="loading">
-                <div class="spinner"></div>
-                <p>Loading automation activity...</p>
+            <!-- Stats Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
+
+              <!-- Stat Card 1 - Contacts -->
+              <div style="background: linear-gradient(135deg, #0f1419 0%, var(--navy) 100%); padding: 1.75rem; border-radius: 12px; color: white; position: relative; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 20px 25px -5px rgb(0 0 0 / 0.1)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgb(0 0 0 / 0.1)'">
+                <div style="content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--gold) 0%, #D4B896 100%);"></div>
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                  <div style="font-size: 0.8rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500;">New Contacts</div>
+                  <div style="font-size: 1.5rem; opacity: 0.6;">🎯</div>
+                </div>
+                <div style="font-size: 2.5rem; font-weight: 600; margin-bottom: 0.5rem; font-family: 'Cormorant Garamond', serif; letter-spacing: -0.02em;" id="widget-leads-count">--</div>
+                <div style="font-size: 0.8rem; opacity: 0.9; display: flex; align-items: center; gap: 0.375rem; font-weight: 500;">
+                  <span style="font-size: 0.75rem;">↑</span>
+                  <span>Last 7 Days</span>
+                </div>
+              </div>
+
+              <!-- Stat Card 2 - Tasks -->
+              <div style="background: linear-gradient(135deg, #9A7B4F 0%, var(--gold) 100%); padding: 1.75rem; border-radius: 12px; color: white; position: relative; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 20px 25px -5px rgb(0 0 0 / 0.1)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgb(0 0 0 / 0.1)'">
+                <div style="content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--gold) 0%, #D4B896 100%);"></div>
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                  <div style="font-size: 0.8rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500;">Pending Tasks</div>
+                  <div style="font-size: 1.5rem; opacity: 0.6;">📝</div>
+                </div>
+                <div style="font-size: 2.5rem; font-weight: 600; margin-bottom: 0.5rem; font-family: 'Cormorant Garamond', serif; letter-spacing: -0.02em;" id="widget-content-count">--</div>
+                <div style="font-size: 0.8rem; opacity: 0.9; display: flex; align-items: center; gap: 0.375rem; font-weight: 500;">
+                  <span style="font-size: 0.75rem;">✓</span>
+                  <span>To Complete</span>
+                </div>
+              </div>
+
+              <!-- Stat Card 3 - High Value -->
+              <div style="background: linear-gradient(135deg, var(--gold) 0%, #D4B896 100%); padding: 1.75rem; border-radius: 12px; color: white; position: relative; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 20px 25px -5px rgb(0 0 0 / 0.1)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgb(0 0 0 / 0.1)'">
+                <div style="content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--gold) 0%, #D4B896 100%);"></div>
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                  <div style="font-size: 0.8rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500;">High Value Clients</div>
+                  <div style="font-size: 1.5rem; opacity: 0.6;">⭐</div>
+                </div>
+                <div style="font-size: 2.5rem; font-weight: 600; margin-bottom: 0.5rem; font-family: 'Cormorant Garamond', serif; letter-spacing: -0.02em;" id="widget-fit-score">--</div>
+                <div style="font-size: 0.8rem; opacity: 0.9; display: flex; align-items: center; gap: 0.375rem; font-weight: 500;">
+                  <span style="font-size: 0.75rem;">●</span>
+                  <span>Active & Strategy</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Activity Feed -->
+            <div style="margin-top: 2rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 400; color: var(--navy); letter-spacing: -0.02em;">Recent Automation Activity</h3>
+                <span style="font-size: 0.875rem; color: #6b7280; background: #f5f5f5; padding: 0.375rem 0.875rem; border-radius: 20px; font-weight: 500;" id="widget-activity-count">0 items</span>
+              </div>
+
+              <div style="background: #FAF8F5; border-radius: 12px; padding: 1.25rem; max-height: 500px; overflow-y: auto; border: 1px solid #e5e7eb;" id="widget-activity-feed">
+                <div style="text-align: center; padding: 3rem 1.5rem; color: #6b7280;">
+                  <div style="width: 48px; height: 48px; border: 3px solid #e5e7eb; border-top-color: var(--gold); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1.25rem;"></div>
+                  <p style="font-size: 0.9375rem; font-weight: 500;">Loading intelligence data...</p>
+                </div>
               </div>
             </div>
+
           </div>
         </div>
       </div>
@@ -2292,25 +2390,175 @@
     }
 
     // Automation Widget Functions
-    async function loadAutomationWidget() {
-      try {
-        await loadWidgetStats();
-        await loadWidgetActivityFeed();
-      } catch (error) {
-        console.error('Error loading automation widget:', error);
-        const feed = document.getElementById('widget-activity-feed');
-        if (feed) {
-          feed.innerHTML = `
-            <div class="empty-state">
-              <div class="empty-icon">⚠️</div>
-              <p>Error loading data. Please refresh.</p>
-            </div>
-          `;
-        }
-      }
+    
+// Enhanced widget loading with premium styling
+async function loadAutomationWidget() {
+  try {
+    await loadWidgetStats();
+    await loadWidgetActivityFeed();
+  } catch (error) {
+    console.error('Error loading automation widget:', error);
+    const feed = document.getElementById('widget-activity-feed');
+    if (feed) {
+      feed.innerHTML = `
+        <div style="text-align: center; padding: 4rem 1.5rem; color: #6b7280;">
+          <div style="font-size: 4rem; margin-bottom: 1.25rem; opacity: 0.4;">⚠️</div>
+          <div style="font-size: 1.125rem; font-weight: 600; color: var(--navy); margin-bottom: 0.5rem;">Unable to Load Data</div>
+          <p style="font-size: 0.875rem; color: #6b7280; line-height: 1.6;">Please check your connection and try refreshing.</p>
+        </div>
+      `;
+    }
+  }
+}
+
+async function loadWidgetStats() {
+  try {
+    const contacts = allContacts || [];
+    const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000);
+    const recentContacts = contacts.filter(c =>
+      new Date(c.created_at) >= sevenDaysAgo
+    );
+
+    document.getElementById('widget-leads-count').textContent = recentContacts.length;
+
+    const highValue = contacts.filter(c =>
+      c.stage === 'active_client' || c.stage === 'strategy' || c.client_tier
+    ).length;
+    document.getElementById('widget-fit-score').textContent = highValue;
+
+    const tasksRes = await fetch(`${API_BASE}/api/tasks?status=pending`, {
+      credentials: 'include'
+    });
+    if (tasksRes.ok) {
+      const tasksData = await tasksRes.json();
+      const tasks = tasksData.tasks || [];
+      document.getElementById('widget-content-count').textContent = tasks.length;
+    } else {
+      document.getElementById('widget-content-count').textContent = '0';
+    }
+  } catch (error) {
+    console.error('Error loading widget stats:', error);
+    document.getElementById('widget-leads-count').textContent = '0';
+    document.getElementById('widget-fit-score').textContent = '0';
+    document.getElementById('widget-content-count').textContent = '0';
+  }
+}
+
+async function loadWidgetActivityFeed() {
+  try {
+    const feed = document.getElementById('widget-activity-feed');
+    if (!feed) return;
+
+    const contacts = allContacts || [];
+
+    const tasksRes = await fetch(`${API_BASE}/api/tasks`, {
+      credentials: 'include'
+    });
+    const tasksData = await tasksRes.json();
+    const allTasks = tasksData.tasks || [];
+
+    const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000);
+    const recentContacts = contacts
+      .filter(c => new Date(c.created_at) >= sevenDaysAgo)
+      .slice(0, 10);
+    const recentTasks = allTasks
+      .filter(t => new Date(t.created_at) >= sevenDaysAgo)
+      .slice(0, 5);
+
+    const allActivity = [
+      ...recentContacts.map(item => ({ ...item, type: 'contact', icon: '🎯' })),
+      ...recentTasks.map(item => ({ ...item, type: 'task', icon: '✓' }))
+    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    // Update activity count
+    document.getElementById('widget-activity-count').textContent = `${allActivity.length} item${allActivity.length !== 1 ? 's' : ''}`;
+
+    if (allActivity.length === 0) {
+      feed.innerHTML = `
+        <div style="text-align: center; padding: 4rem 1.5rem; color: #6b7280;">
+          <div style="font-size: 4rem; margin-bottom: 1.25rem; opacity: 0.4;">🤖</div>
+          <div style="font-size: 1.125rem; font-weight: 600; color: var(--navy); margin-bottom: 0.5rem;">No Recent Activity</div>
+          <p style="font-size: 0.875rem; color: #6b7280; line-height: 1.6;">Your automation engine runs daily at 6:00 AM.<br>Check back soon for new insights.</p>
+        </div>
+      `;
+      return;
     }
 
-    async function loadWidgetStats() {
+    // Render premium activity feed
+    feed.innerHTML = allActivity.slice(0, 20).map(item => {
+      let title, description, badge;
+      let iconWrapperColor;
+
+      if (item.type === 'contact') {
+        const stageName = item.stage || 'new';
+        title = item.full_name ? escapeHtml(item.full_name) : 'New Opportunity';
+        description = (item.company ? escapeHtml(item.company) : 'No company') + ' • Stage: ' + stageName.replace(/_/g, ' ');
+
+        // Add quality badge for high-value clients
+        if (item.client_tier || item.stage === 'active_client' || item.stage === 'strategy') {
+          badge = '<span style="font-size: 0.75rem; padding: 0.25rem 0.625rem; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); color: #065f46; border-radius: 12px; font-weight: 500;">High Value</span>';
+        } else {
+          badge = '';
+        }
+        iconWrapperColor = 'linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%)';
+      } else if (item.type === 'task') {
+        title = escapeHtml(item.title) || 'Task created';
+        description = 'Priority: ' + (item.priority || 'medium') + ' • Status: ' + (item.status || 'pending');
+        badge = '<span style="font-size: 0.75rem; padding: 0.25rem 0.625rem; background: #f5f5f5; color: #6b7280; border-radius: 12px; font-weight: 500;">Task</span>';
+        iconWrapperColor = 'linear-gradient(135deg, var(--gold) 0%, #D4B896 100%)';
+      }
+
+      const timeAgo = getTimeAgo(new Date(item.created_at));
+
+      return `
+        <div class="widget-activity-item-premium ${item.type}" onclick="${item.type === 'contact' ? `openContactDetail('${item.id}')` : ''}">
+          <div style="width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); background: ${iconWrapperColor};">
+            <div style="font-size: 1.5rem;">${item.icon}</div>
+          </div>
+          <div style="flex: 1;">
+            <div style="font-weight: 600; color: var(--navy); margin-bottom: 0.375rem; font-size: 1rem; line-height: 1.4;">${title}</div>
+            <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem; line-height: 1.5;">${description}</div>
+            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+              <div style="font-size: 0.75rem; color: #6b7280; display: flex; align-items: center; gap: 0.375rem;">🕒 ${timeAgo}</div>
+              ${badge}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (error) {
+    console.error('Error loading widget activity:', error);
+    const feed = document.getElementById('widget-activity-feed');
+    if (feed) {
+      feed.innerHTML = `
+        <div style="text-align: center; padding: 4rem 1.5rem; color: #6b7280;">
+          <div style="font-size: 4rem; margin-bottom: 1.25rem; opacity: 0.4;">⚠️</div>
+          <div style="font-size: 1.125rem; font-weight: 600; color: var(--navy); margin-bottom: 0.5rem;">Error Loading Activity</div>
+          <p style="font-size: 0.875rem; color: #6b7280; line-height: 1.6;">Please try refreshing the page.</p>
+        </div>
+      `;
+    }
+  }
+}
+
+function refreshAutomationWidget() {
+  const btn = event.target.closest('button');
+  if (btn) {
+    btn.style.opacity = '0.6';
+    btn.disabled = true;
+  }
+
+  loadAutomationWidget().finally(() => {
+    if (btn) {
+      setTimeout(() => {
+        btn.style.opacity = '1';
+        btn.disabled = false;
+      }, 500);
+    }
+  });
+}
+async function loadWidgetStats() {
       try {
         // Reuse allContacts if available
         const contacts = allContacts || [];
