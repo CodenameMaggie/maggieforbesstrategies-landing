@@ -502,41 +502,80 @@ If you found companies, return the JSON array. If no companies found, return []`
       }
     }
 
-    // Validate: Filter out fake/generic company names
+    // Validate: Filter out fake/generic company names - AGGRESSIVE
     const fakePatterns = [
+      // Generic tech names
       'TechCorp', 'Solutions LLC', 'Innovations Inc', 'Tech Innovations',
       'FinTech', 'HealthTech', 'EduSmart', 'GreenTech', 'Retail Revolution',
+      'TechStartup', 'Tech Startup', 'Generic Inc', 'Digital Solutions',
+
+      // Placeholder names
       'Example Corp', 'Sample Company', 'Company Name', 'Acme Corp',
-      'XYZ Corp', 'ABC Company', 'Tech Startup', 'Generic Inc'
+      'XYZ Corp', 'ABC Company', 'ABC Corp', 'XYZ Inc',
+
+      // Generic business names
+      'Business Solutions', 'Consulting Group', 'Services Inc',
+      'Partners LLC', 'Ventures Inc', 'Holdings LLC',
+
+      // Common fake patterns
+      'Corp Inc', 'LLC Corp', 'Solutions Inc', 'Tech LLC'
     ];
 
-    const genericNames = ['CEO', 'Executive', 'Founder', 'Name', 'Person'];
+    const genericNames = [
+      'CEO', 'Executive', 'Founder', 'Name', 'Person',
+      'Jane Doe', 'John Doe', 'John Smith', 'Jane Smith',
+      'CEO Name', 'Founder Name', 'Executive Name',
+      'Not disclosed', 'Not public', 'Not specified', 'TBD', 'TBA'
+    ];
 
     prospects = prospects.filter(p => {
-      // Check for fake company names
-      if (fakePatterns.some(fake => p.companyName?.includes(fake))) {
-        console.log(`[Web Prospector] ❌ Rejected FAKE COMPANY: ${p.companyName}`);
+      const companyName = p.companyName || '';
+      const contactPerson = p.contactPerson || '';
+
+      // Check for fake company names (case-insensitive)
+      if (fakePatterns.some(fake => companyName.toLowerCase().includes(fake.toLowerCase()))) {
+        console.log(`[Web Prospector] ❌ Rejected FAKE COMPANY: ${companyName}`);
         return false;
       }
 
-      // Check for generic contact names
-      if (genericNames.some(generic => p.contactPerson?.includes(generic))) {
-        console.log(`[Web Prospector] ❌ Rejected GENERIC NAME: ${p.contactPerson} at ${p.companyName}`);
+      // Reject companies that are ONLY generic suffixes
+      const onlyGenericSuffix = /^(Tech|Solutions|Innovations|Digital|Services|Consulting|Group|Partners|Ventures|Holdings)\s*(Inc|LLC|Corp|Ltd)?\.?$/i;
+      if (onlyGenericSuffix.test(companyName.trim())) {
+        console.log(`[Web Prospector] ❌ Rejected GENERIC SUFFIX ONLY: ${companyName}`);
+        return false;
+      }
+
+      // Check for generic contact names (case-insensitive, partial match)
+      if (genericNames.some(generic => contactPerson.toLowerCase().includes(generic.toLowerCase()))) {
+        console.log(`[Web Prospector] ❌ Rejected GENERIC NAME: ${contactPerson} at ${companyName}`);
         return false;
       }
 
       // Require minimum data quality
-      if (!p.companyName || p.companyName.length < 3) {
+      if (!companyName || companyName.length < 3) {
         console.log(`[Web Prospector] ❌ Rejected INVALID: Missing company name`);
         return false;
       }
 
-      if (!p.contactPerson || p.contactPerson.length < 3) {
-        console.log(`[Web Prospector] ❌ Rejected INVALID: Missing contact person for ${p.companyName}`);
+      if (!contactPerson || contactPerson.length < 3) {
+        console.log(`[Web Prospector] ❌ Rejected INVALID: Missing contact person for ${companyName}`);
         return false;
       }
 
-      console.log(`[Web Prospector] ✓ VALIDATED: ${p.companyName} - ${p.contactPerson}`);
+      // Reject if contact person is just a title
+      if (/^(CEO|COO|CFO|CTO|VP|President|Director|Manager|Executive|Founder)$/i.test(contactPerson.trim())) {
+        console.log(`[Web Prospector] ❌ Rejected TITLE ONLY: ${contactPerson} at ${companyName}`);
+        return false;
+      }
+
+      // Require full name (first and last, at least 2 words)
+      const nameParts = contactPerson.trim().split(/\s+/);
+      if (nameParts.length < 2) {
+        console.log(`[Web Prospector] ❌ Rejected INCOMPLETE NAME: ${contactPerson} at ${companyName}`);
+        return false;
+      }
+
+      console.log(`[Web Prospector] ✓ VALIDATED: ${companyName} - ${contactPerson}`);
       return true;
     });
 
