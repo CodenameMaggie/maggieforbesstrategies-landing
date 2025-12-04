@@ -2415,14 +2415,29 @@ async function loadWidgetStats() {
   try {
     const contacts = allContacts || [];
     const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000);
-    const recentContacts = contacts.filter(c =>
-      new Date(c.created_at) >= sevenDaysAgo
+
+    // Filter for AUTOMATION-GENERATED contacts from last 7 days
+    const recentAutomationContacts = contacts.filter(c =>
+      new Date(c.created_at) >= sevenDaysAgo &&
+      c.lead_source && (
+        c.lead_source.includes('high_value_signal') ||
+        c.lead_source.includes('web_prospector') ||
+        c.lead_source.includes('web') ||
+        c.lead_source.includes('linkedin') ||
+        c.lead_source.includes('business_news') ||
+        c.lead_source.includes('job') ||
+        c.lead_source.includes('automation')
+      )
     );
 
-    document.getElementById('widget-leads-count').textContent = recentContacts.length;
+    document.getElementById('widget-leads-count').textContent = recentAutomationContacts.length;
 
+    // High value = automation contacts with high-value signals OR existing high-value clients
     const highValue = contacts.filter(c =>
-      c.stage === 'active_client' || c.stage === 'strategy' || c.client_tier
+      (c.lead_source && c.lead_source.includes('high_value_signal')) ||
+      c.stage === 'active_client' ||
+      c.stage === 'strategy' ||
+      c.client_tier
     ).length;
     document.getElementById('widget-fit-score').textContent = highValue;
 
@@ -2458,11 +2473,24 @@ async function loadWidgetActivityFeed() {
     const allTasks = tasksData.tasks || [];
 
     const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000);
-    const recentContacts = contacts
-      .filter(c => new Date(c.created_at) >= sevenDaysAgo)
-      .slice(0, 10);
+
+    // Filter for AUTOMATION-GENERATED contacts only (web prospector, high-value signals, etc.)
+    const automationContacts = contacts.filter(c =>
+      new Date(c.created_at) >= sevenDaysAgo &&
+      c.lead_source && (
+        c.lead_source.includes('high_value_signal') ||
+        c.lead_source.includes('web_prospector') ||
+        c.lead_source.includes('web') ||
+        c.lead_source.includes('linkedin') ||
+        c.lead_source.includes('business_news') ||
+        c.lead_source.includes('job') ||
+        c.lead_source.includes('automation')
+      )
+    );
+
+    const recentContacts = automationContacts.slice(0, 10);
     const recentTasks = allTasks
-      .filter(t => new Date(t.created_at) >= sevenDaysAgo)
+      .filter(t => new Date(t.created_at) >= sevenDaysAgo && t.source === 'sales_automation')
       .slice(0, 5);
 
     const allActivity = [
