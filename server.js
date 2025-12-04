@@ -1,9 +1,22 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const db = require('./api/utils/db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize database tables on startup
+(async () => {
+  try {
+    console.log('[Server] Initializing database...');
+    await db.initDb();
+    console.log('[Server] ✅ Database initialized');
+  } catch (error) {
+    console.error('[Server] ❌ Database initialization failed:', error.message);
+    console.error('[Server] The server will start but database operations may fail');
+  }
+})();
 
 // Middleware
 app.use(express.json());
@@ -47,18 +60,33 @@ app.all('/api/*', async (req, res, next) => {
     if (!apiHandlerCache[routeKey]) {
       if (fs.existsSync(filePath)) {
         // Lazy load the handler
+        console.log(`[API] Loading route: /api/${routeKey} from ${filePath}`);
         apiHandlerCache[routeKey] = require(filePath);
-        console.log(`✓ Loaded API route: /api/${routeKey}`);
+        console.log(`[API] ✓ Loaded: /api/${routeKey}`);
       } else {
-        return res.status(404).json({ error: `API endpoint /api/${routeKey} not found` });
+        console.error(`[API] ❌ Not found: /api/${routeKey} (looked for: ${filePath})`);
+        return res.status(404).json({
+          success: false,
+          error: `API endpoint /api/${routeKey} not found`,
+          path: req.path,
+          file: filePath
+        });
       }
     }
 
     // Call the handler
     await apiHandlerCache[routeKey](req, res);
   } catch (error) {
-    console.error(`Error in /api/${routeKey}:`, error);
-    res.status(500).json({ error: error.message });
+    console.error(`[API] ❌ Error in /api/${routeKey}:`, error.message);
+    console.error(error.stack);
+
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        route: `/api/${routeKey}`
+      });
+    }
   }
 });
 
@@ -89,6 +117,42 @@ app.get('/ai-assistants', (req, res) => {
 // Health check for Railway
 app.get('/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
+
+// Diagnostic endpoint
+app.get('/api/diagnostic', async (req, res) => {
+  const diagnostics = {
+    server: 'running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    port: PORT,
+    apiRoutes: {},
+    database: { status: 'unknown' }
+  };
+
+  // Check API files
+  try {
+    const apiFiles = fs.readdirSync(apiDir).filter(f => f.endsWith('.js'));
+    apiFiles.forEach(file => {
+      const routeName = file.replace('.js', '');
+      diagnostics.apiRoutes[routeName] = {
+        file: `/api/${routeName}.js`,
+        exists: true
+      };
+    });
+  } catch (error) {
+    diagnostics.apiRoutes.error = error.message;
+  }
+
+  // Check database
+  try {
+    await db.query('SELECT 1');
+    diagnostics.database = { status: 'connected', url: process.env.DATABASE_URL ? 'configured' : 'missing' };
+  } catch (error) {
+    diagnostics.database = { status: 'error', error: error.message };
+  }
+
+  res.json(diagnostics);
 });
 
 // 404 handler
