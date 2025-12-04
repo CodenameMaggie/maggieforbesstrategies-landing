@@ -11,9 +11,9 @@ async function deleteAllFakeData() {
   console.log('========================================\n');
 
   try {
-    // Delete EVERYTHING that looks fake
-    const result = await db.query(`
-      DELETE FROM contacts
+    // First, get IDs of fake contacts
+    const fakeContacts = await db.queryAll(`
+      SELECT id, full_name, company, email FROM contacts
       WHERE
         -- Generic company names
         company ILIKE '%Corp%' OR
@@ -54,18 +54,44 @@ async function deleteAllFakeData() {
         notes ILIKE '%Example%' OR
         notes ILIKE '%placeholder%' OR
         notes ILIKE '%generic%'
-
-      RETURNING id, full_name, company, email;
     `);
 
-    console.log(`\n✅ Deleted ${result.rowCount} fake/placeholder contacts\n`);
+    console.log(`\n📋 Found ${fakeContacts.length} fake/placeholder contacts\n`);
 
-    if (result.rows && result.rows.length > 0) {
-      console.log('Deleted contacts:');
-      result.rows.forEach(row => {
-        console.log(`  • ${row.full_name} at ${row.company} (${row.email})`);
-      });
+    if (fakeContacts.length === 0) {
+      console.log('✅ No fake data found!\n');
+      process.exit(0);
     }
+
+    console.log('Contacts to delete:');
+    fakeContacts.forEach(row => {
+      console.log(`  • ${row.full_name} at ${row.company} (${row.email})`);
+    });
+
+    // Delete related data first (foreign key constraints)
+    console.log('\n🗑️  Deleting related data...');
+    let totalDeleted = 0;
+
+    for (const contact of fakeContacts) {
+      // Delete tasks
+      const tasksResult = await db.query(
+        'DELETE FROM tasks WHERE contact_id = $1',
+        [contact.id]
+      );
+      totalDeleted += tasksResult.rowCount || 0;
+
+      // Delete activities
+      const activitiesResult = await db.query(
+        'DELETE FROM contact_activities WHERE contact_id = $1',
+        [contact.id]
+      );
+      totalDeleted += activitiesResult.rowCount || 0;
+
+      // Delete contact
+      await db.query('DELETE FROM contacts WHERE id = $1', [contact.id]);
+    }
+
+    console.log(`✅ Deleted ${fakeContacts.length} contacts and ${totalDeleted} related records\n`);
 
     // Show what's left
     const remaining = await db.queryOne('SELECT COUNT(*) as count FROM contacts');
