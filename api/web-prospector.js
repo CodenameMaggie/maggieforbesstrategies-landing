@@ -264,12 +264,15 @@ async function scanWebForProspects(criteria, tenantId, req) {
       throw new Error('Perplexity not configured, will use fallback');
     }
     const perplexityResponse = await perplexity.chat.completions.create({
-      model: 'sonar-pro',
+      model: 'sonar',  // Using sonar instead of sonar-pro for better data extraction
       messages: [{
+        role: 'system',
+        content: 'You are a business intelligence data extraction assistant. Extract ONLY factual company data from real news sources. Never use examples or placeholders. Always provide real company names, executive names, and verified funding amounts from actual news articles.'
+      }, {
         role: 'user',
-        content: `CRITICAL: Only return REAL companies from verified news sources. No examples, no hypotheticals.
+        content: `Search TechCrunch, Business Insider, and Crunchbase for companies that raised funding or hired executives in the last 60 days.
 
-Search recent business news (last 60 days) for companies with these HIGH-VALUE signals:
+Find companies with these HIGH-VALUE signals:
 
 1. FUNDING: Series A/B/C/D funding announcements ($5M+)
 2. EXECUTIVE HIRING: New C-level executives (CEO, COO, VP Operations, CSO)
@@ -290,13 +293,15 @@ REQUIREMENTS:
 - Must be US-based companies with $5M+ revenue
 - Must include source URL for verification
 
-Return 3-5 companies in a table format with:
-| Company Name | CEO/Executive | Signal (Date) | Industry | Revenue Size |
+Return 5-10 REAL companies in this table format:
+| Company Name | CEO/Executive | What Happened | Industry |
 
-DO NOT use placeholder/example companies. Only real, verifiable businesses from actual news.`
+Example of CORRECT format (with real data):
+| Brevo | Armand Thiberge | Raised $583M Series D | Marketing Tech |
+
+NO placeholders. NO examples. ONLY real companies from actual articles.`
       }],
-      return_citations: true,
-      search_recency_filter: 'auto'  // Changed from 'month' to 'auto' for better results
+      return_citations: true
     });
 
     const searchResults = perplexityResponse.choices[0].message.content;
