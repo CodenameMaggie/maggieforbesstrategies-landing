@@ -1,6 +1,13 @@
 const { Resend } = require('resend');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization - only create Resend instance if API key exists
+let resend = null;
+function getResend() {
+  if (!resend && process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
 
 /**
  * Email Service for MFS
@@ -18,7 +25,7 @@ async function sendBookingLink(contact) {
   }
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: 'Maggie Forbes <maggie@maggieforbesstrategies.com>',
       to: [contact.email],
       subject: 'Let\'s Schedule Your Discovery Call',
@@ -62,7 +69,7 @@ async function sendFollowUpEmail(contact, message) {
   }
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: 'Maggie Forbes <maggie@maggieforbesstrategies.com>',
       to: [contact.email],
       subject: 'Following Up',
@@ -103,7 +110,7 @@ async function sendConsultationReminder(call) {
   const hoursUntil = Math.round((new Date(call.scheduled_at) - new Date()) / (1000 * 60 * 60));
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: 'Maggie Forbes <maggie@maggieforbesstrategies.com>',
       to: [call.contact_email],
       subject: `Reminder: ${call.type.replace('_', ' ')} in ${hoursUntil} hours`,
@@ -156,7 +163,7 @@ async function sendThankYouEmail(contact) {
   }
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: 'Maggie Forbes <maggie@maggieforbesstrategies.com>',
       to: [contact.email],
       subject: 'Thank You - Next Steps',
@@ -199,7 +206,7 @@ async function sendProposalFollowUp(contact) {
   }
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: 'Maggie Forbes <maggie@maggieforbesstrategies.com>',
       to: [contact.email],
       subject: 'Checking In - Proposal Questions?',

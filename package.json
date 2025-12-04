@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "Maggie Forbes Strategies - Strategic Growth Architecture",
   "scripts": {
-    "build": "echo 'Static site with serverless functions'"
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "echo 'Build complete - static site with API routes'"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",
