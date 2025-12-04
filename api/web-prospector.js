@@ -636,13 +636,13 @@ If you found companies, return the JSON array. If no companies found, return []`
       continue;
     }
 
-    // Extract email if available, or create placeholder for enrichment
-    const contactEmail = prospect.email || prospect.contactEmail ||
-                        `${contactPerson.toLowerCase().replace(/\s+/g, '.')}@${companyName.toLowerCase().replace(/\s+/g, '')}.com.PLACEHOLDER`;
+    // Extract email if available - DO NOT create placeholders
+    const contactEmail = prospect.email || prospect.contactEmail;
 
-    const needsEnrichment = contactEmail.includes('.PLACEHOLDER');
-    if (needsEnrichment) {
-      console.log(`[Web Prospector] 📧 ${companyName} - email needs enrichment`);
+    // SKIP contacts without real emails - don't save placeholders
+    if (!contactEmail || contactEmail.includes('PLACEHOLDER')) {
+      console.log(`[Web Prospector] ⚠️  Skipping ${companyName} - ${contactPerson} - no real email found`);
+      continue;
     }
 
     // Check if we already have this company
