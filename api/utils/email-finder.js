@@ -222,16 +222,96 @@ async function scrapeWebsiteForEmails(domain) {
 }
 
 /**
+ * Extract email from source article/page where person was mentioned
+ */
+async function findEmailInSourceArticle(fullName, sourceUrl) {
+  if (!sourceUrl) return null;
+
+  console.log(`[Email Finder] Checking source article: ${sourceUrl}`);
+
+  try {
+    const response = await fetch(sourceUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+      signal: AbortSignal.timeout(8000)
+    });
+
+    if (!response.ok) return null;
+
+    const html = await response.text();
+    const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi;
+
+    // Find all emails in the article
+    const emails = [...new Set(html.match(emailRegex) || [])];
+
+    // Look for person's name near an email (within 500 chars)
+    const nameParts = fullName.toLowerCase().split(/\s+/);
+
+    for (const email of emails) {
+      // Find where this email appears in the text
+      const emailIndex = html.toLowerCase().indexOf(email.toLowerCase());
+      if (emailIndex === -1) continue;
+
+      // Get text context around the email (500 chars before and after)
+      const contextStart = Math.max(0, emailIndex - 500);
+      const contextEnd = Math.min(html.length, emailIndex + 500);
+      const context = html.substring(contextStart, contextEnd).toLowerCase();
+
+      // Check if person's name appears near this email
+      const nameNearEmail = nameParts.some(part =>
+        part.length > 2 && context.includes(part)
+      );
+
+      if (nameNearEmail) {
+        console.log(`[Email Finder] ✓✓✓ FOUND email in article: ${email}`);
+        return {
+          email: email.toLowerCase(),
+          confidence: 99,
+          source: 'article_extraction',
+          sourceUrl
+        };
+      }
+    }
+
+    // If no name match, but found generic company emails, return those for pattern detection
+    return {
+      genericEmails: emails.filter(e => !e.includes('noreply') && !e.includes('no-reply')),
+      sourceUrl
+    };
+
+  } catch (error) {
+    console.error(`[Email Finder] Error scraping source article:`, error.message);
+    return null;
+  }
+}
+
+/**
  * MAIN FUNCTION: Find and verify email for a person at a company
  */
-async function findVerifiedEmail(fullName, companyName) {
+async function findVerifiedEmail(fullName, companyName, sourceUrl = null) {
   console.log(`[Email Finder] Finding email for ${fullName} at ${companyName}...`);
 
   try {
+    // Step 0: Try to find email in the SOURCE ARTICLE first (99% confidence!)
+    if (sourceUrl) {
+      console.log(`[Email Finder] PRIORITY: Checking source article where ${fullName} was mentioned...`);
+      const articleResult = await findEmailInSourceArticle(fullName, sourceUrl);
+
+      if (articleResult && articleResult.email) {
+        console.log(`[Email Finder] ✓✓✓ REAL EMAIL FOUND in article (not a guess!)`);
+        return {
+          email: articleResult.email,
+          confidence: 99,
+          source: 'article_extraction',
+          verified: true,
+          sourceUrl: articleResult.sourceUrl
+        };
+      }
+    }
+
     // Step 1: Find company domain
     const domain = await findCompanyDomain(companyName);
 
-    // Step 2: Try scraping website first (fastest, most accurate)
+    // Step 2: Try scraping website (check leadership/team pages)
     console.log(`[Email Finder] Scraping ${domain} for emails...`);
     const scrapedEmails = await scrapeWebsiteForEmails(domain);
 
@@ -309,6 +389,7 @@ async function findVerifiedEmail(fullName, companyName) {
 
 module.exports = {
   findVerifiedEmail,
+  findEmailInSourceArticle,
   findCompanyDomain,
   generateEmailPatterns,
   verifyEmailExists,

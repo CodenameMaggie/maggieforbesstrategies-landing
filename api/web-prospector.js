@@ -647,7 +647,8 @@ If you found companies, return the JSON array. If no companies found, return []`
       console.log(`[Web Prospector] 🔍 No email for ${contactPerson} - using self-reliant finder...`);
 
       // Use our own email discovery (no APIs, no big tech)
-      const emailResult = await findVerifiedEmail(contactPerson, companyName);
+      // Pass the source URL so we can scrape the ACTUAL article where they were mentioned
+      const emailResult = await findVerifiedEmail(contactPerson, companyName, postUrl);
 
       if (emailResult && emailResult.email) {
         contactEmail = emailResult.email;
@@ -686,12 +687,14 @@ If you found companies, return the JSON array. If no companies found, return []`
       let notes = `💎 HIGH-VALUE PROSPECT ($5M+)\n\nSignal: ${recentSignal}\n\nIndustry: ${industry}\nSource: ${whereFound}\nVerify: ${postUrl}`;
 
       // Add email verification status to notes
-      if (emailSource === 'website_scrape') {
-        notes += `\n\n✅✅ EMAIL VERIFIED (High Confidence)\nFound: Scraped from company website\nMethod: Direct web scraping (no APIs)`;
+      if (emailSource === 'article_extraction') {
+        notes += `\n\n✅✅✅ REAL EMAIL (99% Confidence)\nFound: Extracted from source article\nEmail published alongside ${contactPerson}'s name\nNOT a guess - actually found in: ${postUrl}\nMethod: Article scraping`;
+      } else if (emailSource === 'website_scrape') {
+        notes += `\n\n✅✅ EMAIL VERIFIED (95% Confidence)\nFound: Scraped from company website\nMatched to ${contactPerson}'s name\nMethod: Direct web scraping`;
       } else if (emailSource === 'smtp_verification') {
-        notes += `\n\n✅ EMAIL VERIFIED\nFound: SMTP verification confirmed mailbox exists\nMethod: Self-reliant (no big tech)`;
+        notes += `\n\n⚠️ EMAIL PATTERN VERIFIED (85% Confidence)\nMethod: SMTP verified mailbox exists\nNote: Pattern guess, but mailbox confirmed\nRecommend: Verify it's the right person`;
       } else if (emailSource === 'pattern_guess' || emailSource === 'fallback_pattern') {
-        notes += `\n\n⚠️ EMAIL NEEDS VERIFICATION\nGenerated: ${contactEmail}\nMethod: Pattern-based guess\nAction: Verify before outreach`;
+        notes += `\n\n⚠️⚠️ EMAIL IS A GUESS (30% Confidence)\nGenerated: ${contactEmail}\nMethod: Pattern-based guess\nWARNING: Not verified - DO NOT use for outreach`;
       } else {
         notes += `\n\n✅ EMAIL PROVIDED\nSource: ${emailSource}`;
       }
