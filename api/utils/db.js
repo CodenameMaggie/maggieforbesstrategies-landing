@@ -2,16 +2,18 @@ const { Pool } = require('pg');
 
 // Build connection string from Railway's individual PG* variables if DATABASE_URL not provided
 let connectionString = process.env.DATABASE_URL;
+let isRailwayDB = false;
 
 if (!connectionString && process.env.PGHOST) {
   // Railway provides individual components - build the URL
   const { PGUSER, PGPASSWORD, PGHOST, PGPORT, PGDATABASE } = process.env;
   connectionString = `postgresql://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${PGDATABASE}`;
+  isRailwayDB = true;
   console.log('[DB] Built connection string from Railway PG* variables');
 }
 
-// Auto-fix: Change port 5432 to 6543 for Supabase transaction pooling (only for Supabase)
-if (connectionString && connectionString.includes('supabase.com') && connectionString.includes(':5432/')) {
+// Auto-fix: Change port 5432 to 6543 for Supabase transaction pooling (ONLY for Supabase, NOT Railway)
+if (!isRailwayDB && connectionString && connectionString.includes('supabase.com') && connectionString.includes(':5432/')) {
   connectionString = connectionString.replace(':5432/', ':6543/');
   console.log('[DB] Using Supabase transaction pooler on port 6543');
 }
