@@ -3,9 +3,16 @@ const db = require('./utils/db');
 const { processConversationMemory, buildSystemPromptWithMemory } = require('./utils/memory-manager');
 const { loadBotContext, injectContextIntoPrompt } = require('./utils/context-loader-helper');
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+// Lazy initialization to prevent errors when API key is missing
+let anthropic = null;
+function getAnthropic() {
+  if (!anthropic && process.env.ANTHROPIC_API_KEY) {
+    anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+  }
+  return anthropic;
+}
 
 // ============================================
 // MFS MARKETING BOT
@@ -204,7 +211,12 @@ SPECIALTIES:
     );
 
     // Call Claude API
-    const response = await anthropic.messages.create({
+    const client = getAnthropic();
+    if (!client) {
+      throw new Error('ANTHROPIC_API_KEY not configured');
+    }
+
+    const response = await client.messages.create({
       model: 'claude-3-5-sonnet-20241022',
       max_tokens: 1500,
       system: systemPrompt,
