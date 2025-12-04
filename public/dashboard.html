@@ -1442,7 +1442,7 @@
     // Dashboard
     async function loadDashboard() {
       try {
-        const res = await fetch(`${API_BASE}/api/contacts`);
+        const res = await fetch(`${API_BASE}/api/contacts`, { credentials: 'include' });
         const data = await res.json();
         allContacts = data.contacts || [];
 
@@ -1452,7 +1452,7 @@
         document.getElementById('stat-active').textContent = allContacts.filter(c => c.stage === 'active_client' || c.stage === 'strategy').length;
         document.getElementById('nav-pipeline-count').textContent = allContacts.length;
 
-        const tasksRes = await fetch(`${API_BASE}/api/tasks?status=pending`);
+        const tasksRes = await fetch(`${API_BASE}/api/tasks?status=pending`, { credentials: 'include' });
         const tasksData = await tasksRes.json();
         document.getElementById('nav-tasks-count').textContent = tasksData.tasks?.length || 0;
         renderTasksList(tasksData.tasks || [], 'tasks-list');
@@ -1473,7 +1473,7 @@
       ];
 
       try {
-        const res = await fetch(`${API_BASE}/api/contacts`);
+        const res = await fetch(`${API_BASE}/api/contacts`, { credentials: 'include' });
         const data = await res.json();
         allContacts = data.contacts || [];
 
@@ -1527,6 +1527,7 @@
         const res = await fetch(`${API_BASE}/api/contacts`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ id: contactId, stage: newStage })
         });
         if (!res.ok) throw new Error(`Failed to advance stage: ${res.status}`);
@@ -1551,7 +1552,7 @@
       const tbody = document.getElementById('contacts-table');
       if (!tbody) return;
       try {
-        const res = await fetch(`${API_BASE}/api/contacts`);
+        const res = await fetch(`${API_BASE}/api/contacts`, { credentials: 'include' });
         const data = await res.json();
         allContacts = data.contacts || [];
 
@@ -1609,6 +1610,7 @@
         const res = await fetch(`${API_BASE}/api/contacts`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ id: selectedContact.id, stage: newStage })
         });
         if (!res.ok) throw new Error(`Failed to update stage: ${res.status}`);
@@ -1655,7 +1657,7 @@
 
     async function loadTasksFull() {
       try {
-        const res = await fetch(`${API_BASE}/api/tasks`);
+        const res = await fetch(`${API_BASE}/api/tasks`, { credentials: 'include' });
         const data = await res.json();
         renderTasksList(data.tasks || [], 'tasks-list-full');
       } catch (error) {
@@ -1668,6 +1670,7 @@
         const res = await fetch(`${API_BASE}/api/tasks`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ id: taskId, status: 'completed' })
         });
         if (!res.ok) throw new Error(`Failed to complete task: ${res.status}`);
@@ -1726,7 +1729,9 @@
     }
 
     function formatMessageContent(text) {
-      return text
+      // First escape HTML to prevent XSS, then apply formatting
+      const escaped = escapeHtml(text);
+      return escaped
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\n/g, '<br>')
         .replace(/• /g, '&bull; ');
@@ -1750,6 +1755,7 @@
         const res = await fetch(`${API_BASE}${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ message, conversationId })
         });
 
@@ -1785,6 +1791,7 @@
         const res = await fetch(`${API_BASE}${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ message, conversationId: conversations[currentBot] })
         });
 
@@ -1862,6 +1869,7 @@
         const res = await fetch(`${API_BASE}/api/contacts`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ full_name: name, email, phone, company, stage, notes })
         });
         if (!res.ok) throw new Error(`Failed to add contact: ${res.status}`);
@@ -1903,6 +1911,7 @@
         const res = await fetch(`${API_BASE}/api/tasks`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ title, priority, due_date_text: due })
         });
         if (!res.ok) throw new Error(`Failed to add task: ${res.status}`);
@@ -1948,13 +1957,14 @@
         const res = await fetch(`${API_BASE}/api/provision-client`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ contactId, tier })
         });
 
         const data = await res.json();
 
         if (data.success) {
-          alert(`Client provisioned successfully!\\n\\nTier: ${tier}\\nMRR: $${data.mrr}\\nTasks Created: ${data.tasksCreated}${data.hasToolsAccess ? '\\nPlatform Access: Enabled' : ''}`);
+          alert(`Client provisioned successfully!\n\nTier: ${tier}\nMRR: $${data.mrr}\nTasks Created: ${data.tasksCreated}${data.hasToolsAccess ? '\nPlatform Access: Enabled' : ''}`);
           loadContacts();
           loadDashboard();
           if (selectedContact) {
@@ -2009,7 +2019,7 @@
     // Automation & Prospecting
     async function loadAutomationPage() {
       try {
-        const res = await fetch(`${API_BASE}/api/automation-settings`);
+        const res = await fetch(`${API_BASE}/api/automation-settings`, { credentials: 'include' });
         const data = await res.json();
 
         if (data.success) {
@@ -2050,7 +2060,7 @@
 
     async function loadAutomationActivity() {
       try {
-        const res = await fetch(`${API_BASE}/api/contacts?limit=100`);
+        const res = await fetch(`${API_BASE}/api/contacts?limit=100`, { credentials: 'include' });
         const data = await res.json();
 
         // Get prospects from automation (includes web prospector, high-value signals, automation)
@@ -2215,7 +2225,8 @@
       try {
         const res = await fetch(`${API_BASE}/api/sales-automation`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
         });
 
         const data = await res.json();
