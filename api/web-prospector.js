@@ -4,6 +4,7 @@ const db = require('./utils/db');
 const { findVerifiedEmail } = require('./utils/email-finder');
 const { qualifyProspect } = require('./utils/prospect-qualifier');
 const { generateOutreach } = require('./utils/outreach-templates');
+const { scrapeFundingNews } = require('./utils/rss-scraper');
 
 // Lazy initialization to prevent 404 when API keys are missing
 let anthropic, openai, perplexity;
@@ -256,15 +257,25 @@ async function scanWebForProspects(criteria, tenantId, req, skipEmailEnrichment 
     console.log('[Web Prospector] Email enrichment SKIPPED for faster processing');
   }
 
-  const { anthropic, openai, perplexity } = getAIClients();
-
-  if (!perplexity && !anthropic) {
-    throw new Error('AI search requires PERPLEXITY_API_KEY or ANTHROPIC_API_KEY to be configured');
-  }
-
   let prospects = [];
 
   try {
+    // PHASE 3: Try RSS scraping first (FAST - 2-3 seconds, FREE)
+    console.log('[Web Prospector] Trying direct RSS scraping (fast & free)...');
+    const rssProspects = await scrapeFundingNews();
+
+    if (rssProspects && rssProspects.length > 0) {
+      console.log(`[Web Prospector] ✓ RSS found ${rssProspects.length} prospects - using these (no Perplexity needed!)`);
+      prospects = rssProspects;
+      // Skip Perplexity entirely - we have prospects!
+    } else {
+      console.log('[Web Prospector] RSS found no prospects, falling back to Perplexity...');
+      // FALLBACK: Use Perplexity only if RSS fails
+      const { anthropic, openai, perplexity } = getAIClients();
+
+      if (!perplexity && !anthropic) {
+        throw new Error('Both RSS and AI failed - need PERPLEXITY_API_KEY or ANTHROPIC_API_KEY');
+      }
     // Search for HIGH-VALUE buying signals using Perplexity Sonar Pro
     if (!perplexity) {
       throw new Error('Perplexity not configured, will use fallback');
