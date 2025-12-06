@@ -88,7 +88,11 @@ module.exports = async (req, res) => {
         const mockReq = {
           method: 'POST',
           headers: {},
-          body: { action: 'scan_web', data: {} }
+          body: {
+            action: 'scan_web',
+            data: {},
+            skipEmailEnrichment: true  // Fast mode for cron - enrich emails later
+          }
         };
         const mockRes = {
           status: (code) => mockRes,

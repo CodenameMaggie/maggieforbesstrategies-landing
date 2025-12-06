@@ -201,11 +201,11 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'POST') {
-      const { action, data } = req.body;
+      const { action, data, skipEmailEnrichment } = req.body;
 
       switch (action) {
         case 'scan_web':
-          const prospects = await scanWebForProspects(data, tenantId, req);
+          const prospects = await scanWebForProspects(data, tenantId, req, skipEmailEnrichment);
           return res.status(200).json({ success: true, prospects });
 
         case 'enrich_email':
@@ -248,8 +248,11 @@ module.exports = async (req, res) => {
 /**
  * Find prospects who are ACTIVELY ASKING for help - real intent signals
  */
-async function scanWebForProspects(criteria, tenantId, req) {
+async function scanWebForProspects(criteria, tenantId, req, skipEmailEnrichment = false) {
   console.log('[Web Prospector] Finding people actively seeking strategic help...');
+  if (skipEmailEnrichment) {
+    console.log('[Web Prospector] Email enrichment SKIPPED for faster processing');
+  }
 
   const { anthropic, openai, perplexity } = getAIClients();
 
@@ -648,26 +651,13 @@ If you found companies, return the JSON array. If no companies found, return []`
     let needsEnrichment = false;
     let emailSource = 'provided';
 
-    // If no email provided, use SELF-RELIANT email discovery
+    // If no email provided, generate placeholder (skip enrichment if requested for speed)
     if (!contactEmail || contactEmail.includes('PLACEHOLDER')) {
-      console.log(`[Web Prospector] 🔍 No email for ${contactPerson} - using self-reliant finder...`);
-
-      // Use our own email discovery (no APIs, no big tech)
-      // Pass the source URL so we can scrape the ACTUAL article where they were mentioned
-      const emailResult = await findVerifiedEmail(contactPerson, companyName, postUrl);
-
-      if (emailResult && emailResult.email) {
-        contactEmail = emailResult.email;
-        emailSource = emailResult.source;
-        needsEnrichment = !emailResult.verified;
-
-        const verifiedLabel = emailResult.verified ? 'VERIFIED ✓✓' : 'unverified';
-        console.log(`[Web Prospector] ✓ Found email via ${emailSource}: ${contactEmail} (${verifiedLabel}, ${emailResult.confidence}% confidence)`);
-      } else {
-        // Shouldn't happen, but fallback just in case
-        const nameParts = contactPerson.toLowerCase().split(' ');
-        const firstName = nameParts[0];
-        const lastName = nameParts[nameParts.length - 1];
+      if (skipEmailEnrichment) {
+        // Fast mode: just use pattern without verification
+        const nameParts = contactPerson.toLowerCase().split(' ').filter(p => p !== '-' && p.toLowerCase() !== 'ceo');
+        const firstName = nameParts[0] || 'contact';
+        const lastName = nameParts[nameParts.length - 1] || 'lead';
 
         const companyDomainGuess = companyName.toLowerCase()
           .replace(/\s+/g, '')
@@ -676,9 +666,39 @@ If you found companies, return the JSON array. If no companies found, return []`
 
         contactEmail = `${firstName}.${lastName}@${companyDomainGuess}.com`;
         needsEnrichment = true;
-        emailSource = 'fallback_pattern';
+        emailSource = 'pattern_guess_fast';
+        console.log(`[Web Prospector] ⚡ Fast email pattern: ${contactEmail}`);
+      } else {
+        console.log(`[Web Prospector] 🔍 No email for ${contactPerson} - using self-reliant finder...`);
 
-        console.log(`[Web Prospector] ⚠️ Fallback email pattern: ${contactEmail}`);
+        // Use our own email discovery (no APIs, no big tech)
+        // Pass the source URL so we can scrape the ACTUAL article where they were mentioned
+        const emailResult = await findVerifiedEmail(contactPerson, companyName, postUrl);
+
+        if (emailResult && emailResult.email) {
+          contactEmail = emailResult.email;
+          emailSource = emailResult.source;
+          needsEnrichment = !emailResult.verified;
+
+          const verifiedLabel = emailResult.verified ? 'VERIFIED ✓✓' : 'unverified';
+          console.log(`[Web Prospector] ✓ Found email via ${emailSource}: ${contactEmail} (${verifiedLabel}, ${emailResult.confidence}% confidence)`);
+        } else {
+          // Shouldn't happen, but fallback just in case
+          const nameParts = contactPerson.toLowerCase().split(' ');
+          const firstName = nameParts[0];
+          const lastName = nameParts[nameParts.length - 1];
+
+          const companyDomainGuess = companyName.toLowerCase()
+            .replace(/\s+/g, '')
+            .replace(/[^a-z0-9]/g, '')
+            .replace(/inc|llc|corp|ltd|company|co$/i, '');
+
+          contactEmail = `${firstName}.${lastName}@${companyDomainGuess}.com`;
+          needsEnrichment = true;
+          emailSource = 'fallback_pattern';
+
+          console.log(`[Web Prospector] ⚠️ Fallback email pattern: ${contactEmail}`);
+        }
       }
     }
 
