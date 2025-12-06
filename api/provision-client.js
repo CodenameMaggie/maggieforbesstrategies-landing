@@ -227,7 +227,25 @@ module.exports = async (req, res) => {
 
     console.log(`[Provision Client] Created ${onboardingTasks.length} onboarding tasks`);
 
-    // Step 7: Send welcome email
+    // Step 7: Auto-create deliverables for client delivery system
+    try {
+      const deliverableResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/client-delivery`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'auto_create_for_client',
+          data: { contactId }
+        })
+      });
+
+      const deliverableResult = await deliverableResponse.json();
+      console.log(`[Provision Client] Created ${deliverableResult.deliverables?.length || 0} deliverables`);
+    } catch (error) {
+      console.error('[Provision Client] Failed to create deliverables:', error.message);
+      // Continue anyway - deliverables can be created manually
+    }
+
+    // Step 8: Send welcome email
     // Note: You can customize this in email-service.js or create a new template
     console.log(`[Provision Client] Welcome email should be sent to ${contact.email}`);
 

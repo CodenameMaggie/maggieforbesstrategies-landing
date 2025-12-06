@@ -47,6 +47,10 @@
     {
       "path": "/api/social-post-publisher",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/scout-agent",
+      "schedule": "0 */6 * * *"
     }
   ]
 }
