@@ -50,10 +50,16 @@ async function scrapeTechCrunchFunding() {
     const items = parseRSSItems(xml);
     const prospects = [];
 
+    console.log(`[RSS Scraper] Parsed ${items.length} items from feed`);
+
     for (const item of items.slice(0, 5)) {  // Only process 5 most recent
+      console.log(`[RSS Scraper] Checking: "${item.title}"`);
       const prospect = extractProspectFromArticle(item);
       if (prospect) {
+        console.log(`[RSS Scraper] ✓ Extracted: ${prospect.companyName}`);
         prospects.push(prospect);
+      } else {
+        console.log(`[RSS Scraper] ✗ Skipped (no funding signal or couldn't extract company)`);
       }
     }
 
@@ -137,10 +143,11 @@ function extractProspectFromArticle(item) {
 
   // Look for funding signals
   const fundingPatterns = [
-    /raised \$?([\d.]+)\s*(million|billion|M|B)/i,
+    /raises? \$?([\d.]+)\s*(million|billion|M|B)/i,  // Match both "raise" and "raises" and "raised"
     /\$?([\d.]+)\s*(million|billion|M|B)\s+(?:series|round|funding)/i,
     /(series [a-z])/i,
-    /funding round/i
+    /funding round/i,
+    /raise[ds]? \$/i  // Any form of raise followed by dollar sign
   ];
 
   const hasFundingSignal = fundingPatterns.some(pattern => pattern.test(text));
@@ -177,6 +184,9 @@ function extractProspectFromArticle(item) {
   if (!companyName) {
     return null;  // Couldn't extract company name
   }
+
+  // Clean up company name - remove "X-backed" prefix
+  companyName = companyName.replace(/^.+-backed\s+/i, '').trim();
 
   // Extract funding amount
   const fundingMatch = text.match(/\$?([\d.]+)\s*(million|billion|M|B)/i);
