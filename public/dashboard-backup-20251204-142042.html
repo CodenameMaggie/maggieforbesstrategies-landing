@@ -1,0 +1,2463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MFS Admin Dashboard</title>
+  <!-- Widget v1.0 -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --gold: #B8935F;
+      --gold-light: #D4B896;
+      --navy: #1a2332;
+      --navy-light: #2c3e50;
+      --blue: #4a6cf7;
+      --green: #43a047;
+      --orange: #fb8c00;
+      --red: #e53935;
+      --purple: #7b1fa2;
+      --cyan: #0097a7;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f5f7fa;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      color: white;
+      padding: 0.8rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-monogram {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem;
+      font-weight: 300;
+    }
+    .logo-monogram .gold { color: var(--gold); }
+    .logo-monogram .white { color: white; }
+
+    .header h1 {
+      font-size: 1.2rem;
+      font-weight: 500;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .user-info { font-size: 0.9rem; opacity: 0.9; }
+
+    .logout-btn {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .logout-btn:hover { background: rgba(255,255,255,0.2); }
+
+    /* Main Layout */
+    .main-container {
+      display: flex;
+      height: calc(100vh - 56px);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      background: white;
+      border-right: 1px solid #e0e0e0;
+      padding: 1rem 0;
+      flex-shrink: 0;
+    }
+
+    .nav-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .nav-section-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #999;
+      padding: 0 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .nav-item {
+      padding: 0.7rem 1.25rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      color: #555;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+      font-size: 0.9rem;
+    }
+
+    .nav-item:hover {
+      background: #f5f7fa;
+      color: var(--navy);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(90deg, rgba(184,147,95,0.1) 0%, transparent 100%);
+      color: var(--gold);
+      border-left-color: var(--gold);
+      font-weight: 500;
+    }
+
+    .nav-icon { font-size: 1.1rem; }
+
+    .nav-badge {
+      margin-left: auto;
+      background: var(--gold);
+      color: white;
+      font-size: 0.7rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+
+    /* Content Area */
+    .content {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+    }
+
+    /* Page Header */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--navy);
+      font-family: 'Cormorant Garamond', serif;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+      color: white;
+    }
+    .btn-primary:hover { box-shadow: 0 4px 12px rgba(184,147,95,0.3); transform: translateY(-1px); }
+
+    .btn-secondary {
+      background: white;
+      color: var(--navy);
+      border: 1px solid #e0e0e0;
+    }
+    .btn-secondary:hover { background: #f5f7fa; }
+
+    /* Dashboard Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 1.25rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      border-left: 4px solid var(--gold);
+    }
+
+    .stat-card h3 {
+      font-size: 0.75rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.4rem;
+    }
+
+    .stat-card .value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .stat-card .subtext {
+      font-size: 0.8rem;
+      color: #888;
+      margin-top: 0.25rem;
+    }
+
+    /* Pipeline Section */
+    .pipeline-section {
+      background: white;
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .pipeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .pipeline-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--navy);
+    }
+
+    .pipeline-stages {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.75rem;
+    }
+
+    .pipeline-stage {
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 0.75rem;
+      min-height: 200px;
+    }
+
+    .stage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid;
+    }
+
+    .stage-new .stage-header { border-color: #2196f3; }
+    .stage-consultation .stage-header { border-color: var(--orange); }
+    .stage-discovery .stage-header { border-color: var(--green); }
+    .stage-strategy .stage-header { border-color: var(--purple); }
+    .stage-active .stage-header { border-color: var(--cyan); }
+    .stage-past .stage-header { border-color: #9e9e9e; }
+
+    .stage-name {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stage-count {
+      font-size: 0.7rem;
+      background: #e0e0e0;
+      padding: 0.15rem 0.5rem;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+
+    .pipeline-card {
+      background: white;
+      border-radius: 6px;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .pipeline-card:hover {
+      box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+      transform: translateY(-1px);
+    }
+
+    .pipeline-card-name {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--navy);
+      margin-bottom: 0.25rem;
+    }
+
+    .pipeline-card-email {
+      font-size: 0.75rem;
+      color: #888;
+      margin-bottom: 0.5rem;
+    }
+
+    .pipeline-card-actions {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .pipeline-action-btn {
+      font-size: 0.65rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-advance {
+      background: var(--green);
+      color: white;
+    }
+    .btn-advance:hover { background: #388e3c; }
+
+    .btn-book {
+      background: var(--gold);
+      color: white;
+    }
+    .btn-book:hover { background: #a07d4f; }
+
+    /* Two Column Layout */
+    .two-column {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    /* Bot Chat Section */
+    .bot-section {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      height: 450px;
+    }
+
+    .bot-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .bot-tabs {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .bot-tab {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border: none;
+      background: #f5f7fa;
+      color: #666;
+      transition: all 0.2s;
+    }
+
+    .bot-tab.active {
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+      color: white;
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .quick-action {
+      font-size: 0.75rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 15px;
+      border: 1px solid #e0e0e0;
+      background: white;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .quick-action:hover {
+      background: var(--gold);
+      color: white;
+      border-color: var(--gold);
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+    }
+
+    .message {
+      margin-bottom: 0.75rem;
+      max-width: 85%;
+    }
+
+    .message.user {
+      margin-left: auto;
+    }
+
+    .message-content {
+      display: inline-block;
+      padding: 0.7rem 1rem;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .message.user .message-content {
+      background: var(--navy);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.assistant .message-content {
+      background: #f5f7fa;
+      color: var(--navy);
+      border-bottom-left-radius: 4px;
+    }
+
+    .chat-input-area {
+      padding: 1rem;
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .chat-input {
+      flex: 1;
+      padding: 0.7rem 1rem;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .chat-input:focus { border-color: var(--gold); }
+
+    .send-btn {
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+      color: white;
+      border: none;
+      padding: 0.7rem 1.25rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .send-btn:hover { box-shadow: 0 4px 12px rgba(184,147,95,0.3); }
+    .send-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+    /* Tasks Section */
+    .tasks-section {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 450px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tasks-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tasks-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--navy);
+    }
+
+    .tasks-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem 0;
+    }
+
+    .task-item {
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-bottom: 1px solid #f5f5f5;
+      transition: background 0.2s;
+    }
+
+    .task-item:hover { background: #fafafa; }
+
+    .task-checkbox {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--gold);
+    }
+
+    .task-content { flex: 1; }
+
+    .task-title {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--navy);
+    }
+
+    .task-meta {
+      font-size: 0.75rem;
+      color: #888;
+      margin-top: 0.15rem;
+    }
+
+    .priority-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .priority-high { background: var(--red); }
+    .priority-medium { background: var(--orange); }
+    .priority-low { background: var(--green); }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: white;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      padding: 1.25rem;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--navy);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #888;
+    }
+
+    .modal-body { padding: 1.25rem; }
+
+    .form-group { margin-bottom: 1rem; }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--navy);
+      margin-bottom: 0.4rem;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.7rem;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--gold);
+    }
+
+    .modal-footer {
+      padding: 1.25rem;
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+
+    /* Contact Detail */
+    .contact-detail {
+      padding: 1rem;
+    }
+
+    .contact-info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .info-item label {
+      font-size: 0.75rem;
+      color: #888;
+      text-transform: uppercase;
+    }
+
+    .info-item p {
+      font-size: 0.95rem;
+      color: var(--navy);
+      margin-top: 0.25rem;
+    }
+
+    .stage-selector {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    .stage-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      border: 2px solid #e0e0e0;
+      background: white;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .stage-btn:hover { border-color: var(--gold); }
+    .stage-btn.active {
+      background: var(--gold);
+      color: white;
+      border-color: var(--gold);
+    }
+
+    /* Page Sections */
+    .page-section { display: none; }
+    .page-section.active { display: block; }
+
+    /* Auth Loading */
+    .auth-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: #f5f7fa;
+    }
+
+    .auth-loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e0e0e0;
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    body.authenticated .auth-loading { display: none; }
+    body:not(.authenticated) .header,
+    body:not(.authenticated) .main-container { display: none; }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: #888;
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+      .pipeline-stages { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (max-width: 900px) {
+      .two-column { grid-template-columns: 1fr; }
+      .sidebar { width: 60px; }
+      .nav-item span:not(.nav-icon) { display: none; }
+    }
+
+    /* Automation Widget Styles */
+    .automation-widget {
+      padding: 1.5rem;
+      background: white;
+      border-radius: 10px;
+    }
+
+    .widget-header-inline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid var(--gold);
+    }
+
+    .widget-title-inline {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-weight: 400;
+      color: var(--navy);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .widget-badge-inline {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.65rem;
+      padding: 0.25rem 0.6rem;
+      background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 100%);
+      color: white;
+      border-radius: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .widget-refresh-inline {
+      background: white;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .widget-refresh-inline:hover {
+      background: var(--gold);
+      color: white;
+    }
+
+    .widget-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .widget-stat-card {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      padding: 1.5rem;
+      border-radius: 10px;
+      color: white;
+      border-top: 3px solid var(--gold);
+    }
+
+    .widget-stat-warning {
+      background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 100%);
+    }
+
+    .widget-stat-primary {
+      background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 100%);
+    }
+
+    .widget-stat-label {
+      font-size: 0.75rem;
+      opacity: 0.9;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .widget-stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .widget-stat-change {
+      font-size: 0.75rem;
+      opacity: 0.85;
+    }
+
+    .widget-activity-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.25rem;
+      font-weight: 400;
+      color: var(--navy);
+      margin-bottom: 1rem;
+    }
+
+    .widget-activity-feed {
+      background: #f8f6f3;
+      border-radius: 10px;
+      padding: 1rem;
+      max-height: 450px;
+      overflow-y: auto;
+    }
+
+    .widget-activity-item {
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+      border-left: 4px solid var(--gold);
+      display: flex;
+      gap: 1rem;
+      align-items: start;
+      transition: transform 0.2s;
+    }
+
+    .widget-activity-item:hover {
+      transform: translateX(4px);
+    }
+
+    .widget-activity-item.contact {
+      border-left-color: var(--navy);
+    }
+
+    .widget-activity-item.task {
+      border-left-color: var(--gold);
+    }
+
+    .widget-activity-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .widget-activity-content {
+      flex: 1;
+    }
+
+    .widget-activity-title-text {
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 0.25rem;
+      font-size: 0.95rem;
+    }
+
+    .widget-activity-description {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 0.25rem;
+    }
+
+    .widget-activity-time {
+      font-size: 0.75rem;
+      color: #999;
+    }
+
+    .widget-activity-feed::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .widget-activity-feed::-webkit-scrollbar-track {
+      background: #f0f0f0;
+      border-radius: 10px;
+    }
+
+    .widget-activity-feed::-webkit-scrollbar-thumb {
+      background: var(--gold);
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-loading">
+    <div class="auth-loading-spinner"></div>
+  </div>
+
+  <header class="header">
+    <div class="header-brand">
+      <div class="logo-monogram"><span class="gold">M</span><span class="white">F</span></div>
+      <h1>Maggie Forbes Strategies</h1>
+    </div>
+    <div class="header-right">
+      <span class="user-info" id="user-greeting">Welcome, Maggie</span>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <nav class="sidebar">
+      <div class="nav-section">
+        <div class="nav-section-title">Overview</div>
+        <div class="nav-item active" data-page="dashboard">
+          <span class="nav-icon">📊</span>
+          <span>Dashboard</span>
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">AI Assistants</div>
+        <div class="nav-item" data-page="bots">
+          <span class="nav-icon">🤖</span>
+          <span>Chat</span>
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">CRM</div>
+        <div class="nav-item" data-page="pipeline">
+          <span class="nav-icon">📈</span>
+          <span>Pipeline</span>
+          <span class="nav-badge" id="nav-pipeline-count">0</span>
+        </div>
+        <div class="nav-item" data-page="contacts">
+          <span class="nav-icon">👥</span>
+          <span>Contacts</span>
+        </div>
+        <div class="nav-item" data-page="tasks">
+          <span class="nav-icon">✓</span>
+          <span>Tasks</span>
+          <span class="nav-badge" id="nav-tasks-count">0</span>
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Automation</div>
+        <div class="nav-item" data-page="automation">
+          <span class="nav-icon">⚡</span>
+          <span>Prospecting</span>
+          <span class="nav-badge" id="nav-automation-count">0</span>
+        </div>
+      </div>
+    </nav>
+
+    <main class="content">
+      <!-- Dashboard Page -->
+      <div class="page-section active" id="page-dashboard">
+        <div class="page-header">
+          <h2 class="section-title">Dashboard</h2>
+          <div class="header-actions">
+            <button class="btn btn-secondary" onclick="openAddContactModal()">+ Add Contact</button>
+            <button class="btn btn-primary" onclick="navigateTo('bots')">Chat with AI</button>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="stat-card">
+            <h3>Total Inquiries</h3>
+            <div class="value" id="stat-contacts">0</div>
+            <div class="subtext">All contacts</div>
+          </div>
+          <div class="stat-card">
+            <h3>Consultations</h3>
+            <div class="value" id="stat-consultations">0</div>
+            <div class="subtext">Scheduled</div>
+          </div>
+          <div class="stat-card">
+            <h3>Discovery</h3>
+            <div class="value" id="stat-discovery">0</div>
+            <div class="subtext">In progress</div>
+          </div>
+          <div class="stat-card">
+            <h3>Active Clients</h3>
+            <div class="value" id="stat-active">0</div>
+            <div class="subtext">Engaged</div>
+          </div>
+        </div>
+
+        <div class="two-column">
+          <!-- AI Assistant -->
+          <div class="bot-section">
+            <div class="bot-header">
+              <div class="bot-tabs">
+                <button class="bot-tab active" onclick="switchBot('secretary')">Sarah (Secretary)</button>
+                <button class="bot-tab" onclick="switchBot('marketing')">Marketing</button>
+              </div>
+            </div>
+            <div style="padding: 0.5rem 1rem; border-bottom: 1px solid #f0f0f0;">
+              <div class="quick-actions">
+                <button class="quick-action" onclick="sendQuickMessage('What do I need to do today?')">Daily Briefing</button>
+                <button class="quick-action" onclick="sendQuickMessage('Who needs follow-up?')">Follow-ups</button>
+                <button class="quick-action" onclick="sendQuickMessage('Show my pipeline summary')">Pipeline</button>
+              </div>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+              <div class="message assistant">
+                <div class="message-content">Hello Maggie! I'm Sarah, your AI secretary. How can I help you today?</div>
+              </div>
+            </div>
+            <div class="chat-input-area">
+              <input type="text" class="chat-input" id="chat-input" placeholder="Ask Sarah anything..." onkeypress="handleKeyPress(event)">
+              <button class="send-btn" id="send-btn" onclick="sendMessage()">Send</button>
+            </div>
+          </div>
+
+          <!-- Tasks -->
+          <div class="tasks-section">
+            <div class="tasks-header">
+              <span class="tasks-title">Pending Tasks</span>
+              <button class="btn btn-secondary" onclick="openAddTaskModal()" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">+ Add</button>
+            </div>
+            <div class="tasks-list" id="tasks-list">
+              <div class="empty-state">Loading tasks...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pipeline Page -->
+      <div class="page-section" id="page-pipeline">
+        <div class="page-header">
+          <h2 class="section-title">Sales Pipeline</h2>
+          <div class="header-actions">
+            <button class="btn btn-primary" onclick="openAddContactModal()">+ Add Contact</button>
+          </div>
+        </div>
+
+        <div class="pipeline-section">
+          <div class="pipeline-stages" id="pipeline-stages">
+            <!-- Pipeline stages will be rendered here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Bots Page -->
+      <div class="page-section" id="page-bots">
+        <div class="page-header">
+          <h2 class="section-title">AI Assistants</h2>
+        </div>
+
+        <div class="bot-section" style="height: calc(100vh - 180px);">
+          <div class="bot-header">
+            <div class="bot-tabs">
+              <button class="bot-tab active" id="tab-secretary" onclick="switchBot('secretary')">Sarah - AI Secretary</button>
+              <button class="bot-tab" id="tab-marketing" onclick="switchBot('marketing')">Marketing Assistant</button>
+            </div>
+          </div>
+          <div style="padding: 0.75rem 1rem; border-bottom: 1px solid #f0f0f0; background: #fafafa;">
+            <div class="quick-actions" id="quick-actions-full">
+              <!-- Quick actions will be populated based on bot type -->
+            </div>
+          </div>
+          <div class="chat-messages" id="chat-messages-full" style="flex: 1;">
+            <div class="message assistant">
+              <div class="message-content">Hello! How can I assist you today?</div>
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <input type="text" class="chat-input" id="chat-input-full" placeholder="Type your message..." onkeypress="handleKeyPressFull(event)">
+            <button class="send-btn" id="send-btn-full" onclick="sendMessageFull()">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contacts Page -->
+      <div class="page-section" id="page-contacts">
+        <div class="page-header">
+          <h2 class="section-title">All Contacts</h2>
+          <div class="header-actions">
+            <button class="btn btn-primary" onclick="openAddContactModal()">+ Add Contact</button>
+          </div>
+        </div>
+
+        <div class="pipeline-section">
+          <table style="width: 100%;">
+            <thead>
+              <tr>
+                <th style="text-align: left; padding: 0.75rem; font-size: 0.75rem; color: #888; text-transform: uppercase;">Name</th>
+                <th style="text-align: left; padding: 0.75rem; font-size: 0.75rem; color: #888; text-transform: uppercase;">Email</th>
+                <th style="text-align: left; padding: 0.75rem; font-size: 0.75rem; color: #888; text-transform: uppercase;">Stage</th>
+                <th style="text-align: left; padding: 0.75rem; font-size: 0.75rem; color: #888; text-transform: uppercase;">Tier</th>
+                <th style="text-align: left; padding: 0.75rem; font-size: 0.75rem; color: #888; text-transform: uppercase;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="contacts-table">
+              <tr><td colspan="4" class="empty-state">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tasks Page -->
+      <div class="page-section" id="page-tasks">
+        <div class="page-header">
+          <h2 class="section-title">All Tasks</h2>
+          <div class="header-actions">
+            <button class="btn btn-primary" onclick="openAddTaskModal()">+ Add Task</button>
+          </div>
+        </div>
+
+        <div class="tasks-section" style="height: auto; max-height: none;">
+          <div class="tasks-list" id="tasks-list-full" style="max-height: none;">
+            <div class="empty-state">Loading tasks...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Automation & Prospecting Page -->
+      <div class="page-section" id="page-automation">
+        <div class="page-header">
+          <h2 class="section-title">Prospecting & Automation</h2>
+          <div class="header-actions">
+            <button class="btn btn-secondary" onclick="runAutomation(event)">▶ Run Now</button>
+            <button class="btn btn-primary" onclick="openAutomationSettings()">⚙ Settings</button>
+          </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="dashboard-grid">
+          <div class="stat-card" style="border-left-color: #43a047;">
+            <h3>Web Prospects</h3>
+            <div class="value" id="stat-web-prospects">0</div>
+            <div class="subtext">Intent signals detected</div>
+          </div>
+          <div class="stat-card" style="border-left-color: #fb8c00;">
+            <h3>Auto-Qualified</h3>
+            <div class="value" id="stat-auto-qualified">0</div>
+            <div class="subtext">This week</div>
+          </div>
+          <div class="stat-card" style="border-left-color: #7b1fa2;">
+            <h3>Follow-ups Sent</h3>
+            <div class="value" id="stat-follow-ups">0</div>
+            <div class="subtext">Last 7 days</div>
+          </div>
+        </div>
+
+        <!-- Automation Status -->
+        <div class="pipeline-section">
+          <div class="pipeline-header">
+            <span class="pipeline-title">Automation Status</span>
+            <span style="font-size: 0.85rem; color: #888;">Last run: <span id="last-automation-run">Never</span></span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem;">
+            <!-- Web Prospecting -->
+            <div style="background: #f9fafb; border-radius: 8px; padding: 1.25rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="font-size: 1.5rem;">🌐</span>
+                  <span style="font-weight: 600; color: var(--navy);">Web Prospector</span>
+                </div>
+                <div style="background: #43a047; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600;" id="web-status">Active</div>
+              </div>
+              <p style="font-size: 0.85rem; color: #666; margin-bottom: 0.75rem;">Scans news, forums, job boards for high-intent leads</p>
+              <div style="font-size: 0.8rem; color: #888;">Schedule: <span id="web-schedule">Daily</span></div>
+              <button class="btn btn-secondary" style="margin-top: 0.75rem; padding: 0.5rem 1rem; font-size: 0.8rem; width: 100%;" onclick="runWebProspecting(event)">Run Web Scan</button>
+            </div>
+
+            <!-- Sales Automation -->
+            <div style="background: #f9fafb; border-radius: 8px; padding: 1.25rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="font-size: 1.5rem;">⚡</span>
+                  <span style="font-weight: 600; color: var(--navy);">Sales Automation</span>
+                </div>
+                <div style="background: #43a047; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600;" id="sales-status">Active</div>
+              </div>
+              <p style="font-size: 0.85rem; color: #666; margin-bottom: 0.75rem;">Auto-qualifies, follows up, progresses pipeline</p>
+              <div style="font-size: 0.8rem; color: #888;">Schedule: <span id="sales-schedule">Continuous</span></div>
+              <button class="btn btn-secondary" style="margin-top: 0.75rem; padding: 0.5rem 1rem; font-size: 0.8rem; width: 100%;" onclick="runSalesAutomation(event)">Run Automation</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="pipeline-section" style="margin-top: 1.5rem;">
+          <div class="pipeline-header">
+            <span class="pipeline-title">Recent Automation Activity</span>
+          </div>
+          <div id="automation-activity" style="margin-top: 1rem;">
+            <div class="empty-state">Loading activity...</div>
+          </div>
+        </div>
+
+        <!-- AI Automation Widget - Integrated -->
+        <div class="pipeline-section" style="margin-top: 1.5rem;">
+          <div class="automation-widget">
+            <!-- Widget Header -->
+            <div class="widget-header-inline">
+              <div class="widget-title-inline">
+                AI Automation Engine
+                <span class="widget-badge-inline">Active</span>
+              </div>
+              <button class="widget-refresh-inline" onclick="refreshAutomationWidget()">
+                🔄 Refresh
+              </button>
+            </div>
+
+            <!-- Widget Stats Grid -->
+            <div class="widget-stats-grid">
+              <div class="widget-stat-card widget-stat-success">
+                <div class="widget-stat-label">New Contacts</div>
+                <div class="widget-stat-value" id="widget-leads-count">--</div>
+                <div class="widget-stat-change">↑ Last 7 Days</div>
+              </div>
+
+              <div class="widget-stat-card widget-stat-warning">
+                <div class="widget-stat-label">Pending Tasks</div>
+                <div class="widget-stat-value" id="widget-content-count">--</div>
+                <div class="widget-stat-change">To Complete</div>
+              </div>
+
+              <div class="widget-stat-card widget-stat-primary">
+                <div class="widget-stat-label">High Value Clients</div>
+                <div class="widget-stat-value" id="widget-fit-score">--</div>
+                <div class="widget-stat-change">Active & Strategy</div>
+              </div>
+            </div>
+
+            <!-- Widget Activity Feed -->
+            <h3 class="widget-activity-title">Recent Automation Activity</h3>
+            <div class="widget-activity-feed" id="widget-activity-feed">
+              <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading automation activity...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Contact Modal -->
+  <div class="modal-overlay" id="add-contact-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Add New Contact</span>
+        <button class="modal-close" onclick="closeModal('add-contact-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" id="contact-name" placeholder="Enter full name">
+        </div>
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" id="contact-email" placeholder="Enter email">
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" id="contact-phone" placeholder="Enter phone number">
+        </div>
+        <div class="form-group">
+          <label>Company</label>
+          <input type="text" id="contact-company" placeholder="Enter company name">
+        </div>
+        <div class="form-group">
+          <label>Stage</label>
+          <select id="contact-stage">
+            <option value="new">New Inquiry</option>
+            <option value="consultation_scheduled">Consultation Scheduled</option>
+            <option value="discovery">Discovery</option>
+            <option value="strategy">Strategy</option>
+            <option value="active_client">Active Client</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="contact-notes" rows="3" placeholder="Any notes..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('add-contact-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveContact()">Save Contact</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact Detail Modal -->
+  <div class="modal-overlay" id="contact-detail-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="contact-detail-name">Contact Name</span>
+        <button class="modal-close" onclick="closeModal('contact-detail-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="contact-info-grid">
+          <div class="info-item">
+            <label>Email</label>
+            <p id="contact-detail-email">-</p>
+          </div>
+          <div class="info-item">
+            <label>Phone</label>
+            <p id="contact-detail-phone">-</p>
+          </div>
+          <div class="info-item">
+            <label>Company</label>
+            <p id="contact-detail-company">-</p>
+          </div>
+          <div class="info-item">
+            <label>Current Stage</label>
+            <p id="contact-detail-stage">-</p>
+          </div>
+        </div>
+
+        <label style="font-size: 0.85rem; font-weight: 500; color: var(--navy); display: block; margin-bottom: 0.5rem;">Move to Stage:</label>
+        <div class="stage-selector" id="stage-selector">
+          <button class="stage-btn" data-stage="new">New</button>
+          <button class="stage-btn" data-stage="consultation_scheduled">Consultation</button>
+          <button class="stage-btn" data-stage="discovery">Discovery</button>
+          <button class="stage-btn" data-stage="strategy">Strategy</button>
+          <button class="stage-btn" data-stage="active_client">Active Client</button>
+        </div>
+
+        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e0e0e0;">
+          <label style="font-size: 0.85rem; font-weight: 500; color: var(--navy); display: block; margin-bottom: 0.5rem;">Provision as Client:</label>
+          <div class="info-item" style="margin-bottom: 0.75rem;">
+            <label>Current Tier</label>
+            <p id="contact-detail-tier">-</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn" style="flex: 1; background: #e3f2fd; color: #1976d2; border: 1px solid #1976d2;" onclick="provisionClient(selectedContact.id, 'strategy')">Strategy ($2.5k)</button>
+            <button class="btn" style="flex: 1; background: #fce4ec; color: #c2185b; border: 1px solid #c2185b;" onclick="provisionClient(selectedContact.id, 'premium')">Premium ($5k)</button>
+            <button class="btn" style="flex: 1; background: #f3e5f5; color: #7b1fa2; border: 1px solid #7b1fa2;" onclick="provisionClient(selectedContact.id, 'enterprise')">Enterprise ($10k)</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('contact-detail-modal')">Close</button>
+        <button class="btn btn-primary" onclick="bookDiscovery()">Book Discovery Call</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Task Modal -->
+  <div class="modal-overlay" id="add-task-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Add New Task</span>
+        <button class="modal-close" onclick="closeModal('add-task-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Task Title *</label>
+          <input type="text" id="task-title" placeholder="Enter task title">
+        </div>
+        <div class="form-group">
+          <label>Priority</label>
+          <select id="task-priority">
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Due Date</label>
+          <input type="text" id="task-due" placeholder="e.g., Tomorrow, This week">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('add-task-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveTask()">Save Task</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    // Tenant ID now handled server-side
+    const CALENDLY_DISCOVERY = 'https://calendly.com/maggie-maggieforbesstrategies/discovery-call';
+
+    let currentBot = 'secretary';
+    let conversationId = null;
+
+    // XSS Protection: Escape HTML entities
+    function escapeHtml(text) {
+      if (!text) return '-';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    let conversations = {};
+    let allContacts = [];
+    let selectedContact = null;
+
+    // Navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => navigateTo(item.dataset.page));
+    });
+
+    function navigateTo(page) {
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
+      document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+      document.getElementById(`page-${page}`)?.classList.add('active');
+
+      if (page === 'pipeline') loadPipeline();
+      if (page === 'contacts') loadContacts();
+      if (page === 'tasks') loadTasksFull();
+      if (page === 'dashboard') loadDashboard();
+      if (page === 'bots') setupBotPage();
+      if (page === 'automation') loadAutomationPage();
+    }
+
+    // Dashboard
+    async function loadDashboard() {
+      try {
+        const res = await fetch(`${API_BASE}/api/contacts`, { credentials: 'include' });
+        const data = await res.json();
+        allContacts = data.contacts || [];
+
+        document.getElementById('stat-contacts').textContent = allContacts.length;
+        document.getElementById('stat-consultations').textContent = allContacts.filter(c => c.stage === 'consultation_scheduled').length;
+        document.getElementById('stat-discovery').textContent = allContacts.filter(c => c.stage === 'discovery').length;
+        document.getElementById('stat-active').textContent = allContacts.filter(c => c.stage === 'active_client' || c.stage === 'strategy').length;
+        document.getElementById('nav-pipeline-count').textContent = allContacts.length;
+
+        const tasksRes = await fetch(`${API_BASE}/api/tasks?status=pending`, { credentials: 'include' });
+        const tasksData = await tasksRes.json();
+        document.getElementById('nav-tasks-count').textContent = tasksData.tasks?.length || 0;
+        renderTasksList(tasksData.tasks || [], 'tasks-list');
+      } catch (error) {
+        console.error('Error loading dashboard:', error);
+      }
+    }
+
+    // Pipeline
+    async function loadPipeline() {
+      const stages = [
+        { id: 'new', name: 'New', class: 'stage-new' },
+        { id: 'consultation_scheduled', name: 'Consultation', class: 'stage-consultation' },
+        { id: 'discovery', name: 'Discovery', class: 'stage-discovery' },
+        { id: 'strategy', name: 'Strategy', class: 'stage-strategy' },
+        { id: 'active_client', name: 'Active', class: 'stage-active' },
+        { id: 'past_client', name: 'Past', class: 'stage-past' }
+      ];
+
+      try {
+        const res = await fetch(`${API_BASE}/api/contacts`, { credentials: 'include' });
+        const data = await res.json();
+        allContacts = data.contacts || [];
+
+        const container = document.getElementById('pipeline-stages');
+        if (!container) return;
+        container.innerHTML = stages.map(stage => {
+          const stageContacts = allContacts.filter(c => (c.stage || 'new') === stage.id);
+          return `
+            <div class="pipeline-stage ${stage.class}">
+              <div class="stage-header">
+                <span class="stage-name">${stage.name}</span>
+                <span class="stage-count">${stageContacts.length}</span>
+              </div>
+              ${stageContacts.map(contact => `
+                <div class="pipeline-card" onclick="openContactDetail('${contact.id}')">
+                  <div class="pipeline-card-name">${escapeHtml(contact.full_name) || 'Unknown'}</div>
+                  <div class="pipeline-card-email">${escapeHtml(contact.email) || '-'}</div>
+                  <div class="pipeline-card-actions">
+                    ${getStageActions(stage.id, contact.id)}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }).join('');
+      } catch (error) {
+        console.error('Error loading pipeline:', error);
+      }
+    }
+
+    function getStageActions(stage, contactId) {
+      const nextStage = {
+        'new': 'consultation_scheduled',
+        'consultation_scheduled': 'discovery',
+        'discovery': 'strategy',
+        'strategy': 'active_client'
+      };
+
+      let actions = '';
+      if (nextStage[stage]) {
+        if (stage === 'consultation_scheduled') {
+          actions += `<button class="pipeline-action-btn btn-book" onclick="event.stopPropagation(); bookDiscoveryFor('${contactId}')">Book Discovery</button>`;
+        }
+        actions += `<button class="pipeline-action-btn btn-advance" onclick="event.stopPropagation(); advanceStage('${contactId}', '${nextStage[stage]}')">${stage === 'consultation_scheduled' ? 'Advance' : 'Next'}</button>`;
+      }
+      return actions;
+    }
+
+    async function advanceStage(contactId, newStage) {
+      try {
+        const res = await fetch(`${API_BASE}/api/contacts`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ id: contactId, stage: newStage })
+        });
+        if (!res.ok) throw new Error(`Failed to advance stage: ${res.status}`);
+        loadPipeline();
+        loadDashboard();
+      } catch (error) {
+        console.error('Error advancing stage:', error);
+        alert('Error advancing stage: ' + error.message);
+      }
+    }
+
+    function bookDiscoveryFor(contactId) {
+      const contact = allContacts.find(c => c.id === contactId);
+      if (contact) {
+        const url = `${CALENDLY_DISCOVERY}?email=${encodeURIComponent(contact.email)}&name=${encodeURIComponent(contact.full_name || '')}`;
+        window.open(url, '_blank');
+      }
+    }
+
+    // Contacts
+    async function loadContacts() {
+      const tbody = document.getElementById('contacts-table');
+      if (!tbody) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/contacts`, { credentials: 'include' });
+        const data = await res.json();
+        allContacts = data.contacts || [];
+
+        if (allContacts.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No contacts yet</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = allContacts.map(contact => {
+          const needsEnrichment = contact.email && contact.email.includes('.PLACEHOLDER');
+          const emailDisplay = needsEnrichment ? '⚠️ Needs Enrichment' : (escapeHtml(contact.email) || '-');
+          const emailStyle = needsEnrichment ? 'color: #fb8c00; font-weight: 500;' : 'color: #666;';
+
+          return `
+          <tr style="${needsEnrichment ? 'background: #fff8e1;' : ''}">
+            <td style="padding: 0.75rem; font-weight: 500;">${escapeHtml(contact.full_name) || '-'}</td>
+            <td style="padding: 0.75rem; ${emailStyle}">${emailDisplay}</td>
+            <td style="padding: 0.75rem;"><span style="background: #f0f0f0; padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.8rem;">${formatStage(contact.stage)}</span></td>
+            <td style="padding: 0.75rem;">${formatTier(contact.client_tier)}</td>
+            <td style="padding: 0.75rem;">
+              <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="openContactDetail('${contact.id}')">View</button>
+              ${needsEnrichment ? `<button class="btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: #fb8c00; color: white; margin-left: 0.25rem;" onclick="enrichContactEmail('${contact.id}', '${escapeHtml(contact.full_name)}', '${escapeHtml(contact.company)}')">Enrich</button>` : ''}
+            </td>
+          </tr>
+        `;
+        }).join('');
+      } catch (error) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Error loading contacts</td></tr>';
+      }
+    }
+
+    function openContactDetail(contactId) {
+      selectedContact = allContacts.find(c => c.id === contactId);
+      if (!selectedContact) return;
+
+      document.getElementById('contact-detail-name').textContent = selectedContact.full_name || 'Unknown';
+      document.getElementById('contact-detail-email').textContent = selectedContact.email || '-';
+      document.getElementById('contact-detail-phone').textContent = selectedContact.phone || '-';
+      document.getElementById('contact-detail-company').textContent = selectedContact.company || '-';
+      document.getElementById('contact-detail-stage').textContent = formatStage(selectedContact.stage);
+      document.getElementById('contact-detail-tier').innerHTML = formatTier(selectedContact.client_tier);
+
+      document.querySelectorAll('.stage-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.stage === (selectedContact.stage || 'new'));
+        btn.onclick = () => updateContactStage(btn.dataset.stage);
+      });
+
+      document.getElementById('contact-detail-modal').classList.add('active');
+    }
+
+    async function updateContactStage(newStage) {
+      if (!selectedContact) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/contacts`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ id: selectedContact.id, stage: newStage })
+        });
+        if (!res.ok) throw new Error(`Failed to update stage: ${res.status}`);
+
+        selectedContact.stage = newStage;
+        document.getElementById('contact-detail-stage').textContent = formatStage(newStage);
+        document.querySelectorAll('.stage-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.stage === newStage);
+        });
+
+        loadPipeline();
+        loadDashboard();
+      } catch (error) {
+        console.error('Error updating stage:', error);
+      }
+    }
+
+    function bookDiscovery() {
+      if (!selectedContact) return;
+      const url = `${CALENDLY_DISCOVERY}?email=${encodeURIComponent(selectedContact.email)}&name=${encodeURIComponent(selectedContact.full_name || '')}`;
+      window.open(url, '_blank');
+    }
+
+    // Tasks
+    function renderTasksList(tasks, containerId) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      if (!tasks || tasks.length === 0) {
+        container.innerHTML = '<div class="empty-state">No pending tasks</div>';
+        return;
+      }
+
+      container.innerHTML = tasks.filter(t => t.status !== 'completed').slice(0, containerId === 'tasks-list' ? 5 : 100).map(task => `
+        <div class="task-item">
+          <div class="priority-indicator priority-${task.priority || 'medium'}"></div>
+          <input type="checkbox" class="task-checkbox" onchange="completeTask('${task.id}')">
+          <div class="task-content">
+            <div class="task-title">${escapeHtml(task.title)}</div>
+            <div class="task-meta">${escapeHtml(task.due_date_text) || 'No due date'} - ${task.priority || 'medium'} priority</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function loadTasksFull() {
+      try {
+        const res = await fetch(`${API_BASE}/api/tasks`, { credentials: 'include' });
+        const data = await res.json();
+        renderTasksList(data.tasks || [], 'tasks-list-full');
+      } catch (error) {
+        console.error('Error loading tasks:', error);
+      }
+    }
+
+    async function completeTask(taskId) {
+      try {
+        const res = await fetch(`${API_BASE}/api/tasks`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ id: taskId, status: 'completed' })
+        });
+        if (!res.ok) throw new Error(`Failed to complete task: ${res.status}`);
+        loadDashboard();
+        loadTasksFull();
+      } catch (error) {
+        console.error('Error completing task:', error);
+        alert('Error completing task: ' + error.message);
+      }
+    }
+
+    // Bot Chat
+    function switchBot(botType) {
+      currentBot = botType;
+      document.querySelectorAll('.bot-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.textContent.toLowerCase().includes(botType));
+      });
+
+      const quickActions = document.getElementById('quick-actions-full');
+      if (quickActions) {
+        if (botType === 'secretary') {
+          quickActions.innerHTML = `
+            <button class="quick-action" onclick="sendQuickMessageFull('What do I need to do today?')">Daily Briefing</button>
+            <button class="quick-action" onclick="sendQuickMessageFull('Who needs follow-up?')">Follow-ups</button>
+            <button class="quick-action" onclick="sendQuickMessageFull('Show pipeline summary')">Pipeline</button>
+            <button class="quick-action" onclick="sendQuickMessageFull('Create a task to follow up with recent inquiries')">Create Task</button>
+          `;
+        } else {
+          quickActions.innerHTML = `
+            <button class="quick-action" onclick="sendQuickMessageFull('Create a LinkedIn post about strategic growth')">LinkedIn Post</button>
+            <button class="quick-action" onclick="sendQuickMessageFull('Give me content ideas for this week')">Content Ideas</button>
+            <button class="quick-action" onclick="sendQuickMessageFull('Write an email follow-up template')">Email Template</button>
+          `;
+        }
+      }
+    }
+
+    function setupBotPage() {
+      switchBot(currentBot);
+    }
+
+    function addMessage(role, content, containerId = 'chat-messages') {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const div = document.createElement('div');
+      div.className = `message ${role}`;
+      // For user messages, escape for XSS protection
+      // For bot messages (assistant), format trusted content
+      if (role === 'user') {
+        div.innerHTML = `<div class="message-content">${escapeHtml(content)}</div>`;
+      } else {
+        div.innerHTML = `<div class="message-content">${formatMessageContent(content)}</div>`;
+      }
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function formatMessageContent(text) {
+      // First escape HTML to prevent XSS, then apply formatting
+      const escaped = escapeHtml(text);
+      return escaped
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>')
+        .replace(/• /g, '&bull; ');
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('chat-input');
+      if (!input) return;
+      const message = input.value.trim();
+      if (!message) return;
+
+      input.value = '';
+      addMessage('user', message);
+
+      const btn = document.getElementById('send-btn');
+      if (!btn) return;
+      btn.disabled = true;
+
+      try {
+        const endpoint = currentBot === 'marketing' ? '/api/ai-marketing-bot' : '/api/ai-secretary-bot';
+        const res = await fetch(`${API_BASE}${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ message, conversationId })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          addMessage('assistant', data.message);
+          conversationId = data.conversationId;
+        } else {
+          addMessage('assistant', 'Sorry, I encountered an error. Please try again.');
+        }
+      } catch (error) {
+        addMessage('assistant', 'Connection error. Please try again.');
+      }
+
+      btn.disabled = false;
+    }
+
+    async function sendMessageFull() {
+      const input = document.getElementById('chat-input-full');
+      if (!input) return;
+      const message = input.value.trim();
+      if (!message) return;
+
+      input.value = '';
+      addMessage('user', message, 'chat-messages-full');
+
+      const btn = document.getElementById('send-btn-full');
+      if (!btn) return;
+      btn.disabled = true;
+
+      try {
+        const endpoint = currentBot === 'marketing' ? '/api/ai-marketing-bot' : '/api/ai-secretary-bot';
+        const res = await fetch(`${API_BASE}${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ message, conversationId: conversations[currentBot] })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          addMessage('assistant', data.message, 'chat-messages-full');
+          conversations[currentBot] = data.conversationId;
+        } else {
+          addMessage('assistant', 'Sorry, I encountered an error.', 'chat-messages-full');
+        }
+      } catch (error) {
+        addMessage('assistant', 'Connection error.', 'chat-messages-full');
+      }
+
+      btn.disabled = false;
+    }
+
+    function sendQuickMessage(msg) {
+      document.getElementById('chat-input').value = msg;
+      sendMessage();
+    }
+
+    function sendQuickMessageFull(msg) {
+      document.getElementById('chat-input-full').value = msg;
+      sendMessageFull();
+    }
+
+    function handleKeyPress(e) {
+      if (e.key === 'Enter') sendMessage();
+    }
+
+    function handleKeyPressFull(e) {
+      if (e.key === 'Enter') sendMessageFull();
+    }
+
+    // Modals
+    function openAddContactModal() {
+      document.getElementById('add-contact-modal').classList.add('active');
+    }
+
+    function openAddTaskModal() {
+      document.getElementById('add-task-modal').classList.add('active');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    async function saveContact() {
+      const nameEl = document.getElementById('contact-name');
+      const emailEl = document.getElementById('contact-email');
+      const phoneEl = document.getElementById('contact-phone');
+      const companyEl = document.getElementById('contact-company');
+      const stageEl = document.getElementById('contact-stage');
+      const notesEl = document.getElementById('contact-notes');
+
+      if (!nameEl || !emailEl) {
+        console.error('Form elements not found');
+        return;
+      }
+
+      const name = nameEl.value.trim();
+      const email = emailEl.value.trim();
+      const phone = phoneEl?.value.trim() || '';
+      const company = companyEl?.value.trim() || '';
+      const stage = stageEl?.value || 'new';
+      const notes = notesEl?.value.trim() || '';
+
+      if (!name || !email) {
+        alert('Please enter name and email');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/contacts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ full_name: name, email, phone, company, stage, notes })
+        });
+        if (!res.ok) throw new Error(`Failed to add contact: ${res.status}`);
+
+        closeModal('add-contact-modal');
+        document.getElementById('contact-name').value = '';
+        document.getElementById('contact-email').value = '';
+        document.getElementById('contact-phone').value = '';
+        document.getElementById('contact-company').value = '';
+        document.getElementById('contact-notes').value = '';
+
+        loadDashboard();
+        loadPipeline();
+      } catch (error) {
+        alert('Error saving contact');
+      }
+    }
+
+    async function saveTask() {
+      const titleEl = document.getElementById('task-title');
+      const priorityEl = document.getElementById('task-priority');
+      const dueEl = document.getElementById('task-due');
+
+      if (!titleEl) {
+        console.error('Task form elements not found');
+        return;
+      }
+
+      const title = titleEl.value.trim();
+      const priority = priorityEl?.value || 'medium';
+      const due = dueEl?.value.trim() || '';
+
+      if (!title) {
+        alert('Please enter a task title');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/tasks`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ title, priority, due_date_text: due })
+        });
+        if (!res.ok) throw new Error(`Failed to add task: ${res.status}`);
+
+        closeModal('add-task-modal');
+        document.getElementById('task-title').value = '';
+        document.getElementById('task-due').value = '';
+
+        loadDashboard();
+      } catch (error) {
+        console.error('Error saving task:', error);
+        alert('Error saving task: ' + error.message);
+      }
+    }
+
+    // Utilities
+    function formatStage(stage) {
+      const stages = {
+        'new': 'New',
+        'consultation_scheduled': 'Consultation',
+        'discovery': 'Discovery',
+        'strategy': 'Strategy',
+        'active_client': 'Active Client',
+        'past_client': 'Past Client'
+      };
+      return stages[stage] || 'New';
+    }
+
+    function formatTier(tier) {
+      if (!tier) return '-';
+      const tiers = {
+        'strategy': '<span style="background: #e3f2fd; color: #1976d2; padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.75rem; font-weight: 600;">Strategy</span>',
+        'premium': '<span style="background: #fce4ec; color: #c2185b; padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.75rem; font-weight: 600;">Premium</span>',
+        'enterprise': '<span style="background: #f3e5f5; color: #7b1fa2; padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.75rem; font-weight: 600;">Enterprise</span>'
+      };
+      return tiers[tier] || '-';
+    }
+
+    async function provisionClient(contactId, tier) {
+      if (!confirm(`Provision this contact as a ${tier.toUpperCase()} client?`)) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/provision-client`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ contactId, tier })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          alert(`Client provisioned successfully!\n\nTier: ${tier}\nMRR: $${data.mrr}\nTasks Created: ${data.tasksCreated}${data.hasToolsAccess ? '\nPlatform Access: Enabled' : ''}`);
+          loadContacts();
+          loadDashboard();
+          if (selectedContact) {
+            closeModal('contact-detail-modal');
+          }
+        } else {
+          alert(`Error: ${data.error}`);
+        }
+      } catch (error) {
+        alert(`Failed to provision client: ${error.message}`);
+      }
+    }
+
+    async function logout() {
+      try {
+        await fetch(`${API_BASE}/api/auth/logout`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+      } catch (e) {
+        console.error('Logout error:', e);
+      }
+      localStorage.removeItem('mfs_session');
+      window.location.href = '/login';
+    }
+
+    function checkAuth() {
+      const session = localStorage.getItem('mfs_session');
+      if (!session) {
+        window.location.href = '/login';
+        return false;
+      }
+
+      try {
+        const data = JSON.parse(session);
+        if (new Date(data.expiresAt) < new Date()) {
+          localStorage.removeItem('mfs_session');
+          window.location.href = '/login';
+          return false;
+        }
+
+        document.getElementById('user-greeting').textContent = `Welcome, ${data.name || 'Admin'}`;
+        document.body.classList.add('authenticated');
+        return true;
+      } catch (e) {
+        localStorage.removeItem('mfs_session');
+        window.location.href = '/login';
+        return false;
+      }
+    }
+
+    // Automation & Prospecting
+    async function loadAutomationPage() {
+      try {
+        const res = await fetch(`${API_BASE}/api/automation-settings`, { credentials: 'include' });
+        const data = await res.json();
+
+        if (data.success) {
+          const { stats, settings } = data;
+
+          // Update stats
+          document.getElementById('stat-web-prospects').textContent = stats.prospects.web;
+          document.getElementById('stat-auto-qualified').textContent = stats.recent.qualifiedThisWeek;
+          document.getElementById('stat-follow-ups').textContent = stats.automation.followUpsSent;
+          document.getElementById('nav-automation-count').textContent = stats.prospects.total;
+
+          // Update schedules
+          document.getElementById('web-schedule').textContent = settings.webSchedule || 'Daily';
+          document.getElementById('sales-schedule').textContent = settings.salesSchedule || 'Continuous';
+
+          // Update status badges
+          updateStatusBadge('web-status', settings.webProspectingEnabled);
+          updateStatusBadge('sales-status', settings.salesAutomationEnabled);
+
+          // Load recent activity
+          loadAutomationActivity();
+        }
+      } catch (error) {
+        console.error('Error loading automation page:', error);
+      }
+    }
+
+    function updateStatusBadge(elementId, enabled) {
+      const el = document.getElementById(elementId);
+      if (enabled) {
+        el.textContent = 'Active';
+        el.style.background = '#43a047';
+      } else {
+        el.textContent = 'Paused';
+        el.style.background = '#9e9e9e';
+      }
+    }
+
+    async function loadAutomationActivity() {
+      try {
+        const res = await fetch(`${API_BASE}/api/contacts?limit=100`, { credentials: 'include' });
+        const data = await res.json();
+
+        // Get prospects from automation (includes web prospector, high-value signals, automation)
+        const automationContacts = (data.contacts || []).filter(c =>
+          c.lead_source && (
+            c.lead_source.includes('linkedin') ||
+            c.lead_source.includes('web') ||
+            c.lead_source.includes('business_news') ||
+            c.lead_source.includes('job') ||
+            c.lead_source.includes('high_value_signal') ||
+            c.lead_source.includes('automation')
+          )
+        ).slice(0, 10);
+
+        const container = document.getElementById('automation-activity');
+        if (!container) return;
+
+        if (automationContacts.length === 0) {
+          container.innerHTML = '<div class="empty-state">No automation activity yet. Run a scan to get started!</div>';
+          return;
+        }
+
+        container.innerHTML = automationContacts.map(contact => `
+          <div class="task-item" onclick="openContactDetail('${contact.id}')" style="cursor: pointer;">
+            <div style="flex: 1;">
+              <div class="task-title">${escapeHtml(contact.full_name) || escapeHtml(contact.company) || 'Unknown'}</div>
+              <div class="task-meta">
+                ${formatLeadSource(contact.lead_source)} •
+                ${escapeHtml(contact.company) || 'No company'} •
+                ${formatStage(contact.stage)}
+              </div>
+            </div>
+            <div style="font-size: 0.75rem; color: #888;">${formatDate(contact.created_at)}</div>
+          </div>
+        `).join('');
+      } catch (error) {
+        console.error('Error loading automation activity:', error);
+      }
+    }
+
+    function formatLeadSource(source) {
+      if (!source) return '📍 Unknown';
+
+      // Handle high_value_signal sources
+      if (source.includes('high_value_signal')) {
+        if (source.includes('funding')) return '💎 Funding';
+        if (source.includes('executive_hiring')) return '💎 Exec Hire';
+        if (source.includes('expansion')) return '💎 Expansion';
+        return '💎 High Value';
+      }
+
+      // Handle other automation sources
+      const sources = {
+        'web_prospector': '🌐 Web',
+        'web_prospector_web': '🌐 Web',
+        'business_news': '📰 News',
+        'job_posting_signal': '💼 Job Signal'
+      };
+      return sources[source] || '⚡ Automation';
+    }
+
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diff = now - date;
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+      if (days === 0) return 'Today';
+      if (days === 1) return 'Yesterday';
+      if (days < 7) return `${days} days ago`;
+      return date.toLocaleDateString();
+    }
+
+    async function runAutomation(event) {
+      if (!confirm('Scan for new prospects? This will search for companies with high-value buying signals (funding, executive hiring, expansion).')) return;
+
+      const btn = event.target;
+      const originalText = btn.textContent;
+      btn.textContent = '⏳ Scanning...';
+      btn.disabled = true;
+
+      try {
+        // Run web prospecting
+        const webRes = await fetch(`${API_BASE}/api/web-prospector`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ action: 'scan_web', data: {} })
+        });
+
+        if (!webRes.ok) {
+          const errorText = await webRes.text();
+          throw new Error(`Web prospecting failed (${webRes.status}): ${errorText.substring(0, 200)}`);
+        }
+
+        const webData = await webRes.json();
+        console.log('Web Response:', webData);
+
+        const prospectsFound = webData.prospects?.length || 0;
+
+        if (prospectsFound > 0) {
+          alert(`✅ Prospect Scan Complete!\n\n🎯 Found & Saved: ${prospectsFound} high-value prospects\n\n💡 Check the Contacts page to view them.\n\nNote: Some emails may need enrichment - look for the ⚠️ indicator in contact notes.`);
+        } else {
+          alert(`Scan Complete\n\nNo new prospects found this time.\n\nTip: Prospecting works best when run daily to catch fresh signals.`);
+        }
+
+        // Reload all data to show new prospects
+        await loadAutomationPage();
+        await loadDashboard();
+        await loadAutomationWidget();
+      } catch (error) {
+        console.error('Automation error:', error);
+        alert('Error running automation: ' + error.message);
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    async function runWebProspecting(event) {
+      const btn = event.target;
+      const originalText = btn.textContent;
+      btn.textContent = '⏳ Scanning...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/web-prospector`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ action: 'scan_web', data: {} })
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+        }
+
+        const data = await res.json();
+
+        if (data.success) {
+          const count = data.prospects?.length || 0;
+          alert(`✅ Found & Saved: ${count} web prospects!\n\nView them in the Contacts page.`);
+          await loadAutomationPage();
+          await loadDashboard();
+          await loadAutomationWidget();
+        }
+      } catch (error) {
+        console.error('Web prospecting error:', error);
+        alert('Error: ' + error.message);
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    async function runSalesAutomation(event) {
+      const btn = event.target;
+      const originalText = btn.textContent;
+      btn.textContent = '⏳ Running...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/sales-automation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          const r = data.results;
+          alert(`Sales Automation Complete!\n\nQualified: ${r.leadsQualified}\nFollow-ups: ${r.followUpsSent}\nProgressed: ${r.stagesProgressed}\nTasks Created: ${r.tasksCreated}`);
+          loadAutomationPage();
+          loadDashboard();
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    function openAutomationSettings() {
+      alert('Automation settings coming soon! Currently using default settings:\n\n• LinkedIn: Daily scans\n• Web: Daily scans\n• Sales: Continuous automation');
+    }
+
+    async function enrichContactEmail(contactId, fullName, companyName) {
+      if (!confirm(`Enrich email for ${fullName} at ${companyName}?\n\nThis will generate common email patterns based on the person's name and company.`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/web-prospector`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            action: 'enrich_email',
+            data: {
+              contactId,
+              contactPerson: fullName,
+              companyName
+            }
+          })
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        if (data.success) {
+          const patterns = data.enrichment.allPatterns || [];
+          alert(`✅ Email Enriched!\n\nPrimary: ${data.enrichment.email}\n\nAlternative patterns:\n${patterns.slice(1, 4).join('\n')}\n\nConfidence: ${data.enrichment.confidence}%\nSource: ${data.enrichment.source}\n\nNote: This is a best guess. Verify before sending emails.`);
+
+          // Reload contacts to show updated email
+          loadContacts();
+          loadDashboard();
+        } else {
+          alert('Enrichment failed: ' + (data.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Email enrichment error:', error);
+        alert('Error enriching email: ' + error.message);
+      }
+    }
+
+    // Automation Widget Functions
+    async function loadAutomationWidget() {
+      try {
+        await loadWidgetStats();
+        await loadWidgetActivityFeed();
+      } catch (error) {
+        console.error('Error loading automation widget:', error);
+        const feed = document.getElementById('widget-activity-feed');
+        if (feed) {
+          feed.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">⚠️</div>
+              <p>Error loading data. Please refresh.</p>
+            </div>
+          `;
+        }
+      }
+    }
+
+    async function loadWidgetStats() {
+      try {
+        // Reuse allContacts if available
+        const contacts = allContacts || [];
+
+        // Filter last 7 days
+        const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000);
+        const recentContacts = contacts.filter(c =>
+          new Date(c.created_at) >= sevenDaysAgo
+        );
+
+        // Update stats
+        document.getElementById('widget-leads-count').textContent = recentContacts.length;
+
+        // Count high-value contacts
+        const highValue = contacts.filter(c =>
+          c.stage === 'active_client' || c.stage === 'strategy' || c.client_tier
+        ).length;
+        document.getElementById('widget-fit-score').textContent = highValue;
+
+        // Count pending tasks (fetch fresh)
+        const tasksRes = await fetch(`${API_BASE}/api/tasks?status=pending`, {
+          credentials: 'include'
+        });
+        if (tasksRes.ok) {
+          const tasksData = await tasksRes.json();
+          const tasks = tasksData.tasks || [];
+          document.getElementById('widget-content-count').textContent = tasks.length;
+        } else {
+          document.getElementById('widget-content-count').textContent = '0';
+        }
+      } catch (error) {
+        console.error('Error loading widget stats:', error);
+        document.getElementById('widget-leads-count').textContent = '0';
+        document.getElementById('widget-fit-score').textContent = '0';
+        document.getElementById('widget-content-count').textContent = '0';
+      }
+    }
+
+    async function loadWidgetActivityFeed() {
+      try {
+        const feed = document.getElementById('widget-activity-feed');
+        if (!feed) return;
+
+        // Reuse allContacts and fetch fresh tasks
+        const contacts = allContacts || [];
+
+        const tasksRes = await fetch(`${API_BASE}/api/tasks`, {
+          credentials: 'include'
+        });
+        const tasksData = await tasksRes.json();
+        const allTasks = tasksData.tasks || [];
+
+        // Filter last 7 days
+        const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000);
+        const recentContacts = contacts
+          .filter(c => new Date(c.created_at) >= sevenDaysAgo)
+          .slice(0, 10);
+        const recentTasks = allTasks
+          .filter(t => new Date(t.created_at) >= sevenDaysAgo)
+          .slice(0, 5);
+
+        // Combine activity
+        const allActivity = [
+          ...recentContacts.map(item => ({ ...item, type: 'contact', icon: '🎯' })),
+          ...recentTasks.map(item => ({ ...item, type: 'task', icon: '✓' }))
+        ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        if (allActivity.length === 0) {
+          feed.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">🤖</div>
+              <p>No recent activity</p>
+              <small style="color: #999;">Activity from the last 7 days will appear here</small>
+            </div>
+          `;
+          return;
+        }
+
+        // Render activity feed
+        feed.innerHTML = allActivity.slice(0, 15).map(item => {
+          let title, description;
+
+          if (item.type === 'contact') {
+            const stageName = item.stage || 'new';
+            title = `New Contact: ${escapeHtml(item.full_name) || 'Unknown'}`;
+            description = `${escapeHtml(item.company) || 'No company'} • Stage: ${stageName.replace('_', ' ')}`;
+          } else if (item.type === 'task') {
+            title = escapeHtml(item.title) || 'Task created';
+            description = `Priority: ${item.priority || 'medium'} • Status: ${item.status || 'pending'}`;
+          }
+
+          const timeAgo = getTimeAgo(new Date(item.created_at));
+
+          return `
+            <div class="widget-activity-item ${item.type}">
+              <div class="widget-activity-icon">${item.icon}</div>
+              <div class="widget-activity-content">
+                <div class="widget-activity-title-text">${title}</div>
+                <div class="widget-activity-description">${description}</div>
+                <div class="widget-activity-time">${timeAgo}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (error) {
+        console.error('Error loading widget activity:', error);
+        const feed = document.getElementById('widget-activity-feed');
+        if (feed) {
+          feed.innerHTML = `
+            <div class="empty-state">
+              <p style="color: #e53935;">Error loading activity</p>
+            </div>
+          `;
+        }
+      }
+    }
+
+    function getTimeAgo(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+      const intervals = {
+        year: 31536000,
+        month: 2592000,
+        week: 604800,
+        day: 86400,
+        hour: 3600,
+        minute: 60
+      };
+
+      for (const [unit, secondsInUnit] of Object.entries(intervals)) {
+        const interval = Math.floor(seconds / secondsInUnit);
+        if (interval >= 1) {
+          return `${interval} ${unit}${interval > 1 ? 's' : ''} ago`;
+        }
+      }
+      return 'Just now';
+    }
+
+    function refreshAutomationWidget() {
+      loadAutomationWidget();
+    }
+
+    // Initialize
+    if (checkAuth()) {
+      loadDashboard();
+      loadAutomationWidget();
+    }
+  </script>
+</body>
+</html>
