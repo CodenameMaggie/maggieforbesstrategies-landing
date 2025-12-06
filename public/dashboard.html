@@ -2246,7 +2246,11 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ action: 'scan_web', data: {} })
+          body: JSON.stringify({
+            action: 'scan_web',
+            data: {},
+            skipEmailEnrichment: true  // Fast mode to avoid timeout
+          })
         });
 
         if (!webRes.ok) {
@@ -2289,7 +2293,11 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ action: 'scan_web', data: {} })
+          body: JSON.stringify({
+            action: 'scan_web',
+            data: {},
+            skipEmailEnrichment: true  // Fast mode to avoid timeout
+          })
         });
 
         if (!res.ok) {
