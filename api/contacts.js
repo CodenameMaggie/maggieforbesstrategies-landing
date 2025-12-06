@@ -5,6 +5,7 @@ const db = require('./utils/db');
  * GET - List contacts
  * POST - Create contact
  * PATCH - Update contact
+ * DELETE - Delete contact
  */
 module.exports = async (req, res) => {
   // CORS headers
@@ -20,7 +21,7 @@ module.exports = async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
   res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Tenant-ID');
 
   if (req.method === 'OPTIONS') {
@@ -110,6 +111,28 @@ module.exports = async (req, res) => {
 
       return res.status(200).json({
         success: true,
+        contact: result
+      });
+    }
+
+    // DELETE - Delete contact
+    if (req.method === 'DELETE') {
+      const { id } = req.query;
+
+      if (!id) {
+        return res.status(400).json({ success: false, error: 'Contact ID is required' });
+      }
+
+      const query = 'DELETE FROM contacts WHERE id = $1 AND tenant_id = $2 RETURNING *';
+      const result = await db.queryOne(query, [id, TENANT_ID]);
+
+      if (!result) {
+        return res.status(404).json({ success: false, error: 'Contact not found' });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Contact deleted successfully',
         contact: result
       });
     }
