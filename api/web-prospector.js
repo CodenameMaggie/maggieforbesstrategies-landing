@@ -363,37 +363,14 @@ NO placeholders. NO examples. ONLY real companies from actual articles.`
           // Skip empty or header rows
           if (!companyName || companyName.toLowerCase() === 'company name') continue;
 
-          // If CEO is not disclosed, try to find it
+          // If CEO is not disclosed, use placeholder (enrich later to avoid timeout)
           let actualCEO = ceo;
           if (ceo.toLowerCase().includes('not public') ||
               ceo.toLowerCase().includes('not disclosed') ||
               ceo.toLowerCase() === 'not specified' ||
               ceo.toLowerCase().includes('not available')) {
-            console.log(`[Web Prospector] 🔍 CEO not specified for ${companyName}, searching...`);
-
-            try {
-              // Use Perplexity to find the CEO
-              const ceoSearchResponse = await perplexity.chat.completions.create({
-                model: 'sonar',
-                messages: [{
-                  role: 'user',
-                  content: `Who is the current CEO of ${companyName}? Return ONLY the person's full name (first and last name). If you cannot find the current CEO, return "UNKNOWN".`
-                }]
-              });
-
-              const ceoResult = ceoSearchResponse.choices[0].message.content.trim();
-
-              if (ceoResult && !ceoResult.includes('UNKNOWN') && ceoResult.length > 3 && ceoResult.length < 50) {
-                actualCEO = ceoResult.replace(/^(CEO|Chief Executive Officer)[:\s]*/i, '').trim();
-                console.log(`[Web Prospector] ✓ Found CEO for ${companyName}: ${actualCEO}`);
-              } else {
-                actualCEO = `CEO - ${companyName}`;
-                console.log(`[Web Prospector] ⚠ CEO not found for ${companyName}, using placeholder`);
-              }
-            } catch (error) {
-              console.log(`[Web Prospector] ⚠ CEO lookup failed for ${companyName}, using placeholder`);
-              actualCEO = `CEO - ${companyName}`;
-            }
+            actualCEO = `CEO - ${companyName}`;
+            console.log(`[Web Prospector] ⚠ CEO not specified for ${companyName}, using placeholder (will enrich later)`);
           }
 
           prospects.push({
