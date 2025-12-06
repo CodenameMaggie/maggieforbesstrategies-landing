@@ -363,24 +363,50 @@ NO placeholders. NO examples. ONLY real companies from actual articles.`
           // Skip empty or header rows
           if (!companyName || companyName.toLowerCase() === 'company name') continue;
 
-          // Skip if CEO is not disclosed
+          // If CEO is not disclosed, try to find it
+          let actualCEO = ceo;
           if (ceo.toLowerCase().includes('not public') ||
               ceo.toLowerCase().includes('not disclosed') ||
-              ceo.toLowerCase() === 'not specified') {
-            console.log(`[Web Prospector] ⚠ Skipping ${companyName} - CEO not public`);
-            continue;
+              ceo.toLowerCase() === 'not specified' ||
+              ceo.toLowerCase().includes('not available')) {
+            console.log(`[Web Prospector] 🔍 CEO not specified for ${companyName}, searching...`);
+
+            try {
+              // Use Perplexity to find the CEO
+              const ceoSearchResponse = await perplexity.chat.completions.create({
+                model: 'sonar',
+                messages: [{
+                  role: 'user',
+                  content: `Who is the current CEO of ${companyName}? Return ONLY the person's full name (first and last name). If you cannot find the current CEO, return "UNKNOWN".`
+                }]
+              });
+
+              const ceoResult = ceoSearchResponse.choices[0].message.content.trim();
+
+              if (ceoResult && !ceoResult.includes('UNKNOWN') && ceoResult.length > 3 && ceoResult.length < 50) {
+                actualCEO = ceoResult.replace(/^(CEO|Chief Executive Officer)[:\s]*/i, '').trim();
+                console.log(`[Web Prospector] ✓ Found CEO for ${companyName}: ${actualCEO}`);
+              } else {
+                actualCEO = `CEO - ${companyName}`;
+                console.log(`[Web Prospector] ⚠ CEO not found for ${companyName}, using placeholder`);
+              }
+            } catch (error) {
+              console.log(`[Web Prospector] ⚠ CEO lookup failed for ${companyName}, using placeholder`);
+              actualCEO = `CEO - ${companyName}`;
+            }
           }
 
           prospects.push({
             companyName,
-            contactPerson: ceo,
+            contactPerson: actualCEO,
             recentSignal: whatHappened,
             whereFound: 'Perplexity Web Search',
             intentScore: 85,
             approachAngle: `Strategic consulting for ${whatHappened.toLowerCase().includes('acquisition') ? 'M&A integration' : whatHappened.toLowerCase().includes('funding') ? 'scaling operations' : 'growth strategy'}`,
             industry,
             companySize: '$5M+',
-            postUrl: citations[0] || 'https://www.perplexity.ai'
+            postUrl: citations[0] || 'https://www.perplexity.ai',
+            needsEnrichment: actualCEO.startsWith('CEO -')
           });
         }
       }
@@ -546,8 +572,9 @@ If you found companies, return the JSON array. If no companies found, return []`
         return false;
       }
 
-      // Check for generic contact names (case-insensitive, partial match)
-      if (genericNames.some(generic => contactPerson.toLowerCase().includes(generic.toLowerCase()))) {
+      // Check for generic contact names (but allow "CEO - Company" pattern for enrichment)
+      if (!contactPerson.startsWith('CEO -') &&
+          genericNames.some(generic => contactPerson.toLowerCase().includes(generic.toLowerCase()))) {
         console.log(`[Web Prospector] ❌ Rejected GENERIC NAME: ${contactPerson} at ${companyName}`);
         return false;
       }
@@ -569,11 +596,13 @@ If you found companies, return the JSON array. If no companies found, return []`
         return false;
       }
 
-      // Require full name (first and last, at least 2 words)
-      const nameParts = contactPerson.trim().split(/\s+/);
-      if (nameParts.length < 2) {
-        console.log(`[Web Prospector] ❌ Rejected INCOMPLETE NAME: ${contactPerson} at ${companyName}`);
-        return false;
+      // Require full name (first and last, at least 2 words), unless it's a placeholder
+      if (!contactPerson.startsWith('CEO -')) {
+        const nameParts = contactPerson.trim().split(/\s+/);
+        if (nameParts.length < 2) {
+          console.log(`[Web Prospector] ❌ Rejected INCOMPLETE NAME: ${contactPerson} at ${companyName}`);
+          return false;
+        }
       }
 
       console.log(`[Web Prospector] ✓ VALIDATED: ${companyName} - ${contactPerson}`);
@@ -685,6 +714,11 @@ If you found companies, return the JSON array. If no companies found, return []`
     if (!existingContact) {
       // Build notes with enrichment status
       let notes = `💎 HIGH-VALUE PROSPECT ($5M+)\n\nSignal: ${recentSignal}\n\nIndustry: ${industry}\nSource: ${whereFound}\nVerify: ${postUrl}`;
+
+      // Add CEO enrichment status if needed
+      if (contactPerson.startsWith('CEO -')) {
+        notes += `\n\n🔍 CEO NAME NEEDS ENRICHMENT\nPlaceholder: ${contactPerson}\nAction Required: Find and update actual CEO name\nCompany: ${companyName}`;
+      }
 
       // Add email verification status to notes
       if (emailSource === 'article_extraction') {
