@@ -602,6 +602,7 @@ If you found companies, return the JSON array. If no companies found, return []`
       console.log(`[Web Prospector] ✓ VALIDATED: ${companyName} - ${contactPerson}`);
       return true;
     });
+    }  // Close the else block for Perplexity fallback
 
   } catch (error) {
     console.error('[Web Prospector] Perplexity search error:', error.message);
