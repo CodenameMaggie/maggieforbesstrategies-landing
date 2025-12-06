@@ -1,9 +1,17 @@
-const Anthropic = require('@anthropic-ai/sdk');
+const OpenAI = require('openai');
 const db = require('./db');
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+// Use Perplexity instead of expensive Anthropic
+let perplexity = null;
+function getPerplexity() {
+  if (!perplexity && process.env.PERPLEXITY_API_KEY) {
+    perplexity = new OpenAI({
+      apiKey: process.env.PERPLEXITY_API_KEY,
+      baseURL: 'https://api.perplexity.ai'
+    });
+  }
+  return perplexity;
+}
 
 /**
  * MEMORY RETENTION SYSTEM - MFS Bots
@@ -81,8 +89,13 @@ ${conversationText}
 Previous key facts (build upon these):
 ${JSON.stringify(existingKeyFacts, null, 2)}`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+    const client = getPerplexity();
+    if (!client) {
+      throw new Error('PERPLEXITY_API_KEY not configured');
+    }
+
+    const response = await client.chat.completions.create({
+      model: 'llama-3.1-sonar-small-128k-chat',
       max_tokens: 500,
       messages: [{
         role: 'user',
@@ -90,7 +103,7 @@ ${JSON.stringify(existingKeyFacts, null, 2)}`;
       }]
     });
 
-    const responseText = response.content[0].text;
+    const responseText = response.choices[0].message.content;
 
     let result;
     try {
