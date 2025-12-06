@@ -69,11 +69,12 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Contact must have an email address' });
     }
 
-    // Step 2: Calculate MRR based on tier
+    // Step 2: Calculate MRR based on tier (annual contract / 12 months)
+    // Contract prices: Strategy $25K, Premium $50K, Enterprise $150K
     const tierPricing = {
-      'strategy': 2500,
-      'premium': 5000,
-      'enterprise': 10000
+      'strategy': 2083.33,   // $25,000 annual contract / 12 months
+      'premium': 4166.67,    // $50,000 annual contract / 12 months
+      'enterprise': 12500    // $150,000 annual contract / 12 months
     };
     const mrr = tierPricing[tier];
 

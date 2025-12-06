@@ -131,7 +131,7 @@ module.exports = async (req, res) => {
       tenant_id: tenantId,
       contact_id: contactId,
       type: 'checkout_created',
-      description: `Stripe checkout session created for ${tier} tier ($${tier === 'strategy' ? '2,500' : tier === 'premium' ? '5,000' : '10,000'}/mo)`,
+      description: `Stripe checkout session created for ${tier} tier ($${tier === 'strategy' ? '25,000' : tier === 'premium' ? '50,000' : '150,000'} annual contract)`,
       created_at: new Date()
     });
 

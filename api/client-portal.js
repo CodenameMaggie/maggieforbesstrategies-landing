@@ -199,8 +199,9 @@ function getTierBenefits(tier) {
   const benefits = {
     strategy: {
       name: 'Strategy Tier',
-      price: '$2,500/month',
+      price: '$25,000/contract',
       features: [
+        '12-month strategic partnership',
         'Monthly strategy sessions',
         'Private Slack channel access',
         'Strategic counsel and planning',
@@ -209,8 +210,9 @@ function getTierBenefits(tier) {
     },
     premium: {
       name: 'Premium Tier',
-      price: '$5,000/month',
+      price: '$50,000/contract',
       features: [
+        '12-month strategic partnership',
         'Bi-weekly strategy sessions',
         'Private Slack channel access',
         'Strategic counsel and planning',
@@ -222,8 +224,9 @@ function getTierBenefits(tier) {
     },
     enterprise: {
       name: 'Enterprise Tier',
-      price: '$10,000+/month',
+      price: '$150,000/contract',
       features: [
+        '12-month strategic partnership',
         'Weekly strategy sessions',
         'Private Slack channel with white-glove support',
         'Dedicated account manager',
@@ -233,7 +236,8 @@ function getTierBenefits(tier) {
         'Intent-based prospecting systems',
         'AI-powered personalization & qualification',
         'Complete operational automation',
-        'Done-for-you service options'
+        'Done-for-you service options',
+        'White-glove implementation support'
       ]
     }
   };
