@@ -2,6 +2,8 @@ const Anthropic = require('@anthropic-ai/sdk');
 const OpenAI = require('openai');
 const db = require('./utils/db');
 const { findVerifiedEmail } = require('./utils/email-finder');
+const { qualifyProspect } = require('./utils/prospect-qualifier');
+const { generateOutreach } = require('./utils/outreach-templates');
 
 // Lazy initialization to prevent 404 when API keys are missing
 let anthropic, openai, perplexity;
@@ -710,8 +712,51 @@ If you found companies, return the JSON array. If no companies found, return []`
     );
 
     if (!existingContact) {
+      // PHASE 3: Rule-based qualification (no AI needed!)
+      const qualification = qualifyProspect({
+        companyName,
+        contactPerson,
+        recentSignal,
+        industry,
+        companySize,
+        fundingAmount: recentSignal,
+        signalType,
+        signalDate: new Date()
+      });
+
+      console.log(`[Web Prospector] 🎯 Qualification Score: ${qualification.score}/100 - Priority: ${qualification.priority}`);
+
+      // Generate personalized outreach (no AI needed!)
+      const outreach = generateOutreach({
+        companyName,
+        contactPerson,
+        recentSignal,
+        industry
+      }, qualification);
+
+      console.log(`[Web Prospector] ✉️  Outreach generated - Subject: ${outreach.subject}`);
+
       // Build notes with enrichment status
       let notes = `💎 HIGH-VALUE PROSPECT ($5M+)\n\nSignal: ${recentSignal}\n\nIndustry: ${industry}\nSource: ${whereFound}\nVerify: ${postUrl}`;
+
+      // Add qualification insights
+      notes += `\n\n🎯 QUALIFICATION (Rule-Based - No AI)`;
+      notes += `\nScore: ${qualification.score}/100`;
+      notes += `\nPriority: ${qualification.priority.toUpperCase()}`;
+      notes += `\nQualified: ${qualification.qualified ? 'YES' : 'NO'}`;
+      if (qualification.reasons.length > 0) {
+        notes += `\n\nReasons:\n${qualification.reasons.map(r => '• ' + r).join('\n')}`;
+      }
+
+      // Add pain points
+      if (qualification.pain_points.length > 0) {
+        notes += `\n\nLikely Pain Points:\n${qualification.pain_points.map(p => '• ' + p).join('\n')}`;
+      }
+
+      // Add outreach email
+      notes += `\n\n📧 PERSONALIZED OUTREACH (Template-Based)`;
+      notes += `\nSubject: ${outreach.subject}`;
+      notes += `\n\n${outreach.body}`;
 
       // Add CEO enrichment status if needed
       if (contactPerson.startsWith('CEO -')) {
