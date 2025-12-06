@@ -511,6 +511,75 @@
             margin-top: 1rem;
         }
 
+        /* Inquiry Form */
+        .inquiry-form {
+            max-width: 600px;
+            margin: 2rem auto;
+            text-align: left;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border: 2px solid var(--cream);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            background: var(--white);
+            color: var(--text-dark);
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(184, 147, 95, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .form-message {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+        }
+
+        .form-message.success {
+            display: block;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .form-message.error {
+            display: block;
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .inquiry-form button[type="submit"] {
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        .inquiry-form button[type="submit"]:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         /* Footer */
         footer {
             background: var(--navy);
@@ -777,11 +846,32 @@
                     <p class="slots-remaining">Limited strategic partnerships available</p>
                 </div>
 
-                <p>If your organization meets the criteria above, schedule a Consultation Now. We'll discuss your current architecture, growth challenges, and whether a strategic partnership makes sense for both parties.</p>
+                <p>If your organization meets the criteria above, submit your information below. We'll review your inquiry and reach out within 2 business days to discuss your current architecture, growth challenges, and whether a strategic partnership makes sense for both parties.</p>
 
-                <p style="margin-bottom: 3rem;">This is an introductory style conversation, not a presentation. We're assessing mutual fit and alignment.</p>
+                <p style="margin-bottom: 2rem;">This is an introductory conversation, not a presentation. We're assessing mutual fit and alignment.</p>
 
-                <a href="https://calendly.com/maggie-maggieforbesstrategies/consultation-mf" class="cta-button" target="_blank">Schedule Consultation</a>
+                <!-- Lead Capture Form -->
+                <form id="inquiryForm" class="inquiry-form">
+                    <div class="form-group">
+                        <input type="text" id="fullName" name="full_name" placeholder="Full Name *" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" id="email" name="email" placeholder="Email Address *" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="tel" id="phone" name="phone" placeholder="Phone Number">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="company" name="company" placeholder="Company Name">
+                    </div>
+                    <div class="form-group">
+                        <textarea id="notes" name="notes" placeholder="Tell us about your organization and growth challenges..." rows="4"></textarea>
+                    </div>
+                    <div id="formMessage" class="form-message"></div>
+                    <button type="submit" class="cta-button" id="submitBtn">Submit Inquiry</button>
+                </form>
+
+                <p style="margin-top: 2rem; font-size: 0.95rem; color: var(--text-light);">Or, if you prefer to schedule directly: <a href="https://calendly.com/maggie-maggieforbesstrategies/consultation-mf" target="_blank" style="color: var(--gold); text-decoration: underline;">Schedule via Calendly</a></p>
             </div>
         </div>
     </section>
@@ -813,6 +903,68 @@
                     });
                 }
             });
+        });
+
+        // Lead Capture Form Submission
+        const form = document.getElementById('inquiryForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const formMessage = document.getElementById('formMessage');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Disable submit button and show loading state
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            formMessage.className = 'form-message';
+            formMessage.style.display = 'none';
+
+            // Collect form data
+            const formData = {
+                full_name: document.getElementById('fullName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                company: document.getElementById('company').value,
+                notes: document.getElementById('notes').value,
+                lead_source: 'website_landing_page',
+                stage: 'inquiry'
+            };
+
+            try {
+                // Submit to API
+                const response = await fetch('/api/contacts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    // Success
+                    formMessage.className = 'form-message success';
+                    formMessage.textContent = 'Thank you for your inquiry! We\'ll review your information and reach out within 2 business days.';
+                    formMessage.style.display = 'block';
+
+                    // Reset form
+                    form.reset();
+                } else {
+                    // Error from API
+                    throw new Error(result.error || 'Failed to submit inquiry');
+                }
+            } catch (error) {
+                // Network or other error
+                console.error('Form submission error:', error);
+                formMessage.className = 'form-message error';
+                formMessage.textContent = 'There was an error submitting your inquiry. Please try again or contact us directly.';
+                formMessage.style.display = 'block';
+            } finally {
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Inquiry';
+            }
         });
     </script>
 </body>
