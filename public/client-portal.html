@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Client Portal - Maggie Forbes Strategies</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .header h1 {
+      color: #667eea;
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .header .welcome {
+      color: #666;
+      font-size: 16px;
+    }
+
+    .tier-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+    .tier-badge.enterprise {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .tier-badge.premium {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 25px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .card h2 {
+      color: #333;
+      font-size: 20px;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .card h2::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      margin-right: 10px;
+      border-radius: 2px;
+    }
+
+    .stat-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      background: #f8f9ff;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    .stat-label {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .stat-value {
+      color: #667eea;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .call-item {
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      background: #f8f9ff;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .call-item.past {
+      border-left-color: #999;
+      background: #f5f5f5;
+    }
+
+    .call-date {
+      color: #667eea;
+      font-weight: 600;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .call-item.past .call-date {
+      color: #666;
+    }
+
+    .call-status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+
+    .call-status.scheduled {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+
+    .call-status.completed {
+      background: #e8f5e9;
+      color: #388e3c;
+    }
+
+    .call-notes {
+      color: #666;
+      font-size: 14px;
+      margin-top: 10px;
+      line-height: 1.6;
+    }
+
+    .meeting-link {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 10px;
+      transition: transform 0.2s;
+    }
+
+    .meeting-link:hover {
+      transform: translateY(-2px);
+    }
+
+    .task-item {
+      padding: 15px;
+      background: #fff9e6;
+      border-left: 4px solid #ffa726;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    .task-item.high {
+      border-left-color: #e53935;
+      background: #ffebee;
+    }
+
+    .task-title {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .task-description {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .activity-item {
+      padding: 12px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .activity-item:last-child {
+      border-bottom: none;
+    }
+
+    .activity-type {
+      color: #667eea;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .activity-description {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .activity-date {
+      color: #999;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    .feature-list {
+      list-style: none;
+    }
+
+    .feature-list li {
+      padding: 10px 0;
+      color: #666;
+      font-size: 14px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .feature-list li:last-child {
+      border-bottom: none;
+    }
+
+    .feature-list li::before {
+      content: '✓';
+      color: #4caf50;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+
+    .ai-tools-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .ai-tools-card h2 {
+      color: white;
+      border-bottom-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .ai-tools-card h2::before {
+      background: white;
+    }
+
+    .ai-tools-link {
+      display: inline-block;
+      background: white;
+      color: #667eea;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      margin-top: 15px;
+      transition: transform 0.2s;
+    }
+
+    .ai-tools-link:hover {
+      transform: translateY(-2px);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 100px;
+      color: white;
+      font-size: 18px;
+    }
+
+    .error {
+      background: #ffebee;
+      color: #c62828;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="loadingState" class="loading">
+      Loading your portal...
+    </div>
+
+    <div id="errorState" style="display: none;"></div>
+
+    <div id="portalContent" style="display: none;">
+      <!-- Header -->
+      <div class="header">
+        <h1>Client Portal</h1>
+        <p class="welcome">Welcome back, <span id="clientName"></span>!</p>
+        <span id="tierBadge" class="tier-badge"></span>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="grid">
+        <!-- Subscription Details -->
+        <div class="card">
+          <h2>Your Subscription</h2>
+          <div class="stat-box">
+            <span class="stat-label">Tier</span>
+            <span class="stat-value" id="tierName"></span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Monthly Rate</span>
+            <span class="stat-value" id="monthlyRate"></span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Client Since</span>
+            <span class="stat-value" id="clientSince"></span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Status</span>
+            <span class="stat-value" id="clientStatus"></span>
+          </div>
+        </div>
+
+        <!-- Tier Benefits -->
+        <div class="card">
+          <h2>Your Benefits</h2>
+          <ul class="feature-list" id="benefitsList"></ul>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="card">
+          <h2>Quick Stats</h2>
+          <div class="stat-box">
+            <span class="stat-label">Upcoming Calls</span>
+            <span class="stat-value" id="upcomingCount">0</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Completed Sessions</span>
+            <span class="stat-value" id="completedCount">0</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Action Items</span>
+            <span class="stat-value" id="actionItemsCount">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Tools Access (Premium/Enterprise only) -->
+      <div id="aiToolsCard" class="card ai-tools-card" style="display: none; margin-bottom: 30px;">
+        <h2>Growth Manager Pro - AI Tools</h2>
+        <p style="margin-bottom: 15px; opacity: 0.95;">Access your unlimited AI-powered growth tools:</p>
+        <ul class="feature-list" style="color: white; margin-bottom: 20px;">
+          <li style="border-bottom-color: rgba(255, 255, 255, 0.2);">Intent-based prospecting</li>
+          <li style="border-bottom-color: rgba(255, 255, 255, 0.2);">AI-powered personalization</li>
+          <li style="border-bottom-color: rgba(255, 255, 255, 0.2);">Autonomous qualification</li>
+          <li style="border-bottom-color: rgba(255, 255, 255, 0.2);">Multi-channel orchestration</li>
+        </ul>
+        <a href="https://app.growthmangerpro.com" target="_blank" class="ai-tools-link">
+          Launch AI Tools →
+        </a>
+      </div>
+
+      <!-- Main Content Grid -->
+      <div class="grid">
+        <!-- Upcoming Calls -->
+        <div class="card">
+          <h2>Upcoming Strategy Calls</h2>
+          <div id="upcomingCallsList"></div>
+        </div>
+
+        <!-- Past Calls -->
+        <div class="card">
+          <h2>Past Sessions</h2>
+          <div id="pastCallsList"></div>
+        </div>
+
+        <!-- Action Items -->
+        <div class="card">
+          <h2>Action Items</h2>
+          <div id="actionItemsList"></div>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="card" style="margin-top: 30px;">
+        <h2>Recent Activity</h2>
+        <div id="recentActivitiesList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Get contact ID or email from URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const contactId = urlParams.get('contactId');
+    const email = urlParams.get('email');
+
+    if (!contactId && !email) {
+      showError('Please provide contact ID or email in URL (e.g., ?email=client@example.com)');
+    } else {
+      loadPortalData();
+    }
+
+    async function loadPortalData() {
+      try {
+        const params = new URLSearchParams();
+        if (contactId) params.append('contactId', contactId);
+        if (email) params.append('email', email);
+
+        const response = await fetch(`/api/client-portal?${params}`);
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to load portal data');
+        }
+
+        renderPortal(data);
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('portalContent').style.display = 'block';
+
+      } catch (error) {
+        console.error('Error loading portal:', error);
+        showError(error.message);
+      }
+    }
+
+    function renderPortal(data) {
+      // Header
+      document.getElementById('clientName').textContent = data.client.name;
+      document.getElementById('tierBadge').textContent = data.tierBenefits.name;
+      document.getElementById('tierBadge').classList.add(data.subscription.tier);
+
+      // Subscription Details
+      document.getElementById('tierName').textContent = data.tierBenefits.name;
+      document.getElementById('monthlyRate').textContent = data.tierBenefits.price;
+      document.getElementById('clientSince').textContent = formatDate(data.subscription.clientSince);
+      document.getElementById('clientStatus').textContent = data.subscription.status.toUpperCase();
+
+      // Benefits
+      const benefitsList = document.getElementById('benefitsList');
+      data.tierBenefits.features.forEach(feature => {
+        const li = document.createElement('li');
+        li.textContent = feature;
+        benefitsList.appendChild(li);
+      });
+
+      // Quick Stats
+      document.getElementById('upcomingCount').textContent = data.upcomingCalls.length;
+      document.getElementById('completedCount').textContent = data.pastCalls.length;
+      document.getElementById('actionItemsCount').textContent = data.actionItems.length;
+
+      // AI Tools Card (Premium/Enterprise only)
+      if (data.subscription.hasAITools) {
+        document.getElementById('aiToolsCard').style.display = 'block';
+      }
+
+      // Upcoming Calls
+      const upcomingList = document.getElementById('upcomingCallsList');
+      if (data.upcomingCalls.length === 0) {
+        upcomingList.innerHTML = '<div class="empty-state">No upcoming calls scheduled</div>';
+      } else {
+        data.upcomingCalls.forEach(call => {
+          upcomingList.appendChild(createCallElement(call, false));
+        });
+      }
+
+      // Past Calls
+      const pastList = document.getElementById('pastCallsList');
+      if (data.pastCalls.length === 0) {
+        pastList.innerHTML = '<div class="empty-state">No past sessions yet</div>';
+      } else {
+        data.pastCalls.slice(0, 5).forEach(call => {
+          pastList.appendChild(createCallElement(call, true));
+        });
+      }
+
+      // Action Items
+      const actionItemsList = document.getElementById('actionItemsList');
+      if (data.actionItems.length === 0) {
+        actionItemsList.innerHTML = '<div class="empty-state">No pending action items</div>';
+      } else {
+        data.actionItems.forEach(task => {
+          actionItemsList.appendChild(createTaskElement(task));
+        });
+      }
+
+      // Recent Activities
+      const activitiesList = document.getElementById('recentActivitiesList');
+      if (data.recentActivities.length === 0) {
+        activitiesList.innerHTML = '<div class="empty-state">No recent activity</div>';
+      } else {
+        data.recentActivities.slice(0, 10).forEach(activity => {
+          activitiesList.appendChild(createActivityElement(activity));
+        });
+      }
+    }
+
+    function createCallElement(call, isPast) {
+      const div = document.createElement('div');
+      div.className = 'call-item' + (isPast ? ' past' : '');
+
+      const date = new Date(call.scheduledAt);
+      const dateStr = date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      div.innerHTML = `
+        <div class="call-date">
+          ${dateStr}
+          <span class="call-status ${call.status}">${call.status}</span>
+        </div>
+        ${call.notes ? `<div class="call-notes"><strong>Notes:</strong> ${call.notes}</div>` : ''}
+        ${call.actionItems ? `<div class="call-notes"><strong>Action Items:</strong> ${call.actionItems}</div>` : ''}
+        ${call.nextSteps ? `<div class="call-notes"><strong>Next Steps:</strong> ${call.nextSteps}</div>` : ''}
+        ${!isPast && call.meetingLink ? `<a href="${call.meetingLink}" target="_blank" class="meeting-link">Join Meeting</a>` : ''}
+      `;
+
+      return div;
+    }
+
+    function createTaskElement(task) {
+      const div = document.createElement('div');
+      div.className = 'task-item' + (task.priority === 'high' ? ' high' : '');
+
+      div.innerHTML = `
+        <div class="task-title">${task.title}</div>
+        ${task.description ? `<div class="task-description">${task.description}</div>` : ''}
+      `;
+
+      return div;
+    }
+
+    function createActivityElement(activity) {
+      const div = document.createElement('div');
+      div.className = 'activity-item';
+
+      div.innerHTML = `
+        <div class="activity-type">${formatActivityType(activity.type)}</div>
+        <div class="activity-description">${activity.description}</div>
+        <div class="activity-date">${formatDate(activity.createdAt)}</div>
+      `;
+
+      return div;
+    }
+
+    function formatActivityType(type) {
+      return type.replace(/_/g, ' ');
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return 'N/A';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+
+    function showError(message) {
+      document.getElementById('loadingState').style.display = 'none';
+      const errorDiv = document.getElementById('errorState');
+      errorDiv.className = 'error';
+      errorDiv.textContent = 'Error: ' + message;
+      errorDiv.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

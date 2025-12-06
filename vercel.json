@@ -3,7 +3,8 @@
   "rewrites": [
     { "source": "/", "destination": "/mf-landing-page.html" },
     { "source": "/login", "destination": "/login.html" },
-    { "source": "/dashboard", "destination": "/dashboard.html" }
+    { "source": "/dashboard", "destination": "/dashboard.html" },
+    { "source": "/client-portal", "destination": "/client-portal.html" }
   ],
   "headers": [
     {
