@@ -297,12 +297,13 @@ REQUIREMENTS:
 - Must be US-based companies with $5M+ revenue
 - Must include source URL for verification
 
-Return 5-10 REAL companies in this table format:
+Return ONLY 1-2 REAL companies in this table format:
 | Company Name | CEO/Executive | What Happened | Industry |
 
 Example of CORRECT format (with real data):
 | Brevo | Armand Thiberge | Raised $583M Series D | Marketing Tech |
 
+IMPORTANT: Return ONLY 1-2 companies max. This runs every 10 minutes so we need fast, focused results.
 NO placeholders. NO examples. ONLY real companies from actual articles.`
       }],
       return_citations: true

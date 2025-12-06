@@ -39,7 +39,7 @@
   "crons": [
     {
       "path": "/api/automation-scheduler",
-      "schedule": "0 * * * *"
+      "schedule": "*/10 * * * *"
     },
     {
       "path": "/api/consultation-reminders",
