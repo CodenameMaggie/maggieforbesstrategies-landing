@@ -17,11 +17,11 @@ module.exports = async (req, res) => {
   try {
     // Check environment variables (don't expose actual values)
     checks.environment = {
-      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY ? '✅ Set' : '❌ Missing',
-      PERPLEXITY_API_KEY: process.env.PERPLEXITY_API_KEY ? '✅ Set' : '❌ Missing',
-      OPEN_API_KEY: process.env.OPEN_API_KEY ? '✅ Set' : '❌ Missing',
-      DATABASE_URL: process.env.DATABASE_URL ? '✅ Set' : '❌ Missing',
+      PERPLEXITY_API_KEY: process.env.PERPLEXITY_API_KEY ? '✅ Set' : '❌ Missing (Required for AI)',
+      DATABASE_URL: process.env.DATABASE_URL ? '✅ Set' : '❌ Missing (Required)',
       MFS_TENANT_ID: process.env.MFS_TENANT_ID ? '✅ Set' : '❌ Missing',
+      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY ? '✅ Set (Optional - expensive)' : '⚪ Not set (OK)',
+      OPEN_API_KEY: process.env.OPEN_API_KEY ? '✅ Set (Optional)' : '⚪ Not set (OK)',
       NODE_ENV: process.env.NODE_ENV || 'development'
     };
 
@@ -52,8 +52,8 @@ module.exports = async (req, res) => {
     }
 
     // Check critical missing configs
-    if (!process.env.ANTHROPIC_API_KEY) {
-      checks.errors.push('ANTHROPIC_API_KEY is required for AI assistants');
+    if (!process.env.PERPLEXITY_API_KEY) {
+      checks.errors.push('PERPLEXITY_API_KEY is required for AI assistants');
       checks.status = 'degraded';
     }
 

@@ -1,17 +1,18 @@
-const Anthropic = require('@anthropic-ai/sdk');
+const OpenAI = require('openai');
 const db = require('./utils/db');
 const { processConversationMemory, buildSystemPromptWithMemory } = require('./utils/memory-manager');
 const { loadBotContext, injectContextIntoPrompt } = require('./utils/context-loader-helper');
 
 // Lazy initialization to prevent errors when API key is missing
-let anthropic = null;
-function getAnthropic() {
-  if (!anthropic && process.env.ANTHROPIC_API_KEY) {
-    anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
+let perplexity = null;
+function getPerplexity() {
+  if (!perplexity && process.env.PERPLEXITY_API_KEY) {
+    perplexity = new OpenAI({
+      apiKey: process.env.PERPLEXITY_API_KEY,
+      baseURL: 'https://api.perplexity.ai'
     });
   }
-  return anthropic;
+  return perplexity;
 }
 
 // ============================================
@@ -257,20 +258,22 @@ When Maggie asks "What do I need to do today?" or similar:
       memoryContext.keyFacts
     );
 
-    // Call Claude API
-    const client = getAnthropic();
+    // Call Perplexity API (cheaper than Anthropic)
+    const client = getPerplexity();
     if (!client) {
-      throw new Error('ANTHROPIC_API_KEY not configured');
+      throw new Error('PERPLEXITY_API_KEY not configured');
     }
 
-    const response = await client.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+    const response = await client.chat.completions.create({
+      model: 'llama-3.1-sonar-large-128k-online',
       max_tokens: 1500,
-      system: systemPrompt,
-      messages: claudeMessages
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...claudeMessages
+      ]
     });
 
-    const aiResponse = response.content[0].text;
+    const aiResponse = response.choices[0].message.content;
 
     // Check for task creation
     let createdTasks = [];
