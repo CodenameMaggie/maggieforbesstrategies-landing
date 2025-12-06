@@ -1,85 +1,66 @@
-const OpenAI = require('openai');
-
 /**
- * TEST ENDPOINT - Diagnose Perplexity API issues
+ * Simple Perplexity API Test Endpoint
+ * Tests if Perplexity API key is working without database dependencies
  */
 
-const perplexity = new OpenAI({
-  apiKey: process.env.PERPLEXITY_API_KEY,
-  baseURL: 'https://api.perplexity.ai',
-});
+const OpenAI = require('openai');
 
 module.exports = async (req, res) => {
-  // CORS headers
-  const allowedOrigins = [
-    process.env.NEXT_PUBLIC_APP_URL,
-    'https://maggieforbesstrategies.com',
-    'https://www.maggieforbesstrategies.com',
-    'http://localhost:3000'
-  ].filter(Boolean);
+  try {
+    const apiKey = process.env.PERPLEXITY_API_KEY;
 
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  const testResults = {
-    apiKeyConfigured: !!process.env.PERPLEXITY_API_KEY,
-    apiKeyPrefix: process.env.PERPLEXITY_API_KEY?.substring(0, 10) || 'NOT SET',
-    tests: []
-  };
-
-  // Test different models (from official docs)
-  const modelsToTest = [
-    'sonar',
-    'sonar-pro',
-    'sonar-reasoning',
-    'sonar-reasoning-pro',
-    'sonar-deep-research'
-  ];
-
-  for (const modelName of modelsToTest) {
-    try {
-      console.log(`[Test] Trying model: ${modelName}`);
-
-      const response = await perplexity.chat.completions.create({
-        model: modelName,
-        max_tokens: 100,
-        messages: [{
-          role: 'user',
-          content: 'What is the capital of France?'
-        }],
-        // All sonar models support search
-        search_recency_filter: 'month'
+    if (!apiKey) {
+      return res.status(500).json({
+        success: false,
+        error: 'PERPLEXITY_API_KEY not set in environment',
+        env_check: {
+          PERPLEXITY_API_KEY: 'Missing',
+          key_length: 0
+        }
       });
-
-      testResults.tests.push({
-        model: modelName,
-        status: 'SUCCESS',
-        response: response.choices[0].message.content.substring(0, 100),
-        citations: response.citations?.length || 0
-      });
-
-      console.log(`[Test] ✓ ${modelName} succeeded`);
-
-    } catch (error) {
-      testResults.tests.push({
-        model: modelName,
-        status: 'FAILED',
-        error: error.message,
-        statusCode: error.status || error.statusCode
-      });
-
-      console.log(`[Test] ✗ ${modelName} failed: ${error.message}`);
     }
-  }
 
-  return res.status(200).json(testResults);
+    // Test Perplexity API
+    const perplexity = new OpenAI({
+      apiKey: apiKey,
+      baseURL: 'https://api.perplexity.ai'
+    });
+
+    console.log('[Test] Calling Perplexity API...');
+
+    const response = await perplexity.chat.completions.create({
+      model: 'llama-3.1-sonar-large-128k-online',
+      max_tokens: 100,
+      messages: [
+        { role: 'system', content: 'You are a helpful assistant.' },
+        { role: 'user', content: 'Say "Hello! I am working!" and nothing else.' }
+      ]
+    });
+
+    const aiResponse = response.choices[0].message.content;
+
+    console.log('[Test] Perplexity responded:', aiResponse);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Perplexity API is working!',
+      ai_response: aiResponse,
+      env_check: {
+        PERPLEXITY_API_KEY: 'Set ✅',
+        key_length: apiKey.length,
+        key_prefix: apiKey.substring(0, 7) + '...'
+      },
+      model: 'llama-3.1-sonar-large-128k-online'
+    });
+
+  } catch (error) {
+    console.error('[Test] Perplexity API Error:', error);
+
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+      error_type: error.constructor.name,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
 };
