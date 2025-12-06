@@ -26,14 +26,14 @@
     }
   ],
   "functions": {
+    "api/automation-scheduler": {
+      "maxDuration": 60
+    },
+    "api/web-prospector": {
+      "maxDuration": 60
+    },
     "api/**/*.js": {
       "maxDuration": 30
-    },
-    "api/automation-scheduler.js": {
-      "maxDuration": 60
-    },
-    "api/web-prospector.js": {
-      "maxDuration": 60
     }
   },
   "crons": [
